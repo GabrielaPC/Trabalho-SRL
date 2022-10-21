@@ -3,12 +3,12 @@ setParam: stringsAreCaseSensitive = true.
 usePrologVariables: true.
 
 
-(trusts(A, B, 0.2519165586334043) :-  /* #neg=6 #pos=578 */ knows(B, A)).
-(trusts(A, B, 0.2764040929852319) :-  /* #neg=1 #pos=29 */ knows(UniqueVar41, A), knows(UniqueVar41, UniqueVar41), knows(UniqueVar41, B)).
-(trusts(A, B, -0.11768041364736082) :-  /* #neg=3 #pos=3 */ knows(UniqueVar42, A), knows(UniqueVar42, UniqueVar42), knows(B, B)).
-(trusts(A, _, 0.2285742131692746) :-  /* #neg=5 #pos=53 */ knows(UniqueVar43, A), knows(UniqueVar43, UniqueVar43), knows(A, UniqueVar43)).
-(trusts(A, _, 0.1514093407472434) :-  /* #neg=8 #pos=38 */ knows(UniqueVar44, A), knows(UniqueVar44, UniqueVar44)).
-(trusts(_, A, 0.24490633825720523) :-  /* #neg=34 #pos=916 */ knows(A, UniqueVar45), knows(UniqueVar45, A)).
-(trusts(A, B, 0.16509144853730856) :-  /* #neg=8 #pos=48 */ knows(B, UniqueVar46), knows(UniqueVar47, A), knows(UniqueVar47, UniqueVar46)).
-(trusts(A, B, 0.23434927456920904) :-  /* #neg=5 #pos=87 */ knows(B, _), knows(_, A)).
-trusts(_, _, 0.2447237937790199) /* #neg=7 #pos=179 */ .
+(trusts(A, B, 0.25312023036782316) :-  /* #neg=6 #pos=578 */ knows(B, A)).
+(trusts(A, B, 0.2763102460593184) :-  /* #neg=1 #pos=29 */ knows(UniqueVar40, A), knows(UniqueVar40, UniqueVar40), knows(UniqueVar40, B)).
+(trusts(A, B, -0.14050258426165682) :-  /* #neg=3 #pos=3 */ knows(UniqueVar41, A), knows(UniqueVar41, UniqueVar41), knows(B, B)).
+(trusts(A, _, 0.22173652103410885) :-  /* #neg=5 #pos=53 */ knows(UniqueVar42, A), knows(UniqueVar42, UniqueVar42), knows(A, UniqueVar42)).
+(trusts(A, _, 0.14997022543865726) :-  /* #neg=8 #pos=38 */ knows(UniqueVar43, A), knows(UniqueVar43, UniqueVar43)).
+(trusts(_, A, 0.24516065733449488) :-  /* #neg=34 #pos=916 */ knows(A, UniqueVar44), knows(UniqueVar44, A)).
+(trusts(A, B, 0.15519042312082676) :-  /* #neg=8 #pos=48 */ knows(B, UniqueVar45), knows(UniqueVar46, A), knows(UniqueVar46, UniqueVar45)).
+(trusts(A, B, 0.23539907032824625) :-  /* #neg=5 #pos=87 */ knows(B, _), knows(_, A)).
+trusts(_, _, 0.24485003501214636) /* #neg=7 #pos=179 */ .

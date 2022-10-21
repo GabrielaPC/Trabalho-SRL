@@ -1,7 +1,13 @@
 
+% Starting a LEARNING run of bRDN.
+
+% Calling SETUP.
+
 % Switching to VarIndicator = uppercase.
 
 % Unset'ing VarIndicator.
+
+Resetting the LazyGroundNthArgumentClauseIndex.
 
 % Calling ILPouterLoop from createRegressionOuterLooper.
 
@@ -111,8 +117,6 @@ Set score:0.0025
 % [ LazyGroundClauseIndex ]  Building full index for knows/2 with 7.577 assertions.
 % [ LazyGroundNthArgumentClauseIndex ]  Argument 0:  Building full index for knows/2.
 % [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for knows/2.
-There is no fact nor clause nor built-in predicate matching: 'prior/1'.
-  Possibly a typo?  If not, add to the BK file:   okIfUnknown: prior/1.
 
 % Skipping over this 'waitHere': There is no fact nor clause nor built-in predicate matching: 'prior/1'.
   Possibly a typo?  If not, add to the BK file:   okIfUnknown: prior/1.

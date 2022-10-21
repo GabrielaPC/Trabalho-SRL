@@ -49,16 +49,13 @@ for type_files in types:
         if file.endswith("_obs.txt"):
             file_path = f"{input_path}/{file}"
     
-            # call read text file function
             read_and_convert(file_path, file[:-8].replace('_',''), f"{type_files}_facts.txt")
         elif file.endswith("_truth.txt"):
             file_path = f"{input_path}/{file}"
     
-            # call read text file function
             read_and_convert(file_path, file[:-10].replace('_',''), f"{type_files}_pos.txt", is_pos=True)
         elif file.endswith("_target.txt"):
             file_path = f"{input_path}/{file}"
     
-            # call read text file function
             read_and_convert(file_path, file[:-11].replace('_',''), f"{type_files}_pos.txt", is_pos=True)
         

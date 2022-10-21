@@ -1,7 +1,11 @@
 
+% Starting an INFERENCE run of bRDN.
+
 % Switching to VarIndicator = uppercase.
 
 % Unset'ing VarIndicator.
+
+Resetting the LazyGroundNthArgumentClauseIndex.
 
 % Calling ILPouterLoop from createRegressionOuterLooper.
 
@@ -111,6 +115,7 @@ printExamples: Writing out predictions (for Tuffy?) on 2.196 examples for 'trust
 %Neg=92
 %LL:-322.8105567695986
 %LL:-493.4867439787307
+Best F1 = 1.0
 % F1 = 1.0
 % Threshold = 0.8484143501464415
 

@@ -3,12 +3,12 @@ setParam: stringsAreCaseSensitive = true.
 usePrologVariables: true.
 
 
-(hasCat(A, _, 0.26234242582212886) :-  /* #neg=15 #pos=93 */ link(UniqueVar39, A), link(UniqueVar40, UniqueVar39), link(UniqueVar40, A)).
-(hasCat(A, _, 0.2974039542166813) :-  /* #neg=14 #pos=156 */ link(UniqueVar41, A), link(_, UniqueVar41)).
-(hasCat(A, _, 0.30115052913049256) :-  /* #neg=3 #pos=40 */ link(UniqueVar42, A), link(UniqueVar42, UniqueVar43), link(A, UniqueVar43)).
-(hasCat(A, _, 0.2704004827393416) :-  /* #neg=29 #pos=185 */ link(A, UniqueVar44), link(UniqueVar45, UniqueVar44), link(_, UniqueVar45)).
-(hasCat(A, _, 0.3069041755673856) :-  /* #neg=5 #pos=49 */ link(A, UniqueVar46), link(UniqueVar46, _)).
-(hasCat(A, _, 0.27373469233698233) :-  /* #neg=33 #pos=245 */ link(A, _)).
-(hasCat(A, _, 0.2754236547931493) :-  /* #neg=16 #pos=116 */ link(UniqueVar47, A), link(UniqueVar47, UniqueVar48), link(UniqueVar48, _)).
-(hasCat(A, _, 0.2763296536538527) :-  /* #neg=35 #pos=250 */ link(_, A)).
-hasCat(_, _, 0.2845503940323708) /* #neg=57 #pos=522 */ .
+(hasCat(A, _, 0.327364532970671) :-  /* #neg=2 #pos=37 */ link(A, UniqueVar37), link(UniqueVar38, UniqueVar37), link(UniqueVar37, UniqueVar38)).
+(hasCat(A, _, 0.2570586906606973) :-  /* #neg=15 #pos=84 */ link(UniqueVar39, A), link(UniqueVar40, UniqueVar39), link(UniqueVar40, A)).
+(hasCat(A, _, 0.2573543744482423) :-  /* #neg=8 #pos=46 */ link(A, UniqueVar41), link(UniqueVar41, UniqueVar42), link(UniqueVar42, _)).
+(hasCat(A, _, 0.24471233828081118) :-  /* #neg=7 #pos=36 */ link(A, UniqueVar43), link(UniqueVar43, UniqueVar44), link(A, UniqueVar44)).
+(hasCat(A, _, 0.28513775326746404) :-  /* #neg=8 #pos=74 */ link(A, UniqueVar45), link(UniqueVar45, _)).
+(hasCat(A, _, 0.2847444858761528) :-  /* #neg=30 #pos=261 */ link(UniqueVar46, A), link(UniqueVar46, UniqueVar47), link(UniqueVar47, _)).
+(hasCat(A, _, 0.27809526235588244) :-  /* #neg=7 #pos=46 */ link(A, UniqueVar48), link(UniqueVar49, UniqueVar48), link(_, UniqueVar49)).
+(hasCat(A, _, 0.2745268547956197) :-  /* #neg=33 #pos=245 */ link(A, _)).
+hasCat(_, _, 0.28390101423140623) /* #neg=97 #pos=827 */ .

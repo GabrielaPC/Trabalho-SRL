@@ -3,12 +3,12 @@ setParam: stringsAreCaseSensitive = true.
 usePrologVariables: true.
 
 
-(trusts(A, B, 0.17326110543369536) :-  /* #neg=6 #pos=578 */ knows(B, A)).
-(trusts(A, B, 0.1890514850369187) :-  /* #neg=1 #pos=29 */ knows(UniqueVar56, A), knows(UniqueVar56, UniqueVar56), knows(UniqueVar56, B)).
-(trusts(A, B, -0.12988316104316686) :-  /* #neg=3 #pos=3 */ knows(UniqueVar57, A), knows(UniqueVar57, UniqueVar57), knows(B, B)).
-(trusts(A, _, 0.14900969624337618) :-  /* #neg=5 #pos=53 */ knows(UniqueVar58, A), knows(UniqueVar58, UniqueVar58), knows(A, UniqueVar58)).
-(trusts(A, _, 0.08345675744197376) :-  /* #neg=8 #pos=38 */ knows(UniqueVar59, A), knows(UniqueVar59, UniqueVar59)).
-(trusts(_, A, 0.17466522220808162) :-  /* #neg=8 #pos=260 */ knows(UniqueVar60, A), knows(UniqueVar60, UniqueVar60)).
-(trusts(A, _, 0.13894271362499264) :-  /* #neg=38 #pos=458 */ knows(UniqueVar61, A), knows(UniqueVar62, UniqueVar61), knows(UniqueVar62, A)).
-(trusts(A, _, 0.1740237090194458) :-  /* #neg=7 #pos=311 */ knows(UniqueVar63, A), knows(_, UniqueVar63)).
-trusts(_, _, 0.1814537234933347) /* #neg=1 #pos=201 */ .
+(trusts(A, B, 0.17388620426732404) :-  /* #neg=6 #pos=578 */ knows(B, A)).
+(trusts(A, B, 0.1565554848760374) :-  /* #neg=6 #pos=66 */ knows(A, UniqueVar55), knows(UniqueVar55, UniqueVar55), knows(B, UniqueVar55)).
+(trusts(A, B, 0.1317132013119006) :-  /* #neg=25 #pos=207 */ knows(A, UniqueVar56), knows(UniqueVar56, UniqueVar56), knows(B, _)).
+(trusts(A, _, 0.16531154963425473) :-  /* #neg=1 #pos=25 */ knows(A, UniqueVar57), knows(UniqueVar57, UniqueVar57)).
+(trusts(A, _, 0.1513213872436984) :-  /* #neg=29 #pos=451 */ knows(UniqueVar58, A), knows(UniqueVar59, UniqueVar58), knows(UniqueVar59, A)).
+(trusts(A, B, 0.1747451126140717) :-  /* #neg=4 #pos=300 */ knows(UniqueVar60, A), knows(_, UniqueVar60), knows(B, _)).
+(trusts(A, _, 0.14461609553355276) :-  /* #neg=3 #pos=47 */ knows(UniqueVar61, A), knows(_, UniqueVar61)).
+(trusts(A, _, 0.17855390423173834) :-  /* #neg=2 #pos=248 */ knows(A, UniqueVar62), knows(UniqueVar62, _)).
+trusts(_, _, 0.08744091084885572) /* #neg=1 #pos=9 */ .

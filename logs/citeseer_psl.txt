@@ -1,0 +1,112 @@
+citeseer.zip file found cached, skipping download.
+Extracted citeseer.zip zip found cached, skipping extract.
+Using PSL jar found at /home/gpinheiro/Trabalho-SRL/PSL/citeseer/cli/psl-cli-3.0.0-SNAPSHOT.jar. To fetch a new version, delete this cached jar.
+Running PSL Weight Learning.
+2676 [main] INFO  org.linqs.psl.runtime.Runtime  - PSL Runtime Version 3.0.0-SNAPSHOT-9191e6f
+WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
+4857 [main] INFO  org.linqs.psl.util.RandUtils  - Using random seed: 13256544
+4896 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Grounding out model.
+7154 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Grounding complete.
+9306 [main] WARN  org.linqs.psl.application.learning.weight.VotedPerceptron  - Latent variable(s) found when using a VotedPerceptron-based weight learning method (org.linqs.psl.application.learning.weight.maxlikelihood.MaxLikelihoodMPE). VotedPerceptron uses gradients to update weights, but latent variables may make the gradients less accurate. Weight learning may still perform sufficiently. Found 9936 latent variables. Example latent variable: [HASCAT('2212', '1')].
+9641 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+16760 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 337.05871054935835, Feasible: true, Primal res.: 0.002357699130057796, Dual res.: 0.003266757719645776
+16779 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+16901 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+23049 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 332.0284295733951, Feasible: true, Primal res.: 0.00206534312777401, Dual res.: 1.8941505961072246E-4
+23063 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+23165 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+29362 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 329.7458284667096, Feasible: true, Primal res.: 0.0021405265108833454, Dual res.: 1.9250307294802434E-4
+29376 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+29455 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+34748 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 550 iterations. Objective: 328.1935414767247, Feasible: true, Primal res.: 0.0026263008340484087, Dual res.: 2.47906769185701E-4
+34764 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+34847 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+40082 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 327.08250752147046, Feasible: true, Primal res.: 0.002158137518823126, Dual res.: 1.9619777058291001E-4
+40096 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+40158 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+46083 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 326.1732506352312, Feasible: true, Primal res.: 0.0019958525969701216, Dual res.: 1.8167952919084478E-4
+46095 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+46149 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+51972 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 550 iterations. Objective: 325.3794355792432, Feasible: true, Primal res.: 0.002641137887948474, Dual res.: 2.502939885074882E-4
+51973 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+52033 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+56259 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 324.75788296062206, Feasible: true, Primal res.: 0.0021412368197832074, Dual res.: 2.006111790373161E-4
+56261 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+56320 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+64737 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 324.19044794015593, Feasible: true, Primal res.: 0.0019751567964592254, Dual res.: 1.8401333310078062E-4
+64738 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+64816 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+74655 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 323.68229911690577, Feasible: true, Primal res.: 0.0020847548427533843, Dual res.: 1.9049975323300763E-4
+74658 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+74720 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+80769 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 323.22530645504406, Feasible: true, Primal res.: 0.0020674489851148893, Dual res.: 1.8689193164253724E-4
+80771 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+80820 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+85742 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 550 iterations. Objective: 322.78170664160086, Feasible: true, Primal res.: 0.0026172632801440966, Dual res.: 2.525170342778731E-4
+85743 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+85796 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+91901 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 322.4318553690559, Feasible: true, Primal res.: 0.0019891626108876044, Dual res.: 1.8833897833972832E-4
+91902 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+91954 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+98072 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 550 iterations. Objective: 322.05199192759534, Feasible: true, Primal res.: 0.0025344794314810797, Dual res.: 2.4623415614030084E-4
+98073 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+98143 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+106120 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 321.7539870475059, Feasible: true, Primal res.: 0.002044363347826656, Dual res.: 1.8663881943117028E-4
+106121 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+106172 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+111278 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 321.45023590452763, Feasible: true, Primal res.: 0.0019632479712529973, Dual res.: 1.7997241303339544E-4
+111279 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+111328 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+118825 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 321.1643133384897, Feasible: true, Primal res.: 0.002017343069685673, Dual res.: 1.8236581077957673E-4
+118826 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+118889 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+122994 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 550 iterations. Objective: 320.8721298265684, Feasible: true, Primal res.: 0.0024596142171660466, Dual res.: 2.4729910960663776E-4
+122994 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+123044 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+129834 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 320.64393774855637, Feasible: true, Primal res.: 0.001999756699828473, Dual res.: 1.8277458679898676E-4
+129835 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+129897 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+138955 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 320.4048874149688, Feasible: true, Primal res.: 0.0019129603736264512, Dual res.: 1.7736492470277153E-4
+138955 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+139036 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+146356 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 550 iterations. Objective: 320.14719407238323, Feasible: true, Primal res.: 0.0025349134454843098, Dual res.: 2.457512578456843E-4
+146357 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+146408 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+151793 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 550 iterations. Objective: 319.92840485694, Feasible: true, Primal res.: 0.0025455724976679315, Dual res.: 2.5338259893657375E-4
+151794 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+151846 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+158415 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 319.7496421800949, Feasible: true, Primal res.: 0.002016843165192858, Dual res.: 1.8010485877746147E-4
+158415 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+158501 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+164355 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 319.55237609606064, Feasible: true, Primal res.: 0.0019150453387363339, Dual res.: 1.787518982745115E-4
+164356 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+164409 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+170211 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 319.35925479506096, Feasible: true, Primal res.: 0.0021684249574558914, Dual res.: 1.946255347825354E-4
+170212 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+170269 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Writing results to Database.
+170926 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Results committed to database.
+170951 [main] INFO  org.linqs.psl.runtime.Runtime  - Learned Model:
+170958 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.9461861: ( LINK(A, B) & (A != B) & HASCAT(A, C) ) >> HASCAT(B, C) ^2
+170958 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.9476767: ( LINK(B, A) & (A != B) & HASCAT(A, C) ) >> HASCAT(B, C) ^2
+170959 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.9449615: ( LINK(A, B) & HASCAT(A, '1') ) >> HASCAT(B, '1') ^2
+170959 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.9462466: ( LINK(A, B) & HASCAT(A, '2') ) >> HASCAT(B, '2') ^2
+170959 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.94673485: ( LINK(A, B) & HASCAT(A, '3') ) >> HASCAT(B, '3') ^2
+170960 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.95388883: ( LINK(A, B) & HASCAT(A, '4') ) >> HASCAT(B, '4') ^2
+170960 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.9575132: ( LINK(A, B) & HASCAT(A, '5') ) >> HASCAT(B, '5') ^2
+170961 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.9427711: ( LINK(A, B) & HASCAT(A, '6') ) >> HASCAT(B, '6') ^2
+170962 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.93302864: ( LINK(A, B) & HASCAT(A, '7') ) >> HASCAT(B, '7') ^2
+170962 [main] INFO  org.linqs.psl.runtime.Runtime  -    1.0 * HASCAT(A, +C) = 1.0 .
+170963 [main] INFO  org.linqs.psl.runtime.Runtime  -    0.0: ~( HASCAT(A, N) ) ^2
+Running PSL Inference.
+1586 [main] INFO  org.linqs.psl.runtime.Runtime  - PSL Runtime Version 3.0.0-SNAPSHOT-9191e6f
+WARNING: sun.reflect.Reflection.getCallerClass is not supported. This will impact performance.
+3626 [main] INFO  org.linqs.psl.util.RandUtils  - Using random seed: 29922815
+3660 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Grounding out model.
+6064 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Grounding complete.
+8007 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Beginning inference.
+16427 [main] INFO  org.linqs.psl.reasoner.admm.ADMMReasoner  - Optimization completed in 600 iterations. Objective: 268.44194597992157, Feasible: true, Primal res.: 0.003048848292168096, Dual res.: 2.671930454591559E-4
+16442 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Inference complete.
+16443 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Writing results to Database.
+17140 [main] INFO  org.linqs.psl.application.inference.InferenceApplication  - Results committed to database.
+17141 [main] INFO  org.linqs.psl.runtime.Runtime  - Writing inferred predicates to directory: /home/gpinheiro/Trabalho-SRL/PSL/citeseer/cli/inferred-predicates
+17575 [main] INFO  org.linqs.psl.runtime.Runtime  - Evaluation results for HASCAT -- Categorical Accuracy: 0,722222

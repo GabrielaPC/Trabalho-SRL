@@ -1,7 +1,13 @@
 
+% Starting a LEARNING run of bRDN.
+
+% Calling SETUP.
+
 % Switching to VarIndicator = uppercase.
 
 % Unset'ing VarIndicator.
+
+Resetting the LazyGroundNthArgumentClauseIndex.
 
 % Calling ILPouterLoop from createRegressionOuterLooper.
 

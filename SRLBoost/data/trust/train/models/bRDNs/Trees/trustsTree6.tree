@@ -3,12 +3,12 @@ setParam: stringsAreCaseSensitive = true.
 usePrologVariables: true.
 
 
-(trusts(A, B, 0.19769524726480153) :-  /* #neg=4 #pos=156 */ knows(A, UniqueVar48), knows(UniqueVar48, UniqueVar48), knows(B, A)).
-(trusts(A, B, 0.17012887306415517) :-  /* #neg=31 #pos=273 */ knows(A, UniqueVar49), knows(UniqueVar49, UniqueVar49), knows(B, _)).
-(trusts(A, _, 0.21857578450653384) :-  /* #pos=6 */ knows(A, UniqueVar50), knows(UniqueVar50, UniqueVar50), knows(UniqueVar50, A)).
-(trusts(A, _, 0.1923191411153547) :-  /* #neg=1 #pos=19 */ knows(A, UniqueVar51), knows(UniqueVar51, UniqueVar51)).
-(trusts(A, B, 0.2093688489158066) :-  /* #neg=2 #pos=422 */ knows(B, A)).
-(trusts(A, _, 0.18436541071709567) :-  /* #neg=29 #pos=451 */ knows(UniqueVar52, A), knows(UniqueVar53, UniqueVar52), knows(UniqueVar53, A)).
-(trusts(A, B, 0.20913016220024966) :-  /* #neg=4 #pos=300 */ knows(UniqueVar54, A), knows(_, UniqueVar54), knows(B, _)).
-(trusts(A, _, 0.17565374921594526) :-  /* #neg=3 #pos=47 */ knows(UniqueVar55, A), knows(_, UniqueVar55)).
-trusts(_, _, 0.20861959129809846) /* #neg=3 #pos=257 */ .
+(trusts(A, B, 0.1988503413758935) :-  /* #neg=4 #pos=156 */ knows(A, UniqueVar47), knows(UniqueVar47, UniqueVar47), knows(B, A)).
+(trusts(A, B, 0.19327064913888703) :-  /* #neg=6 #pos=66 */ knows(A, UniqueVar48), knows(UniqueVar48, UniqueVar48), knows(B, UniqueVar48)).
+(trusts(A, B, 0.16253433014434135) :-  /* #neg=25 #pos=207 */ knows(A, UniqueVar49), knows(UniqueVar49, UniqueVar49), knows(B, _)).
+(trusts(A, _, 0.22032231991822207) :-  /* #pos=6 */ knows(A, UniqueVar50), knows(UniqueVar50, UniqueVar50), knows(UniqueVar50, A)).
+(trusts(A, _, 0.19322665909811748) :-  /* #neg=1 #pos=19 */ knows(A, UniqueVar51), knows(UniqueVar51, UniqueVar51)).
+(trusts(A, B, 0.21010593998454127) :-  /* #neg=2 #pos=422 */ knows(B, A)).
+(trusts(A, _, 0.18354190793754563) :-  /* #neg=29 #pos=451 */ knows(UniqueVar52, A), knows(UniqueVar53, UniqueVar52), knows(UniqueVar53, A)).
+(trusts(A, _, 0.20387890177972479) :-  /* #neg=7 #pos=347 */ knows(UniqueVar54, A), knows(_, UniqueVar54)).
+trusts(_, _, 0.2088315126245339) /* #neg=3 #pos=257 */ .

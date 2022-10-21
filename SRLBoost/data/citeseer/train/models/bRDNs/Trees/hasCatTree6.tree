@@ -3,12 +3,12 @@ setParam: stringsAreCaseSensitive = true.
 usePrologVariables: true.
 
 
-(hasCat(A, _, 0.18583471684908837) :-  /* #neg=16 #pos=184 */ link(A, _), link(_, A)).
-(hasCat(A, _, 0.2115432969714104) :-  /* #neg=1 #pos=12 */ link(UniqueVar62, A), link(UniqueVar62, UniqueVar63), link(UniqueVar63, UniqueVar62)).
-(hasCat(A, _, 0.12765428905953877) :-  /* #neg=12 #pos=55 */ link(UniqueVar64, A), link(UniqueVar65, UniqueVar64), link(_, UniqueVar65)).
-(hasCat(A, _, 0.15454309786357492) :-  /* #neg=22 #pos=123 */ link(A, UniqueVar66), link(UniqueVar67, UniqueVar66), link(_, UniqueVar67)).
-(hasCat(A, _, 0.19096589097400385) :-  /* #neg=5 #pos=49 */ link(A, UniqueVar68), link(UniqueVar68, _)).
-(hasCat(A, _, 0.1649489042589438) :-  /* #neg=33 #pos=245 */ link(A, _)).
-(hasCat(A, _, 0.18078756142754224) :-  /* #neg=10 #pos=100 */ link(UniqueVar69, A), link(_, UniqueVar69)).
-(hasCat(A, _, 0.16592456393563765) :-  /* #neg=51 #pos=366 */ link(_, A)).
-hasCat(_, _, 0.17504052969312195) /* #neg=57 #pos=522 */ .
+(hasCat(A, _, 0.23705618833188882) :-  /* #pos=24 */ link(A, UniqueVar60), link(UniqueVar60, _), link(UniqueVar60, A)).
+(hasCat(A, _, 0.1743544120734732) :-  /* #neg=10 #pos=68 */ link(A, UniqueVar61), link(UniqueVar61, UniqueVar62), link(A, UniqueVar62)).
+(hasCat(A, _, 0.09402072496114336) :-  /* #neg=7 #pos=28 */ link(A, UniqueVar63), link(UniqueVar63, UniqueVar64), link(UniqueVar64, _)).
+(hasCat(A, _, 0.1702960818041161) :-  /* #neg=9 #pos=79 */ link(A, UniqueVar65), link(UniqueVar65, _)).
+(hasCat(A, _, 0.14192737475443953) :-  /* #neg=15 #pos=80 */ link(UniqueVar66, A), link(UniqueVar67, UniqueVar66), link(_, UniqueVar67)).
+(hasCat(A, _, 0.19471376265223725) :-  /* #neg=11 #pos=129 */ link(UniqueVar68, A), link(_, UniqueVar68)).
+(hasCat(A, _, 0.17020600080208512) :-  /* #neg=23 #pos=185 */ link(UniqueVar69, A), link(UniqueVar69, UniqueVar70), link(UniqueVar70, _)).
+(hasCat(A, _, 0.1650925746530566) :-  /* #neg=35 #pos=250 */ link(_, A)).
+hasCat(_, _, 0.17225184143785557) /* #neg=97 #pos=813 */ .
