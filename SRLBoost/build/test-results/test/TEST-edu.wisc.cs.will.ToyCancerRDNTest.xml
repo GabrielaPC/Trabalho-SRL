@@ -1,0 +1,1367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="edu.wisc.cs.will.ToyCancerRDNTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2022-10-20T17:10:38" hostname="Ubuntu" time="0.223">
+  <properties/>
+  <testcase name="testToyCancerLearnInfer()" classname="edu.wisc.cs.will.ToyCancerRDNTest" time="0.223"/>
+  <system-out><![CDATA[
+% Starting a LEARNING run of bRDN.
+
+% Calling SETUP.
+
+% Switching to VarIndicator = uppercase.
+
+% Unset'ing VarIndicator.
+
+Resetting the LazyGroundNthArgumentClauseIndex.
+
+% Calling ILPouterLoop from createRegressionOuterLooper.
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/train/train_pos.txt, data/toy_cancer/train/train_neg.txt, data/toy_cancer/train/train_bk.txt, data/toy_cancer/train/train_facts.txt]
+%  for N=0: args[N]=data/toy_cancer/train/train_pos.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/train/train_pos.txt, data/toy_cancer/train/train_neg.txt, data/toy_cancer/train/train_bk.txt, data/toy_cancer/train/train_facts.txt]
+%  for N=1: args[N]=data/toy_cancer/train/train_neg.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/train/train_pos.txt, data/toy_cancer/train/train_neg.txt, data/toy_cancer/train/train_bk.txt, data/toy_cancer/train/train_facts.txt]
+%  for N=2: args[N]=data/toy_cancer/train/train_bk.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/train/train_pos.txt, data/toy_cancer/train/train_neg.txt, data/toy_cancer/train/train_bk.txt, data/toy_cancer/train/train_facts.txt]
+%  for N=3: args[N]=data/toy_cancer/train/train_facts.txt
+
+% Welcome to the WILL ILP/SRL systems.
+
+% Reading background theory from dir: null
+
+% Switching to VarIndicator = uppercase.
+
+***** Warning: % Since this is the first setting of the notation for variables, will keep:
+%   variableIndicator = uppercase *****
+
+% [ LazyGroundClauseIndex ]  Building full index for mode/1 with 1 assertions.
+
+%  Read the facts.
+%  Have read 15 facts.
+% Have read 4 examples from 'data/toy_cancer/train' [data/toy_cancer/train/train*].
+% Have read 2 examples from 'data/toy_cancer/train' [data/toy_cancer/train/train*].
+
+%  LearnOneClause initialized.
+
+% The outer looper has been created.
+
+% Initializing the ILP inner looper.
+
+% NEW target:                 cancer(A)
+%  targetPred:                cancer/1
+%  targetArgTypes:            signature = [const], types = [+person]
+%  targets:                   [cancer(A)]
+%  targetPredicates:          [cancer/1]
+%  targetArgSpecs:            [[A[+person]]]
+%  variablesInTargets:        [[A]]
+
+% Started collecting constants
+
+% Collecting the types of constants.
+
+% Looking at the training examples to see if any types of new constants can be inferred.
+% Time to collect constants: 0 seconds
+
+% Read 4 pos examples and 2 neg examples.
+% Time to init learnOneClause: 0 seconds
+% Old dirnull
+Setting model dir
+
+% Have 4 'raw' positive examples and kept 4.
+% Have 2 'raw' negative examples and kept 2.
+
+% processing backup's for cancer
+%  POS EX = 4
+%  NEG EX = 2
+
+% Memory usage by WILLSetup (just counts # targets?):
+%  |backupPosExamples| = 1
+%  |backupNegExamples| = 1
+%  |predicatesAsFacts| = 0
+%  |addedToFactBase|   = 0
+data/toy_cancer/train/models/
+% Learning 10 trees in this iteration for cancer
+
+% Learn model for: cancer
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Have prepared facts.
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.2222222222222222
+Set score:0.0025
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 0 seconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.2222222222222221
+Set score:0.0025
+
+***** Warning: % Have only 6 positive examples, so cannot choose 10 of them. *****
+
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% LearnOneClause Parameters:
+%   Targets (1):
+%    cancer(+person)
+%  Modes (3):
+%    friends(+person, -person),
+%    friends(-person, +person),
+%    smokes(+person)
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+% [ LazyGroundClauseIndex ]  Building full index for friends/2 with 12 assertions.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 0:  Building full index for friends/2.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for friends/2.
+% [ LazyGroundClauseIndex ]  Building full index for smokes/1 with 3 assertions.
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: 1.4802973661668753E-16 to score=0.0025 #egs=3.0
+Comparing variance: 0.22222222222222224 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 10 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #1 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.8581489350995121;  // std dev = 2,11e-08, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.19148226843284552;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.8581489350995121) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.19148226843284552) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.8581489350995121) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.19148226843284552) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 1 trees is 16 milliseconds.
+
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.2222222222222221
+Set score:0.0025
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.18754527566494433
+Set score:0.0025
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: 0.0 to score=0.0025 #egs=3.0
+Comparing variance: 0.2222222222222222 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 9 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #2 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.7194734122109545;  // std dev = 0,000, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.16653882456488175;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.7194734122109545) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.16653882456488175) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.7194734122109545) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.16653882456488175) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 2 trees is 32 milliseconds.
+
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.18754527566494433
+Set score:0.0025
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:1 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.15380958768018868
+Set score:0.0025
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: 3.700743415417188E-17 to score=0.0025 #egs=3.0
+Comparing variance: 0.22222222222222218 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 15 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #3 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.5553664367462845;  // std dev = 1,05e-08, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.1420942428155648;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.5553664367462845) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.1420942428155648) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.5553664367462845) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.1420942428155648) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 3 trees is 53 milliseconds.
+
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.15380958768018868
+Set score:0.0025
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 0 seconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.13336648156722608
+Set score:0.0025
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: -3.700743415417188E-17 to score=0.0025 #egs=3.0
+Comparing variance: 0.22222222222222224 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 11 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #4 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.41751358415830997;  // std dev = 0,000, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.11914890490746428;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.41751358415830997) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.11914890490746428) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.41751358415830997) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.11914890490746428) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 4 trees is 70 milliseconds.
+
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.13336648156722608
+Set score:0.0025
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:1 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.12346526070412303
+Set score:0.0025
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: 0.0 to score=0.0025 #egs=3.0
+Comparing variance: 0.2222222222222222 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 11 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #5 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.32071184716014967;  // std dev = 0,000, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.09841340278401862;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.32071184716014967) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.09841340278401862) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.32071184716014967) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.09841340278401862) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 5 trees is 89 milliseconds.
+
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.12346526070412303
+Set score:0.0025
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.1187591114831673
+Set score:0.0025
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: 0.0 to score=0.0025 #egs=3.0
+Comparing variance: 0.22222222222222224 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 13 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #6 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.25517224256948945;  // std dev = 0,000, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.08026654944252243;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.25517224256948945) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.08026654944252243) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.25517224256948945) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.08026654944252243) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 6 trees is 110 milliseconds.
+
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.1187591114831673
+Set score:0.0025
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 0 seconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.11636459194107544
+Set score:0.0025
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: 0.0 to score=0.0025 #egs=3.0
+Comparing variance: 0.22222222222222224 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 11 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #7 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.20975771563253554;  // std dev = 0,000, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.06479591611329232;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.20975771563253554) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.06479591611329232) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.20975771563253554) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.06479591611329232) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 7 trees is 129 milliseconds.
+
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.11636459194107544
+Set score:0.0025
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:1 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.11503095594409692
+Set score:0.0025
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: 0.0 to score=0.0025 #egs=3.0
+Comparing variance: 0.2222222222222222 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 10 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #8 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.17709649774527736;  // std dev = 0,000, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.05187916934404054;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.17709649774527736) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.05187916934404054) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.17709649774527736) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.05187916934404054) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 8 trees is 148 milliseconds.
+
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.11503095594409692
+Set score:0.0025
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:1 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.11421775371541582
+Set score:0.0025
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: -4.625929269271485E-18 to score=0.0025 #egs=3.0
+Comparing variance: 0.22222222222222218 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 9 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #9 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.15274385809367097;  // std dev = 0,000, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.04126932998424626;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.15274385809367097) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.04126932998424626) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.15274385809367097) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.04126932998424626) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 9 trees is 173 milliseconds.
+
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.11421775371541582
+Set score:0.0025
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 0 seconds
+%      addToQueueOfTreeStructuredLearningTasks (level=0; score=1,797693135e+308)
+%         ILP node to extend: null
+%      Insert tree-structured search node (@ level = 0 and with score = 1,797693135e+308) into the LAST position (#1) in the search queue.
+Variance:0.11367872627591485
+Set score:0.0025
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666669 (regressionFit = 0,666667, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% Expanding node at Level 0 with score = 1,797693e+308.
+% Will extend: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Comparing variance: -2.3129646346357427E-18 to score=0.0025 #egs=3.0
+Comparing variance: 0.2222222222222222 to score=0.0025 #egs=3.0
+%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = 3,0 < 2.1 * minPosCov = 6,3
+
+% Time for loop #1: 9 milliseconds.
+% Internal node max length = 2
+% Max tree depth in lits   = 3
+% Max tree depth in nodes  = 4
+% Max number of clauses    = 8
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+
+% ******************************************
+
+%  Have stopped ILP's outer loop because the tree-structured queue is empty.
+
+% ******************************************
+
+%%%%%  WILL-Produced Tree #10 @ 14:10:38 10/20/22.  %%%%%
+
+
+% FOR cancer(A):
+%   if ( smokes(A) )
+%   then return 0.13400703000801117;  // std dev = 0,000, 3,000 (wgt'ed) examples reached here.  /* #pos=3 */
+%   else return 0.032663748734830134;  // std dev = 0,816, 3,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=1 */
+
+
+% Clauses:
+
+cancer(A, 0.13400703000801117) :- 
+     smokes(A), 
+     !. // Clause #1.
+
+cancer(A, 0.032663748734830134) :- !. // Clause #2.
+
+
+% The flattened versions of these clauses:
+
+flattened_cancer(a, 0.13400703000801117) :-  /* #pos=3 */ 
+   smokes(a),
+   !. // Flattened version of clause #1.
+
+flattened_cancer(underscore, 0.032663748734830134) :-  /* #neg=2 #pos=1 */ 
+   !. // Flattened version of clause #2.
+
+
+% The unique flattened literals:
+%   smokes(a)
+
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%  Final call for computing score for cancer.  %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+stepLength_tree1(1.0).
+stepLength_tree2(1.0).
+stepLength_tree3(1.0).
+stepLength_tree4(1.0).
+stepLength_tree5(1.0).
+stepLength_tree6(1.0).
+stepLength_tree7(1.0).
+stepLength_tree8(1.0).
+stepLength_tree9(1.0).
+stepLength_tree10(1.0).
+
+logPrior(-1.8).
+cancer(A, Total) :- // A general accessor. 
+   cancer(A, 1000000, Total), !.
+cancer(A, Total) :- waitHere("This should not fail", cancer(A, Total)).
+
+cancer(A, TreesToUse, Total) :- // A tree-limited accessor (e.g., for tuning the number of trees to use).
+   logPrior(LogPrior),
+   getScore_cancer_tree1(A, TreesToUse, Total1),
+   getScore_cancer_tree2(A, TreesToUse, Total2),
+   getScore_cancer_tree3(A, TreesToUse, Total3),
+   getScore_cancer_tree4(A, TreesToUse, Total4),
+   getScore_cancer_tree5(A, TreesToUse, Total5),
+   getScore_cancer_tree6(A, TreesToUse, Total6),
+   getScore_cancer_tree7(A, TreesToUse, Total7),
+   getScore_cancer_tree8(A, TreesToUse, Total8),
+   getScore_cancer_tree9(A, TreesToUse, Total9),
+   getScore_cancer_tree10(A, TreesToUse, Total10),
+   Total is LogPrior + Total1 + Total2 + Total3 + Total4 + Total5 + Total6 + Total7 + Total8 + Total9 + Total10,
+   !.
+cancer(A, TreesToUse, Total) :- waitHere("This should not fail", cancer(A, TreesToUse, Total)).
+
+getScore_cancer_tree1(A, TreesToUse, 0.0) :- 1 > TreesToUse, !.
+getScore_cancer_tree1(A, TreesToUse, Total1) :- cancer_tree1(A, Total), stepLength_tree1(StepLen), Total1 is Total * StepLen.
+
+getScore_cancer_tree2(A, TreesToUse, 0.0) :- 2 > TreesToUse, !.
+getScore_cancer_tree2(A, TreesToUse, Total2) :- cancer_tree2(A, Total), stepLength_tree2(StepLen), Total2 is Total * StepLen.
+
+getScore_cancer_tree3(A, TreesToUse, 0.0) :- 3 > TreesToUse, !.
+getScore_cancer_tree3(A, TreesToUse, Total3) :- cancer_tree3(A, Total), stepLength_tree3(StepLen), Total3 is Total * StepLen.
+
+getScore_cancer_tree4(A, TreesToUse, 0.0) :- 4 > TreesToUse, !.
+getScore_cancer_tree4(A, TreesToUse, Total4) :- cancer_tree4(A, Total), stepLength_tree4(StepLen), Total4 is Total * StepLen.
+
+getScore_cancer_tree5(A, TreesToUse, 0.0) :- 5 > TreesToUse, !.
+getScore_cancer_tree5(A, TreesToUse, Total5) :- cancer_tree5(A, Total), stepLength_tree5(StepLen), Total5 is Total * StepLen.
+
+getScore_cancer_tree6(A, TreesToUse, 0.0) :- 6 > TreesToUse, !.
+getScore_cancer_tree6(A, TreesToUse, Total6) :- cancer_tree6(A, Total), stepLength_tree6(StepLen), Total6 is Total * StepLen.
+
+getScore_cancer_tree7(A, TreesToUse, 0.0) :- 7 > TreesToUse, !.
+getScore_cancer_tree7(A, TreesToUse, Total7) :- cancer_tree7(A, Total), stepLength_tree7(StepLen), Total7 is Total * StepLen.
+
+getScore_cancer_tree8(A, TreesToUse, 0.0) :- 8 > TreesToUse, !.
+getScore_cancer_tree8(A, TreesToUse, Total8) :- cancer_tree8(A, Total), stepLength_tree8(StepLen), Total8 is Total * StepLen.
+
+getScore_cancer_tree9(A, TreesToUse, 0.0) :- 9 > TreesToUse, !.
+getScore_cancer_tree9(A, TreesToUse, Total9) :- cancer_tree9(A, Total), stepLength_tree9(StepLen), Total9 is Total * StepLen.
+
+getScore_cancer_tree10(A, TreesToUse, 0.0) :- 10 > TreesToUse, !.
+getScore_cancer_tree10(A, TreesToUse, Total10) :- cancer_tree10(A, Total), stepLength_tree10(StepLen), Total10 is Total * StepLen.
+
+flattenedLiteralsInThisSetOfTrees(cancer, 1, [
+   smokes(a)]).
+% Time taken to learn model for 'cancer': 196 milliseconds.
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model
+cached groundings hit: 0
+Misses: 0
+
+% Total learning time (10 trees): 207 milliseconds.
+
+% Starting an INFERENCE run of bRDN.
+
+% Switching to VarIndicator = uppercase.
+
+% Unset'ing VarIndicator.
+
+Resetting the LazyGroundNthArgumentClauseIndex.
+
+% Calling ILPouterLoop from createRegressionOuterLooper.
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/test/test_pos.txt, data/toy_cancer/test/test_neg.txt, data/toy_cancer/test/test_bk.txt, data/toy_cancer/test/test_facts.txt]
+%  for N=0: args[N]=data/toy_cancer/test/test_pos.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/test/test_pos.txt, data/toy_cancer/test/test_neg.txt, data/toy_cancer/test/test_bk.txt, data/toy_cancer/test/test_facts.txt]
+%  for N=1: args[N]=data/toy_cancer/test/test_neg.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/test/test_pos.txt, data/toy_cancer/test/test_neg.txt, data/toy_cancer/test/test_bk.txt, data/toy_cancer/test/test_facts.txt]
+%  for N=2: args[N]=data/toy_cancer/test/test_bk.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/test/test_pos.txt, data/toy_cancer/test/test_neg.txt, data/toy_cancer/test/test_bk.txt, data/toy_cancer/test/test_facts.txt]
+%  for N=3: args[N]=data/toy_cancer/test/test_facts.txt
+
+% Welcome to the WILL ILP/SRL systems.
+
+% Reading background theory from dir: null
+
+% Switching to VarIndicator = uppercase.
+
+***** Warning: % Since this is the first setting of the notation for variables, will keep:
+%   variableIndicator = uppercase *****
+
+% [ LazyGroundClauseIndex ]  Building full index for mode/1 with 1 assertions.
+
+%  Read the facts.
+%  Have read 13 facts.
+% Have read 3 examples from 'data/toy_cancer/test' [data/toy_cancer/test/test*].
+% Have read 2 examples from 'data/toy_cancer/test' [data/toy_cancer/test/test*].
+
+%  LearnOneClause initialized.
+
+% The outer looper has been created.
+
+% Initializing the ILP inner looper.
+
+% NEW target:                 cancer(A)
+%  targetPred:                cancer/1
+%  targetArgTypes:            signature = [const], types = [+person]
+%  targets:                   [cancer(A)]
+%  targetPredicates:          [cancer/1]
+%  targetArgSpecs:            [[A[+person]]]
+%  variablesInTargets:        [[A]]
+
+% Started collecting constants
+
+% Collecting the types of constants.
+
+% Looking at the training examples to see if any types of new constants can be inferred.
+% Time to collect constants: 0 seconds
+
+% Read 3 pos examples and 2 neg examples.
+% Time to init learnOneClause: 1 milliseconds
+% Old dirdata/toy_cancer/train/models/
+
+% Have 3 'raw' positive examples and kept 3.
+% Have 2 'raw' negative examples and kept 2.
+
+% processing backup's for cancer
+%  POS EX = 3
+%  NEG EX = 2
+
+% Memory usage by WILLSetup (just counts # targets?):
+%  |backupPosExamples| = 1
+%  |backupNegExamples| = 1
+%  |predicatesAsFacts| = 0
+%  |addedToFactBase|   = 0
+
+% Getting bRDN's target predicates.
+% Did not learn a model for 'cancer' this run.
+%   loadModel (#0): data/toy_cancer/train/models/bRDNs/Trees/cancerTree0.tree
+%   loadModel (#1): data/toy_cancer/train/models/bRDNs/Trees/cancerTree1.tree
+%   loadModel (#2): data/toy_cancer/train/models/bRDNs/Trees/cancerTree2.tree
+%   loadModel (#3): data/toy_cancer/train/models/bRDNs/Trees/cancerTree3.tree
+%   loadModel (#4): data/toy_cancer/train/models/bRDNs/Trees/cancerTree4.tree
+%   loadModel (#5): data/toy_cancer/train/models/bRDNs/Trees/cancerTree5.tree
+%   loadModel (#6): data/toy_cancer/train/models/bRDNs/Trees/cancerTree6.tree
+%   loadModel (#7): data/toy_cancer/train/models/bRDNs/Trees/cancerTree7.tree
+%   loadModel (#8): data/toy_cancer/train/models/bRDNs/Trees/cancerTree8.tree
+%   loadModel (#9): data/toy_cancer/train/models/bRDNs/Trees/cancerTree9.tree
+%  Done loading 10 models.
+
+% for cancer |lookupPos| = 3
+% for cancer |lookupNeg| = 2
+% getJointExamples: |pos| = 3, |neg| = 2
+
+% Starting inference in bRDN.
+% Trees = 10
+
+% Starting getMarginalProbabilities.
+% [ LazyGroundClauseIndex ]  Building full index for smokes/1 with 3 assertions.
+ (Arithmetic) Mean Probability Assigned to Correct Output Class: 4,027/5,00 = 0,805445
+
+ The weighted count of positive examples = 3,000 and the weighted count of negative examples = 2,000
+
+printExamples: Writing out predictions (for Tuffy?) on 5 examples for 'cancer' to:
+  data/toy_cancer/test/results_cancer.db
+ and to:
+  data/toy_cancer/test/query_cancer.db
+
+% Computing Area Under Curves.
+%Pos=3
+%Neg=2
+%LL:-0.38078705156403625
+%LL:-1.1159182524360722
+Best F1 = 1.0
+% F1 = 1.0
+% Threshold = 0.5941891446831462
+
+%   AUC ROC   = 1,000000
+%   AUC PR    = 1,000000
+%   CLL	      = -0,223184
+%   Precision = 1,000000 at threshold = 0,500
+%   Recall    = 1,000000
+%   F1        = 1,000000
+
+% Total inference time (10 trees): 14 milliseconds.
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MapOfLists.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Utils</a> &gt; <span class="el_source">MapOfLists.java</span></div><h1>MapOfLists.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Utils;
+
+import java.util.*;
+import java.util.Map.Entry;
+
+/* A Map that maps Keys to List of values.
+ *
+ * Each key can be mapped to a list of values.
+ *
+ * @author twalker
+ */
+public class MapOfLists&lt;Key, Value&gt; implements Iterable&lt;Value&gt; {
+
+    private Map&lt;Key, List&lt;Value&gt;&gt; map;
+
+<span class="fc" id="L16">    public MapOfLists() {</span>
+<span class="fc" id="L17">    }</span>
+
+    public boolean containsKey(Key key) {
+<span class="pc bpc" id="L20" title="1 of 4 branches missed.">        return map != null &amp;&amp; map.containsKey(key);</span>
+    }
+
+    public void removeValue(Key key, Value value) {
+<span class="nc" id="L24">        List&lt;Value&gt; list = map.get(key);</span>
+
+<span class="nc bnc" id="L26" title="All 2 branches missed.">        if ( list != null ) {</span>
+<span class="nc" id="L27">            list.remove(value);</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">            if ( list.isEmpty() ) {</span>
+<span class="nc" id="L29">                map.remove(key);</span>
+            }
+        }
+<span class="nc" id="L32">    }</span>
+
+    public void add(Key key, Value e) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if ( map == null ) {</span>
+<span class="fc" id="L36">            map = createMap();</span>
+        }
+
+<span class="fc" id="L39">        List&lt;Value&gt; result = map.get(key);</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if ( result == null ) {</span>
+<span class="fc" id="L41">            result = createValueList();</span>
+<span class="fc" id="L42">            map.put(key, result);</span>
+        }
+
+<span class="fc" id="L45">        result.add(e);</span>
+<span class="fc" id="L46">    }</span>
+
+
+    public List&lt;Value&gt; getValues(Key key) {
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        return map == null ? null : map.get(key);</span>
+    }
+
+    protected List&lt;Value&gt; createValueList() {
+<span class="nc" id="L54">        return new ArrayList&lt;&gt;();</span>
+    }
+
+    private Map&lt;Key, List&lt;Value&gt;&gt; createMap() {
+<span class="fc" id="L58">        return new HashMap&lt;&gt;();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if ( map == null ) {</span>
+<span class="nc" id="L64">            return &quot;{}&quot;;</span>
+        }
+        else {
+<span class="nc" id="L67">            StringBuilder stringBuilder = new StringBuilder();</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            for (Entry&lt;Key, List&lt;Value&gt;&gt; entry : map.entrySet()) {</span>
+<span class="nc" id="L70">                stringBuilder.append(entry.getKey()).append(&quot; =&gt; &quot;);</span>
+
+<span class="nc" id="L72">                boolean first = true;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                for (Value value : entry.getValue()) {</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                    if (!first) {</span>
+<span class="nc" id="L75">                        stringBuilder.append(&quot;,&quot;);</span>
+                    }
+<span class="nc" id="L77">                    stringBuilder.append(&quot;\n&quot;).append(&quot;   &quot;).append(value);</span>
+
+<span class="nc" id="L79">                    first = false;</span>
+<span class="nc" id="L80">                }</span>
+
+<span class="nc" id="L82">                stringBuilder.append(&quot;.\n&quot;);</span>
+
+<span class="nc" id="L84">            }</span>
+<span class="nc" id="L85">            return stringBuilder.toString();</span>
+        }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        if (obj == null) {</span>
+<span class="nc" id="L92">            return false;</span>
+        }
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (getClass() != obj.getClass()) {</span>
+<span class="nc" id="L95">            return false;</span>
+        }
+<span class="nc" id="L97">        final MapOfLists&lt;Key, Value&gt; other = (MapOfLists&lt;Key, Value&gt;) obj;</span>
+<span class="nc" id="L98">        return Objects.equals(this.map, other.map);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L103">        int hash = 7;</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        hash = 71 * hash + (this.map != null ? this.map.hashCode() : 0);</span>
+<span class="nc" id="L105">        return hash;</span>
+    }
+
+    public Iterator&lt;Value&gt; iterator() {
+
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        if ( map == null ) {</span>
+<span class="nc" id="L111">            return Collections.EMPTY_SET.iterator();</span>
+        }
+        else {
+<span class="fc" id="L114">            return new AllValueIterator(map.keySet().iterator());</span>
+        }
+    }
+
+    class AllValueIterator implements Iterator&lt;Value&gt;{
+        final Iterator&lt;Key&gt; allKeysIterator;
+
+<span class="fc" id="L121">        Iterator&lt;Value&gt; currentSubIterator = null;</span>
+
+<span class="fc" id="L123">        Value next = null;</span>
+
+<span class="fc" id="L125">        AllValueIterator(Iterator&lt;Key&gt; allKeysIterator) {</span>
+<span class="fc" id="L126">            this.allKeysIterator = allKeysIterator;</span>
+<span class="fc" id="L127">        }</span>
+
+        public boolean hasNext() {
+<span class="fc" id="L130">            setupNext();</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            return next != null;</span>
+        }
+
+        public Value next() {
+<span class="fc" id="L135">            setupNext();</span>
+<span class="fc" id="L136">            Value result = next;</span>
+<span class="fc" id="L137">            next = null;</span>
+<span class="fc" id="L138">            return result;</span>
+        }
+
+        public void remove() {
+<span class="nc" id="L142">            throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);</span>
+        }
+
+        private void setupNext() {
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            while (next == null) {</span>
+<span class="fc bfc" id="L147" title="All 4 branches covered.">                if ( currentSubIterator != null &amp;&amp; currentSubIterator.hasNext()) {</span>
+<span class="fc" id="L148">                    next = currentSubIterator.next();</span>
+                }
+                else {
+<span class="pc bpc" id="L151" title="1 of 4 branches missed.">                    if ( allKeysIterator != null &amp;&amp; allKeysIterator.hasNext() ) {</span>
+<span class="fc" id="L152">                        currentSubIterator = getValues(allKeysIterator.next()).iterator();</span>
+                    }
+                    else {
+                        break;
+                    }
+                }
+            }
+<span class="fc" id="L159">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

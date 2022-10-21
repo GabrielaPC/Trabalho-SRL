@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RelationalDependencyNetwork.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.RDN.Models</a> &gt; <span class="el_source">RelationalDependencyNetwork.java</span></div><h1>RelationalDependencyNetwork.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.RDN.Models;
+
+import edu.wisc.cs.will.Boosting.RDN.ConditionalModelPerPredicate;
+import edu.wisc.cs.will.Boosting.RDN.JointRDNModel;
+import edu.wisc.cs.will.Boosting.RDN.Models.DependencyPredicateNode.PredicateType;
+import edu.wisc.cs.will.Boosting.RDN.WILLSetup;
+import edu.wisc.cs.will.FOPC.Clause;
+import edu.wisc.cs.will.FOPC.Literal;
+import edu.wisc.cs.will.FOPC.PredicateName;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.*;
+
+/*
+ * @author Tushar Khot
+ *
+ */
+public class RelationalDependencyNetwork extends DependencyNetwork {
+
+	public RelationalDependencyNetwork(JointRDNModel fullModel, WILLSetup setup) {
+<span class="fc" id="L21">		super();</span>
+<span class="fc" id="L22">		initializeRDNUsingModel(fullModel, setup);</span>
+<span class="fc" id="L23">		initializeRDNUsingPrecompute(setup);</span>
+<span class="fc" id="L24">	}</span>
+
+	private void initializeRDNUsingPrecompute(WILLSetup setup) {
+
+		// TODO(hayesall): Precomputes are deprecated.
+
+<span class="fc" id="L30">		HashMap&lt;PredicateName, Set&lt;PredicateName&gt;&gt; predicateToParents = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L32" title="All 2 branches covered.">		for (Clause clause : setup.getContext().getClausebase().getBackgroundKnowledge()) {</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">			if (!clause.isDefiniteClause()) { </span>
+<span class="nc" id="L34">				Utils.error(&quot;Ignoring clause: '&quot; + clause + &quot;'.&quot;);</span>
+<span class="nc" id="L35">				continue;</span>
+			}
+
+<span class="fc" id="L38">			PredicateName pName = clause.posLiterals.get(0).predicateName;</span>
+
+<span class="fc bfc" id="L40" title="All 2 branches covered.">			if (!predicateToParents.containsKey(pName)) {</span>
+<span class="fc" id="L41">				predicateToParents.put(pName, new HashSet&lt;&gt;());</span>
+			}
+<span class="fc" id="L43">			Set&lt;PredicateName&gt; parents = predicateToParents.get(pName);</span>
+<span class="pc bpc" id="L44" title="3 of 4 branches missed.">			if (clause.negLiterals == null || clause.negLiterals.size() &lt;= 0) {</span>
+				// Utils.println(&quot;No neg literals in clause: &quot; + clause);
+<span class="nc" id="L46">				continue;</span>
+			}
+			// Take parents from the body of the clause
+<span class="nc bnc" id="L49" title="All 2 branches missed.">			for (Literal lit : clause.negLiterals) {</span>
+<span class="nc" id="L50">				parents.add(lit.predicateName);</span>
+<span class="nc" id="L51">			}</span>
+<span class="nc" id="L52">		}</span>
+<span class="fc" id="L53">	}</span>
+
+	private void initializeRDNUsingModel(JointRDNModel fullModel, WILLSetup setup) {
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">		if (fullModel == null) {</span>
+			// No model provided. Model is only for precomputes.
+<span class="nc" id="L58">			return;</span>
+		}
+<span class="fc bfc" id="L60" title="All 2 branches covered.">		for (String pname : fullModel.keySet()) {</span>
+<span class="fc" id="L61">			PredicateName predname = setup.getHandler().getPredicateName(pname);</span>
+			// Set type to query
+<span class="fc" id="L63">			getDependencyNode(predname).setType(PredicateType.QUERY);</span>
+<span class="fc" id="L64">			ConditionalModelPerPredicate model = fullModel.get(pname);</span>
+<span class="fc" id="L65">			Set&lt;PredicateName&gt; parents = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L66">			model.getParentPredicates(parents);</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">			for (PredicateName parent : parents) {</span>
+<span class="fc" id="L68">				addLink(parent, predname);</span>
+<span class="fc" id="L69">			}</span>
+<span class="fc" id="L70">		}</span>
+<span class="fc" id="L71">	}</span>
+
+	private void addLink(PredicateName parent, PredicateName child) {
+		// Check if we have parent node
+<span class="fc" id="L75">		DependencyNode parNode = getDependencyNode(parent);</span>
+<span class="fc" id="L76">		DependencyNode chiNode = getDependencyNode(child);</span>
+<span class="fc" id="L77">		DependencyNetworkEdge edge = getDependencyEdge(parNode);</span>
+<span class="fc" id="L78">		parNode.addChild(edge);</span>
+<span class="fc" id="L79">		chiNode.addParent(edge);</span>
+<span class="fc" id="L80">	}</span>
+
+	private DependencyNetworkEdge getDependencyEdge(
+			DependencyNode parNode) {
+<span class="fc" id="L84">		return new DependencyNetworkEdge(parNode);</span>
+	}
+
+	public DependencyPredicateNode getDependencyNode(PredicateName parent) {
+<span class="fc bfc" id="L88" title="All 2 branches covered.">		if (!stringRepToNode.containsKey(parent.name)) {</span>
+<span class="fc" id="L89">			DependencyPredicateNode newPar = new DependencyPredicateNode(parent); </span>
+<span class="fc" id="L90">			stringRepToNode.put(parent.name, newPar);</span>
+		}
+<span class="fc" id="L92">		return (DependencyPredicateNode)stringRepToNode.get(parent.name);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

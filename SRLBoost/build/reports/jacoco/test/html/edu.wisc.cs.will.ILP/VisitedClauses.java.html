@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VisitedClauses.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">VisitedClauses.java</span></div><h1>VisitedClauses.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.ClosedList;
+import edu.wisc.cs.will.stdAIsearch.SearchNode;
+
+import java.util.*;
+import java.util.Map.Entry;
+
+/*
+ * @author shavlik
+ * 
+ * TODO pull out the generic part of this and then specialize for SearchNodes
+ *
+ */
+public class VisitedClauses extends ClosedList {
+	private final LiteralComparator literalComparator; // Only need one of these even if many instances, but for safety give each instance its own since the space needed is trivial (only one comparator per ILP search).
+	private final Map&lt;Integer,Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt; canonicalClauses; // Index first on total number of args (dont bother to recur into any functions) + 97 * length.  Then hash on the predicate of the last literal.
+<span class="fc" id="L20">	private int    size    =  0; // Count how many items are in this CLOSED.</span>
+<span class="fc" id="L21">	private int    maxSize = -1; // If size gets close to this, then 1-fractionToKeep of the items are randomly deleted.  A non-pos value means &quot;do not prune CLOSED.&quot;</span>
+<span class="fc" id="L22">	private final double fractionToKeep = 0.75; // When CLOSED reaches 90% of its maxSize, discard 25% of the items (which means it will be be about 2/3rds full).</span>
+	private final BindingList tempBindings;
+
+	/*
+	 * 
+	 * Need a way to put visited clauses in a (quasi)canonical form.  It is ok if there are a few 'false negatives' - ie, ok to revisit 
+	 * a clause since that only wastes CPU time.  However, there should not be any 'false positives,' since in that case a good clause
+	 * might have been discarded.
+	 * 
+	 * Current Design
+	 * 	sort the literals in the clause (including the head though that might not be necessary)
+	 *  see if variants
+	 */
+<span class="fc" id="L35">	private VisitedClauses() {</span>
+<span class="fc" id="L36">		literalComparator = new LiteralComparator();</span>
+<span class="fc" id="L37">		canonicalClauses  = new HashMap&lt;&gt;(64);</span>
+<span class="fc" id="L38">		tempBindings      = new BindingList();</span>
+<span class="fc" id="L39">	}</span>
+	VisitedClauses(int maxSize) {
+<span class="fc" id="L41">		this();</span>
+<span class="fc" id="L42">		this.maxSize = maxSize;		</span>
+<span class="fc" id="L43">	}</span>
+
+	private void reduceSize(double fraction) { // Reduce the size to about this fraction of its current size.
+<span class="nc bnc" id="L46" title="All 2 branches missed.">		if (fraction &lt;= 0.0) { emptyClosedList(); return; } // Negative fractions interpreted as 'clear all.'</span>
+<span class="nc bnc" id="L47" title="All 2 branches missed.">		if (fraction &gt;= 1.0) { return; }</span>
+		
+<span class="nc" id="L49">		int countIter1removes = 0;</span>
+		// Walk through the hash maps and random discard some literals.
+<span class="nc" id="L51">		Set&lt; Entry&lt;Integer,Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt;&gt; entrySet1 = canonicalClauses.entrySet();</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">		for (Entry&lt;Integer,Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt;  entry1 : entrySet1) {</span>
+<span class="nc" id="L53">			Map&lt;      PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;   hashObj1   = entry1.getValue(); // TODO(?) delete this comment if no errors for awhile [8/1/08]  canonicalClauses.get(primaryKey);</span>
+<span class="nc" id="L54">			Set&lt;Entry&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt;  entrySet2  = hashObj1.entrySet();</span>
+
+<span class="nc bnc" id="L56" title="All 2 branches missed.">			for (Entry&lt;PredicateName, List&lt;List&lt;Literal&gt;&gt;&gt; entry2 : entrySet2) {</span>
+<span class="nc" id="L57">				PredicateName       secondaryKey = entry2.getKey();</span>
+<span class="nc" id="L58">				List&lt;List&lt;Literal&gt;&gt; storedItems  = hashObj1.get(secondaryKey);</span>
+<span class="nc" id="L59">				Iterator&lt;List&lt;Literal&gt;&gt; iter     = storedItems.iterator();</span>
+<span class="nc bnc" id="L60" title="All 4 branches missed.">				while (iter.hasNext()) if ( Utils.random() &gt; fractionToKeep) {</span>
+<span class="nc" id="L61">					iter.next();</span>
+<span class="nc" id="L62">					iter.remove();</span>
+<span class="nc" id="L63">					size--;</span>
+<span class="nc" id="L64">					countIter1removes++;</span>
+				}
+<span class="nc" id="L66">			}</span>
+<span class="nc" id="L67">		}</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">		if (countIter1removes &gt; 0) { removeEmptyPortions(); } // Do some garbage collection (ie, remove portions of CLOSED that contain no literal lists.</span>
+<span class="nc" id="L69">	}</span>
+	
+	private void removeEmptyPortions() {
+		// Walk through the hash maps and discard if nothing underneath.
+<span class="nc" id="L73">		Set&lt;     Entry&lt;Integer,Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt;&gt; entrySet1 = canonicalClauses.entrySet();</span>
+<span class="nc" id="L74">		Iterator&lt;Entry&lt;Integer,Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt;&gt; iter1     = entrySet1.iterator();</span>
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">		while (iter1.hasNext()) {</span>
+<span class="nc" id="L77">			boolean                                            discardIter1 = true; // See if anything found underneath.</span>
+<span class="nc" id="L78">			Set&lt;     Entry&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt; entrySet2    = iter1.next().getValue().entrySet();</span>
+<span class="nc" id="L79">			Iterator&lt;Entry&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt; iter2        = entrySet2.iterator();</span>
+			
+<span class="nc bnc" id="L81" title="All 2 branches missed.">			while (iter2.hasNext()) {</span>
+<span class="nc" id="L82">				 List&lt;List&lt;Literal&gt;&gt; literals = iter2.next().getValue();</span>
+				 
+<span class="nc bnc" id="L84" title="All 2 branches missed.">				 if (Utils.getSizeSafely(literals) &lt; 1) { iter2.remove();</span>
+				 }
+<span class="nc bnc" id="L86" title="All 2 branches missed.">				 else if (discardIter1) { discardIter1 = false; } // Found something so don't discard iter1.</span>
+<span class="nc" id="L87">			}</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">			if (discardIter1) { iter1.remove();</span>
+			}
+<span class="nc" id="L90">		}</span>
+<span class="nc" id="L91">	}</span>
+	
+	private List&lt;Literal&gt; createCanonicalClause(SingleClauseNode clauseNode) {		
+<span class="fc bfc" id="L94" title="All 2 branches covered.">		if (clauseNode.canonicalForm != null) { return clauseNode.canonicalForm; }</span>
+		
+<span class="fc" id="L96">		HandleFOPCstrings stringHandler = ((LearnOneClause) clauseNode.task).stringHandler;</span>
+<span class="fc" id="L97">		List&lt;Literal&gt;     literals      = clauseNode.getClauseBodyReversed();</span>
+<span class="fc" id="L98">		Literal           head          = clauseNode.getClauseHead();</span>
+<span class="fc" id="L99">		literals.add(head);</span>
+<span class="fc" id="L100">		List&lt;Literal&gt;     newLiterals   = createCanonicalClause(stringHandler, literals);</span>
+<span class="fc" id="L101">		clauseNode.canonicalForm = newLiterals;</span>
+<span class="fc" id="L102">		return newLiterals;</span>
+	}
+	private List&lt;Literal&gt; createCanonicalClause(HandleFOPCstrings stringHandler, Clause clause) {
+<span class="fc" id="L105">		List&lt;Literal&gt; literals = new ArrayList&lt;&gt;(1);</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">		if (clause.posLiterals != null) { literals.addAll(clause.posLiterals); }</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">		if (clause.negLiterals != null) { literals.addAll(clause.negLiterals); }</span>
+<span class="fc" id="L108">		return createCanonicalClause(stringHandler, literals);</span>
+	}
+	private List&lt;Literal&gt; createCanonicalClause(HandleFOPCstrings stringHandler, List&lt;Literal&gt; literals) {
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">		if (literals == null) { return null; }</span>
+<span class="fc" id="L112">		List&lt;Literal&gt; newLiterals = new ArrayList&lt;&gt;(Utils.getSizeSafely(literals));</span>
+
+<span class="fc" id="L114">		stringHandler.pushVariableHash(); // Want to have all new variables in these.</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">		for (Literal lit : literals) { newLiterals.add(lit.copy(true)); }</span>
+<span class="fc" id="L116">		stringHandler.popVariableHash();</span>
+<span class="fc" id="L117">		newLiterals.sort(literalComparator);</span>
+<span class="fc" id="L118">		return newLiterals;</span>
+	}
+	
+	// Create a hashcode by walking through a list of literals.
+	private Integer getPrimaryKey(List&lt;Literal&gt; literals) {
+<span class="fc" id="L123">		int count = 0;</span>
+		
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">		if (literals == null) { return 0; }</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">		for (Literal lit : literals) { </span>
+<span class="fc" id="L127">			List&lt;Term&gt; terms = lit.getArguments();</span>
+			
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">			if (terms != null) {</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">				if (count &gt; Integer.MAX_VALUE / 2) { count -= Integer.MAX_VALUE / 2; } // Play it safe to watch for integer overflow.</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">				if (Utils.getSizeSafely(terms) &gt; 0) { </span>
+<span class="fc" id="L132">					Term term1 = terms.get(0); </span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">					count += 91 * terms.size() + (term1 == null ? 0 </span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">																: (term1 instanceof Variable ? 1 </span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">																							 : (term1 instanceof Function ? ((Function) term1).functionName.hashCode() / 3 // Don't want to count any variables in here.</span>
+<span class="pc" id="L136">																									 				      : term1.hashCode() / 3))); // Include the first term's hashcode, unless it is a variable (due to renaming of vars).</span>
+				}
+<span class="fc" id="L138">				count += lit.predicateName.hashCode() / 5;  // The 91 (above) is some prime so that the sizes don't &quot;synch with&quot; hashcode's of adjacent predicateNames'.  The &quot;divide by X's&quot; are intended to help protect from int overflow.</span>
+			}
+<span class="fc" id="L140">		}</span>
+<span class="fc" id="L141">		return count;</span>
+	}
+	
+	private PredicateName getSecondaryKey(List&lt;Literal&gt; literals) {
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">		if (literals == null) { return null; } // Or do we need to return some actual PredicateName here?</span>
+<span class="fc" id="L146">		return (literals.get(literals.size()/2).predicateName); // Get the middle literal's predicate name.</span>
+	}
+	
+	public void addNodeToClosed(SearchNode node)  // Assume that this node's literals are not already in CLOSED (i.e., be sure to check elsewhere).
+<span class="fc" id="L150">	{	SingleClauseNode clauseNode = (SingleClauseNode) node;</span>
+<span class="fc" id="L151">		List&lt;Literal&gt;    literals   = createCanonicalClause(clauseNode);</span>
+<span class="fc" id="L152">		addListOfLiteralsToClosed(literals);</span>
+<span class="fc" id="L153">	}</span>
+	void addClauseToClosed(HandleFOPCstrings stringHandler, Clause clause) {
+<span class="fc" id="L155">		List&lt;Literal&gt;    literals   = createCanonicalClause(stringHandler, clause);</span>
+<span class="fc" id="L156">		addListOfLiteralsToClosed(literals);</span>
+<span class="fc" id="L157">	}</span>
+
+	private void addListOfLiteralsToClosed(List&lt;Literal&gt; literals) {
+<span class="fc" id="L160">		Integer          primaryKey   = getPrimaryKey(  literals);</span>
+<span class="fc" id="L161">		PredicateName    secondaryKey = getSecondaryKey(literals);</span>
+<span class="fc" id="L162">		Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt; hashObj1 = canonicalClauses.get(primaryKey);		</span>
+
+<span class="fc" id="L164">		size++;</span>
+<span class="pc bpc" id="L165" title="2 of 4 branches missed.">		if (maxSize &gt; 0 &amp;&amp; maxSize - size &lt; maxSize / 10) { reduceSize(fractionToKeep); }  // Reduce if within 10% of full.</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">		if (hashObj1 == null) { // No items yet with this primary key.</span>
+<span class="fc" id="L167">			List&lt;List&lt;Literal&gt;&gt; newSecondaryObject = new ArrayList&lt;&gt;(8);  // Create a new entry.</span>
+<span class="fc" id="L168">			newSecondaryObject.add(literals);</span>
+<span class="fc" id="L169">			Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt; newPrimaryObject = new HashMap&lt;&gt;(8);</span>
+<span class="fc" id="L170">			newPrimaryObject.put(secondaryKey, newSecondaryObject);</span>
+<span class="fc" id="L171">			canonicalClauses.put(primaryKey,   newPrimaryObject);</span>
+<span class="fc" id="L172">			return;</span>
+		}
+<span class="fc" id="L174">		List&lt;List&lt;Literal&gt;&gt; hashObj2 = hashObj1.get(secondaryKey);</span>
+<span class="fc bfc" id="L175" title="All 2 branches covered.">		if (hashObj2 == null) { // No items yet with this secondary key.</span>
+<span class="fc" id="L176">			List&lt;List&lt;Literal&gt;&gt; newObject = new ArrayList&lt;&gt;(8);  // Create a new entry.</span>
+<span class="fc" id="L177">			newObject.add(literals);</span>
+<span class="fc" id="L178">			hashObj1.put(secondaryKey,newObject);</span>
+<span class="fc" id="L179">		}</span>
+		else { // Already have some entries for these two keys, so make a list.
+<span class="fc" id="L181">			hashObj2.add(literals);</span>
+		}
+<span class="fc" id="L183">	}</span>
+	
+	private boolean variantClauses(List&lt;Literal&gt; list1, List&lt;Literal&gt; list2) {
+<span class="fc" id="L186">		int counter = 0; // Should do a double for loop, but this code is more readable and the lengths should be short.</span>
+<span class="fc" id="L187">		tempBindings.theta.clear(); // Reuse this memory and save a 'new.'</span>
+<span class="fc" id="L188">		BindingList bindings = tempBindings;</span>
+<span class="fc" id="L189">		int size1 = Utils.getSizeSafely(list1);</span>
+<span class="fc" id="L190">		int size2 = Utils.getSizeSafely(list2);</span>
+<span class="pc bpc" id="L191" title="3 of 4 branches missed.">		if (size1 &lt; 1 &amp;&amp; size2  &lt; 1) { return true;  }</span>
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">		if (size1     != size2)      { return false; } // The caller already checked for size, but this is an easy way to see if ONE list equals null.</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">		for (Literal lit : list1) {</span>
+<span class="fc" id="L194">			bindings = lit.variants(list2.get(counter++), bindings);</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">			if (bindings == null) { return false; }</span>
+<span class="fc" id="L196">		}</span>
+<span class="fc" id="L197">		return true;</span>
+	}
+	
+	public boolean alreadyInClosedList(SearchNode node)
+<span class="fc" id="L201">	{	SingleClauseNode clauseNode = (SingleClauseNode) node;</span>
+<span class="fc" id="L202">		List&lt;Literal&gt;    literals   = createCanonicalClause(clauseNode);</span>
+<span class="fc" id="L203">		List&lt;Literal&gt;    oldLits    = alreadyInClosedList(literals);</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">		return oldLits != null;</span>
+	}
+
+	private List&lt;Literal&gt; alreadyInClosedList(List&lt;Literal&gt;    literals) {
+<span class="fc" id="L208">		Integer          primaryKey   = getPrimaryKey(  literals);</span>
+<span class="fc" id="L209">		PredicateName    secondaryKey = getSecondaryKey(literals);</span>
+<span class="fc" id="L210">		Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt; hashObj1 = canonicalClauses.get(primaryKey);</span>
+		
+		// Pass in a clauseNode if these need to be turned on
+		
+<span class="fc bfc" id="L214" title="All 2 branches covered.">		if (hashObj1 == null) {</span>
+<span class="fc" id="L215">			return null;</span>
+		}
+		
+<span class="fc" id="L218">		List&lt;List&lt;Literal&gt;&gt; hashObj2 = hashObj1.get(secondaryKey);</span>
+
+<span class="fc bfc" id="L220" title="All 2 branches covered.">		if (hashObj2 == null) {</span>
+<span class="fc" id="L221">			return null;</span>
+		}
+		
+<span class="fc" id="L224">		int count = Utils.getSizeSafely(literals);</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">		for (List&lt;Literal&gt; prevLiterals : hashObj2) {</span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">			if (count != Utils.getSizeSafely(prevLiterals)) {  continue; } // Can't match if not same number of literals.</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">			if (variantClauses(literals, prevLiterals)) {</span>
+<span class="fc" id="L228">				return prevLiterals;</span>
+			}
+<span class="fc" id="L230">		}</span>
+<span class="fc" id="L231">		return null;</span>
+	}
+
+	public void emptyClosedList() {
+<span class="fc" id="L235">		size = 0;</span>
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">		if (canonicalClauses != null) { canonicalClauses.clear(); }		</span>
+<span class="fc" id="L237">	}</span>
+
+	public String toString() {
+<span class="nc" id="L240">		StringBuilder result = new StringBuilder();</span>
+		// Walk through the hash maps and random discard some literals.
+<span class="nc" id="L242">		Set&lt; Entry&lt;Integer,Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt;&gt; entrySet1 = canonicalClauses.entrySet();</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">		for (Entry&lt;Integer,Map&lt;PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt;  entry1 : entrySet1) {</span>
+<span class="nc" id="L244">			Map&lt;               PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;   hashObj1   = entry1.getValue(); // TODO(?) delete this comment if no errors for awhile [8/1/08]  canonicalClauses.get(primaryKey);</span>
+<span class="nc" id="L245">			Set&lt;Entry&lt;         PredicateName,List&lt;List&lt;Literal&gt;&gt;&gt;&gt;  entrySet2  = hashObj1.entrySet();</span>
+			
+<span class="nc bnc" id="L247" title="All 2 branches missed.">			for (Entry&lt;        PredicateName, List&lt;List&lt;Literal&gt;&gt;&gt; entry2 : entrySet2) {</span>
+<span class="nc" id="L248">				PredicateName       secondaryKey = entry2.getKey();</span>
+<span class="nc" id="L249">				List&lt;List&lt;Literal&gt;&gt; storedItems  = hashObj1.get(secondaryKey);</span>
+
+<span class="nc bnc" id="L251" title="All 2 branches missed.">				for (List&lt;Literal&gt; storedItem : storedItems) {</span>
+<span class="nc" id="L252">					result.append(&quot;%     &quot;).append(storedItem).append(&quot;\n&quot;);</span>
+<span class="nc" id="L253">				}</span>
+<span class="nc" id="L254">			}</span>
+<span class="nc" id="L255">		}</span>
+<span class="nc" id="L256">		return result.toString();</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

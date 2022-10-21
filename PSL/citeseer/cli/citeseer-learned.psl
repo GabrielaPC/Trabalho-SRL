@@ -1,0 +1,11 @@
+0.94618803: LINK(A, B) & (A != B) & HASCAT(A, C) >> HASCAT(B, C) ^2
+0.94283855: LINK(B, A) & (A != B) & HASCAT(A, C) >> HASCAT(B, C) ^2
+0.922637: LINK(A, B) & HASCAT(A, '1') >> HASCAT(B, '1') ^2
+0.9523063: LINK(A, B) & HASCAT(A, '2') >> HASCAT(B, '2') ^2
+0.9516313: LINK(A, B) & HASCAT(A, '3') >> HASCAT(B, '3') ^2
+0.9554653: LINK(A, B) & HASCAT(A, '4') >> HASCAT(B, '4') ^2
+0.9600335: LINK(A, B) & HASCAT(A, '5') >> HASCAT(B, '5') ^2
+0.93938047: LINK(A, B) & HASCAT(A, '6') >> HASCAT(B, '6') ^2
+0.94281024: LINK(A, B) & HASCAT(A, '7') >> HASCAT(B, '7') ^2
+1.0 * HASCAT(A, +C) = 1.0 .
+0.0: ~HASCAT(A, N) ^2

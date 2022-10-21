@@ -1,0 +1,769 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Clause.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">Clause.java</span></div><h1>Clause.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC.visitors.SentenceVisitor;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.*;
+
+/*
+ * @author shavlik
+ */
+public class Clause extends Sentence implements DefiniteClause {
+	static final int defaultNumberOfLiteralsPerRowInPrintouts = 1;
+	private static final int maxLiteralsToPrint = 100; // This maximum applies INDEPENDENTLY to both the positive and negative literals.
+	
+	public  List&lt;Literal&gt; posLiterals;
+	public  List&lt;Literal&gt; negLiterals;
+
+<span class="fc" id="L18">	private Boolean       bodyContainsCut = null; // This is now a tristate-variable.  True/False mean the normal thing.  Null means not yet evaluated.</span>
+
+<span class="fc" id="L20">	private String        extraLabel      = null; // This is partially implemented so that we can take extraLabels from SingleClauseNodes and have them persist when clauses are created.  However, weight until we are sure we want the overhead of doing this, plus if a comment should be printed inside a comment, we might have parser problems.</span>
+<span class="fc" id="L21">	public String getExtraLabel()                  {	return extraLabel; }</span>
+
+<span class="fc" id="L23">    protected Clause() {</span>
+<span class="fc" id="L24">    }</span>
+    
+	public Clause(HandleFOPCstrings stringHandler, List&lt;Literal&gt; posLiterals, List&lt;Literal&gt; negLiterals) { // If called this, there is no error checking to confirm 'sign' of literals. This is done to save cpu time.
+<span class="fc" id="L27">    	this();</span>
+<span class="fc" id="L28">		this.stringHandler = stringHandler;</span>
+<span class="fc" id="L29">		this.posLiterals   = posLiterals;</span>
+<span class="fc" id="L30">		this.negLiterals   = negLiterals;</span>
+<span class="fc" id="L31">	}</span>
+	public Clause(HandleFOPCstrings stringHandler, List&lt;Literal&gt; posLiterals, List&lt;Literal&gt; negLiterals, String extraLabel) {
+<span class="fc" id="L33">		this(stringHandler, posLiterals, negLiterals);</span>
+<span class="fc" id="L34">		this.extraLabel = extraLabel;</span>
+<span class="fc" id="L35">	}</span>
+	protected Clause(HandleFOPCstrings stringHandler, Clause other)  {
+<span class="fc" id="L37">    	this();</span>
+<span class="fc" id="L38">		this.stringHandler = stringHandler;</span>
+<span class="fc" id="L39">		this.posLiterals   = other.posLiterals;</span>
+<span class="fc" id="L40">		this.negLiterals   = other.negLiterals;</span>
+<span class="fc" id="L41">	}</span>
+
+	Clause(HandleFOPCstrings stringHandler, List&lt;Literal&gt; literals, boolean literalsAreAllPos) { // If not all positive, assumes all are negative.
+<span class="fc" id="L44">    	this();</span>
+<span class="fc" id="L45">		this.stringHandler = stringHandler;</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">		if (literalsAreAllPos) {</span>
+<span class="nc" id="L47">			posLiterals = literals;</span>
+<span class="nc" id="L48">			negLiterals = null;</span>
+		}
+		else {
+<span class="fc" id="L51">			posLiterals = null;</span>
+<span class="fc" id="L52">			negLiterals = literals;</span>
+		}
+<span class="fc" id="L54">	}</span>
+	Clause(HandleFOPCstrings stringHandler, Literal literal, boolean literalIsPos) {
+<span class="fc" id="L56">    	this();</span>
+<span class="fc" id="L57">		this.stringHandler = stringHandler;</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">		if (literalIsPos) {</span>
+<span class="fc" id="L59">			posLiterals = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L60">			posLiterals.add(literal);</span>
+<span class="fc" id="L61">			negLiterals = null;</span>
+		}
+		else{
+<span class="fc" id="L64">			negLiterals = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L65">			negLiterals.add(literal);</span>
+<span class="fc" id="L66">			posLiterals = null;</span>
+		}
+<span class="fc" id="L68">	}	</span>
+	public Clause(HandleFOPCstrings stringHandler, Literal literal,	boolean literalIsPos, String extraLabel) {
+<span class="nc" id="L70">		this(stringHandler, literal, literalIsPos);</span>
+<span class="nc" id="L71">		this.extraLabel = extraLabel;</span>
+<span class="nc" id="L72">	}</span>
+
+    void addNegLiteralToFront(Literal lit) {
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">		if (negLiterals == null) { negLiterals = new ArrayList&lt;&gt;(1); }</span>
+<span class="fc" id="L76">		negLiterals.add(0, lit);</span>
+<span class="fc" id="L77">	}</span>
+
+	// These allow a single FOR LOOP to walk through all the literals.
+	public int getLength() {
+<span class="fc" id="L81">		return Utils.getSizeSafely(posLiterals) + Utils.getSizeSafely(negLiterals);</span>
+	}
+
+    public Literal getPosLiteral(int i) {
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if ( posLiterals == null ) throw new IndexOutOfBoundsException();</span>
+<span class="fc" id="L86">        return posLiterals.get(i);</span>
+    }
+
+    public int getPosLiteralCount() {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        return posLiterals == null ? 0 : posLiterals.size();</span>
+    }
+
+    public Literal getNegLiteral(int i) {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if ( negLiterals == null ) throw new IndexOutOfBoundsException();</span>
+<span class="fc" id="L95">        return negLiterals.get(i);</span>
+    }
+
+    public int getNegLiteralCount() {
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        return negLiterals == null ? 0 : negLiterals.size();</span>
+    }
+
+    /* Returns the list of positive literals with gaurantee of being non-null.
+     *
+     * @return Non-null list of Positive literals.
+     */
+    public List&lt;Literal&gt; getPositiveLiterals() {
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if ( posLiterals == null ) return Collections.EMPTY_LIST;</span>
+<span class="fc" id="L108">        else return posLiterals;</span>
+    }
+
+    /* Returns the list of negative literals with gaurantee of being non-null.
+     *
+     * @return Non-null list of negative literals.
+     */
+    public List&lt;Literal&gt; getNegativeLiterals() {
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        if ( negLiterals == null ) return Collections.EMPTY_LIST;</span>
+<span class="fc" id="L117">        else return negLiterals;</span>
+    }
+
+	/*
+	 * Would any variables in this clause remain UNBOUND if this binding list were to be applied?
+	 */
+    @Override
+	public boolean containsFreeVariablesAfterSubstitution(BindingList theta) {
+<span class="nc bnc" id="L125" title="All 6 branches missed.">		if (posLiterals != null) { for (Literal litP : posLiterals) if (litP.containsFreeVariablesAfterSubstitution(theta)) { return true; } }</span>
+<span class="nc bnc" id="L126" title="All 6 branches missed.">		if (negLiterals != null) { for (Literal litN : negLiterals) if (litN.containsFreeVariablesAfterSubstitution(theta)) { return true; } }</span>
+<span class="nc" id="L127">		return false;</span>
+	}	
+	
+	void checkForCut() {
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">		if ( bodyContainsCut == null ) {</span>
+
+<span class="fc" id="L133">            boolean found = false;</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            if (negLiterals != null) { // Mark that is clause contains a 'cut' - this info is needed at the time the head (i.e., the positive literal) is matched and we don't want to check everything a clause is used in resolution theorem proving.</span>
+<span class="pc bpc" id="L135" title="2 of 4 branches missed.">                for (Literal lit : negLiterals) if (lit.predicateName.name.equals(&quot;!&quot;)) {</span>
+<span class="fc" id="L136">                    found = true;</span>
+<span class="fc" id="L137">                    break;</span>
+                }
+            }
+
+<span class="fc" id="L141">            bodyContainsCut = found;</span>
+        }
+<span class="fc" id="L143">	}</span>
+	
+	// Could make this a subclass, but this seems fine.
+    @Override
+	public boolean isDefiniteClause() { // A disjunction of ONE positive and any number of negated literals is DEFINITE.  See http://en.wikipedia.org/wiki/Horn_clause
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">		return getPosLiteralCount() == 1;</span>
+	}
+
+    @Override
+    public boolean isDefiniteClauseRule() {
+<span class="pc bpc" id="L153" title="2 of 4 branches missed.">        return getPosLiteralCount() == 1 &amp;&amp; getNegLiteralCount() &gt; 0;</span>
+    }
+
+    @Override
+	public boolean isDefiniteClauseFact() { // A disjunction of ONE positive and any number of negated literals is DEFINITE.  See http://en.wikipedia.org/wiki/Horn_clause
+<span class="nc bnc" id="L158" title="All 4 branches missed.">		return getPosLiteralCount() == 1 &amp;&amp; getNegLiteralCount() == 0;</span>
+	}
+
+    @Override
+    public Literal getDefiniteClauseHead() throws IllegalStateException{
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">        if (!isDefiniteClause()) throw new IllegalStateException(&quot;Clause '&quot; + this + &quot;' is not a definite clause.&quot;);</span>
+<span class="fc" id="L164">        return posLiterals.get(0);</span>
+    }
+
+    @Override
+    public Literal getDefiniteClauseFactAsLiteral() throws IllegalStateException {
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (!isDefiniteClauseFact()) throw new IllegalStateException(&quot;Clause '&quot; + this + &quot;' is not a definite clause fact.&quot;);</span>
+<span class="nc" id="L170">        return posLiterals.get(0);</span>
+    }
+
+    @Override
+    public Clause getDefiniteClauseAsClause() throws IllegalStateException {
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">        if (!isDefiniteClause()) throw new IllegalStateException(&quot;Clause '&quot; + this + &quot;' is not a definite clause.&quot;);</span>
+<span class="fc" id="L176">        return this;</span>
+    }
+
+    @Override
+    public List&lt;Literal&gt; getDefiniteClauseBody() {
+<span class="fc" id="L181">        return getNegativeLiterals();</span>
+    }
+
+    public BindingList unifyDefiniteClause(DefiniteClause otherDefiniteClause, BindingList bindingList) {
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        if ( this.isDefiniteClauseRule() != otherDefiniteClause.isDefiniteClauseRule() ) {</span>
+<span class="nc" id="L186">            return null;</span>
+        }
+
+<span class="nc" id="L189">        Clause otherClause = otherDefiniteClause.getDefiniteClauseAsClause();</span>
+
+<span class="nc" id="L191">        return unify(otherClause, bindingList);</span>
+
+    }
+
+    private BindingList unify(Clause that, BindingList bindingList) {
+<span class="nc bnc" id="L196" title="All 4 branches missed.">        if ( this.getPosLiteralCount() != that.getPosLiteralCount() || this.getNegLiteralCount() != that.getNegLiteralCount() ) {</span>
+<span class="nc" id="L197">            return null;</span>
+        }
+
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if ( bindingList == null ) bindingList = new BindingList();</span>
+
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        if ( this == that ) return bindingList;</span>
+
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        for (int i = 0; i &lt; getPosLiteralCount(); i++) {</span>
+<span class="nc" id="L205">            bindingList = Unifier.UNIFIER.unify(this.getPosLiteral(i), that.getPosLiteral(i), bindingList);</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            if ( bindingList == null ) return null;</span>
+        }
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        for (int i = 0; i &lt; getNegLiteralCount(); i++) {</span>
+<span class="nc" id="L210">            bindingList = Unifier.UNIFIER.unify(this.getNegLiteral(i), that.getNegLiteral(i), bindingList);</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">            if ( bindingList == null ) return null;</span>
+        }
+
+<span class="nc" id="L214">        return bindingList;</span>
+    }
+
+	public boolean isEmptyClause() {
+<span class="pc bpc" id="L218" title="1 of 4 branches missed.">		return getPosLiteralCount() == 0 &amp;&amp; getNegLiteralCount() == 0;</span>
+	}
+
+	@Override
+	public Clause applyTheta(Map&lt;Variable,Term&gt; theta) {
+<span class="fc" id="L223">		List&lt;Literal&gt; newPosLiterals = null;</span>
+<span class="fc" id="L224">		List&lt;Literal&gt; newNegLiterals = null;</span>
+		
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">		if (posLiterals != null) {</span>
+<span class="fc" id="L227">			newPosLiterals = new ArrayList&lt;&gt;(posLiterals.size());</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">			for (Literal lit : posLiterals) { newPosLiterals.add(lit.applyTheta(theta)); }</span>
+		}
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">		if (negLiterals != null) {</span>
+<span class="fc" id="L231">			newNegLiterals = new ArrayList&lt;&gt;(negLiterals.size());</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">			for (Literal lit : negLiterals) { newNegLiterals.add(lit.applyTheta(theta)); }</span>
+		}
+
+<span class="fc" id="L235">		return (Clause) stringHandler.getClause(newPosLiterals, newNegLiterals, extraLabel).setWeightOnSentence(wgtSentence);</span>
+	}
+
+    public Clause applyTheta(BindingList bindingList) {
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        if ( bindingList != null ) {</span>
+<span class="fc" id="L240">            return applyTheta(bindingList.theta);</span>
+        }
+        else {
+<span class="nc" id="L243">            return this;</span>
+        }
+    }
+
+    @Override
+    public BindingList isEquivalentUptoVariableRenaming(Sentence that, BindingList bindings) {
+<span class="nc bnc" id="L249" title="All 2 branches missed.">        if (!(that instanceof Clause)) return null;</span>
+
+<span class="nc" id="L251">        Clause thatClause = (Clause) that;</span>
+
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if ( this.getPosLiteralCount() != thatClause.getPosLiteralCount() ) return null;</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">        if ( this.getNegLiteralCount() != thatClause.getNegLiteralCount() ) return null;</span>
+
+<span class="nc bnc" id="L256" title="All 2 branches missed.">        if ( bindings == null ) bindings = new BindingList();</span>
+
+<span class="nc bnc" id="L258" title="All 2 branches missed.">        for (int i = 0; i &lt; getPosLiteralCount(); i++) {</span>
+<span class="nc" id="L259">            bindings = this.getPosLiteral(i).isEquivalentUptoVariableRenaming(thatClause.getPosLiteral(i), bindings);</span>
+<span class="nc bnc" id="L260" title="All 2 branches missed.">            if ( bindings == null ) return null;</span>
+        }
+
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        for (int i = 0; i &lt; getNegLiteralCount(); i++) {</span>
+<span class="nc" id="L264">            bindings = this.getNegLiteral(i).isEquivalentUptoVariableRenaming(thatClause.getNegLiteral(i), bindings);</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            if ( bindings == null ) return null;</span>
+        }
+
+<span class="nc" id="L268">        return bindings;</span>
+    }
+
+    @Override
+	public Clause copy(boolean recursiveCopy) {
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">		List&lt;Literal&gt; newPosLiterals = (posLiterals == null ? null : new ArrayList&lt;&gt;(posLiterals.size()));</span>
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">		List&lt;Literal&gt; newNegLiterals = (negLiterals == null ? null : new ArrayList&lt;&gt;(negLiterals.size()));</span>
+		
+<span class="pc bpc" id="L276" title="1 of 2 branches missed.">		if (recursiveCopy) {</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">            if (posLiterals != null) {</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">                for (Literal p : posLiterals) {</span>
+<span class="nc" id="L279">                    newPosLiterals.add(p.copy(true));</span>
+<span class="nc" id="L280">                }</span>
+            }
+<span class="nc bnc" id="L282" title="All 2 branches missed.">            if (negLiterals != null) {</span>
+<span class="nc bnc" id="L283" title="All 2 branches missed.">                for (Literal n : negLiterals) {</span>
+<span class="nc" id="L284">                    newNegLiterals.add(n.copy(true));</span>
+<span class="nc" id="L285">                }</span>
+            }
+<span class="nc" id="L287">			Clause newClause = (Clause) stringHandler.getClause(newPosLiterals, newNegLiterals, extraLabel).setWeightOnSentence(wgtSentence);</span>
+<span class="nc" id="L288">			newClause.setBodyContainsCut(getBodyContainsCut());	</span>
+<span class="nc" id="L289">			return newClause;</span>
+		}
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">		if (posLiterals != null) { newPosLiterals.addAll(posLiterals); }</span>
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">		if (negLiterals != null) { newNegLiterals.addAll(negLiterals); }</span>
+<span class="fc" id="L293">		Clause newClause = (Clause) stringHandler.getClause(newPosLiterals, newNegLiterals, extraLabel).setWeightOnSentence(wgtSentence);</span>
+<span class="fc" id="L294">		newClause.setBodyContainsCut(getBodyContainsCut());</span>
+<span class="fc" id="L295">		return newClause;</span>
+	}
+
+    @Override
+	public Clause copy2(boolean recursiveCopy, BindingList bindingList) {
+<span class="nc bnc" id="L300" title="All 2 branches missed.">		List&lt;Literal&gt; newPosLiterals = (posLiterals == null ? null : new ArrayList&lt;&gt;(posLiterals.size()));</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">		List&lt;Literal&gt; newNegLiterals = (negLiterals == null ? null : new ArrayList&lt;&gt;(negLiterals.size()));</span>
+
+<span class="nc bnc" id="L303" title="All 2 branches missed.">		if (recursiveCopy) {</span>
+<span class="nc bnc" id="L304" title="All 2 branches missed.">            if (posLiterals != null) {</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                for (Literal p : posLiterals) {</span>
+<span class="nc" id="L306">                    newPosLiterals.add(p.copy2(true, bindingList));</span>
+<span class="nc" id="L307">                }</span>
+            }
+<span class="nc bnc" id="L309" title="All 2 branches missed.">            if (negLiterals != null) {</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">                for (Literal n : negLiterals) {</span>
+<span class="nc" id="L311">                    newNegLiterals.add(n.copy2(true, bindingList));</span>
+<span class="nc" id="L312">                }</span>
+            }
+<span class="nc" id="L314">			return (Clause) stringHandler.getClause(newPosLiterals, newNegLiterals).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="nc bnc" id="L316" title="All 2 branches missed.">		if (posLiterals != null) { newPosLiterals.addAll(posLiterals); }</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">		if (negLiterals != null) { newNegLiterals.addAll(negLiterals); }</span>
+<span class="nc" id="L318">		return (Clause) stringHandler.getClause(newPosLiterals, newNegLiterals).setWeightOnSentence(wgtSentence);</span>
+	}
+
+    @Override
+    public List&lt;Clause&gt; convertToClausalForm() {
+<span class="fc" id="L323">		List&lt;Clause&gt; listClause = new ArrayList&lt;&gt;(1);</span>
+
+<span class="fc" id="L325">        Clause clause = this;</span>
+<span class="fc" id="L326">        listClause.add(clause);</span>
+<span class="fc" id="L327">        return listClause;</span>
+    }
+	
+
+	public BindingList copyAndReplaceVariablesWithNumbers(StringConstant[] constantsToUse) {
+<span class="fc" id="L332">		Collection&lt;Variable&gt; collectedFreeVariables = collectFreeVariables(null);</span>
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">		if (collectedFreeVariables == null) { return null; }</span>
+<span class="fc" id="L334">		BindingList bl = new BindingList();</span>
+<span class="fc" id="L335">		int counter = 0;</span>
+<span class="fc" id="L336">		int numberOfConstants = constantsToUse.length;</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">		for (Variable var : collectedFreeVariables) {</span>
+<span class="pc bpc" id="L338" title="1 of 2 branches missed.">			StringConstant nextConstant = (counter &gt;= numberOfConstants</span>
+<span class="nc" id="L339">											? stringHandler.getStringConstant(&quot;WillConstant&quot; + (++counter)) // Recall that these count from ONE.</span>
+<span class="fc" id="L340">											: constantsToUse[counter++]);</span>
+<span class="fc" id="L341">			bl.addBinding(var, nextConstant);</span>
+<span class="fc" id="L342">		}</span>
+<span class="fc" id="L343">		return bl;</span>
+	}
+	
+    @Override
+	public boolean containsTermAsSentence() {
+<span class="nc" id="L348">		return false;</span>
+	}
+
+    @Override
+	public Collection&lt;Variable&gt; collectAllVariables() {
+<span class="fc" id="L353">		return collectFreeVariables(null);</span>
+	}
+
+    @Override
+    public Collection&lt;Variable&gt; collectFreeVariables(Collection&lt;Variable&gt; boundVariables) {
+
+<span class="fc" id="L359">		List&lt;Variable&gt;  result = null;</span>
+		
+<span class="fc bfc" id="L361" title="All 4 branches covered.">		if (posLiterals != null) for (Literal lit : posLiterals) {</span>
+<span class="fc" id="L362">			Collection&lt;Variable&gt; temp = lit.collectFreeVariables(boundVariables);</span>
+			
+<span class="pc bpc" id="L364" title="2 of 8 branches missed.">			if (temp != null) for (Variable var : temp) if (result == null || !result.contains(var)) {</span>
+<span class="fc bfc" id="L365" title="All 2 branches covered.">				if (result == null) { result = new ArrayList&lt;&gt;(4); } // Wait to create until needed.</span>
+<span class="fc" id="L366">				result.add(var);</span>
+			}	
+<span class="fc" id="L368">		}</span>
+<span class="pc bpc" id="L369" title="1 of 4 branches missed.">		if (negLiterals != null) for (Literal lit : negLiterals) {</span>
+<span class="fc" id="L370">			Collection&lt;Variable&gt; temp = lit.collectFreeVariables(boundVariables);</span>
+			
+<span class="pc bpc" id="L372" title="1 of 8 branches missed.">			if (temp != null) for (Variable var : temp) if (result == null || !result.contains(var)) {</span>
+<span class="fc bfc" id="L373" title="All 2 branches covered.">				if (result == null) { result = new ArrayList&lt;&gt;(4); } // Wait to create until needed.</span>
+<span class="fc" id="L374">				result.add(var);</span>
+			}		
+<span class="fc" id="L376">		}						</span>
+<span class="fc bfc" id="L377" title="All 2 branches covered.">		return result == null ? Collections.EMPTY_LIST : result;</span>
+	}
+	@Override
+	public int hashCode() {
+<span class="fc" id="L381">        return super.hashCode();</span>
+    }
+    @Override
+	public boolean equals(Object other) { // TODO doesn't deal with permutations in the literals.  Not sure doing so is necessary; other code deals with canonical forms.
+<span class="nc bnc" id="L385" title="All 2 branches missed.">		if (this == other) { return true; }</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">        if (!(other instanceof Clause)) { return false; }</span>
+<span class="nc" id="L387">		Clause otherAsClause = (Clause) other;</span>
+		
+<span class="nc bnc" id="L389" title="All 2 branches missed.">		if (posLiterals != null) {</span>
+<span class="nc bnc" id="L390" title="All 2 branches missed.">			if (otherAsClause.posLiterals == null) { return false; }</span>
+<span class="nc bnc" id="L391" title="All 2 branches missed.">			if (posLiterals.size() != otherAsClause.posLiterals.size()) { return false; }</span>
+<span class="nc bnc" id="L392" title="All 2 branches missed.">			for (int i = 0; i &lt; posLiterals.size(); i++) {</span>
+<span class="nc bnc" id="L393" title="All 2 branches missed.">				if (!posLiterals.get(i).equals(otherAsClause.posLiterals.get(i))) { return false; }</span>
+			}
+		}
+<span class="nc bnc" id="L396" title="All 2 branches missed.">		if (negLiterals != null) {</span>
+<span class="nc bnc" id="L397" title="All 2 branches missed.">			if (otherAsClause.negLiterals == null) { return false; }</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">			if (negLiterals.size() != otherAsClause.negLiterals.size()) { return false; }</span>
+<span class="nc bnc" id="L399" title="All 2 branches missed.">			for (int i = 0; i &lt; negLiterals.size(); i++) {</span>
+<span class="nc bnc" id="L400" title="All 2 branches missed.">				if (!negLiterals.get(i).equals(otherAsClause.negLiterals.get(i))) { return false; }</span>
+			}
+		}
+<span class="nc" id="L403">		return true;</span>
+	}
+
+    @Override
+	public BindingList variants(Sentence other, BindingList bindings) { 
+	
+        // We would really like to lazily create this if null, but that would
+        // require a rewrite of all the other variant code...maybe later.
+<span class="pc bpc" id="L411" title="1 of 2 branches missed.">        if ( bindings == null ) bindings = new BindingList();</span>
+
+<span class="pc bpc" id="L413" title="1 of 2 branches missed.">        if ( this == other ) {</span>
+<span class="nc" id="L414">            return bindings;</span>
+        }
+<span class="pc bpc" id="L416" title="1 of 2 branches missed.">        else if (other instanceof Clause) {</span>
+<span class="fc" id="L417">            Clause that = (Clause) other;</span>
+
+<span class="pc bpc" id="L419" title="1 of 4 branches missed.">            if ( this.getPosLiteralCount() != that.getPosLiteralCount() || this.getNegLiteralCount() != that.getNegLiteralCount() ) {</span>
+<span class="fc" id="L420">                return null;</span>
+            }
+            
+<span class="fc bfc" id="L423" title="All 2 branches covered.">            for (int i = 0; i &lt; getPosLiteralCount(); i++) {</span>
+<span class="fc" id="L424">                bindings = this.getPosLiteral(i).variants(that.getPosLiteral(i), bindings);</span>
+<span class="pc bpc" id="L425" title="1 of 2 branches missed.">                if ( bindings == null ) {</span>
+<span class="nc" id="L426">                    return null;</span>
+                }
+            }
+
+
+<span class="fc bfc" id="L431" title="All 2 branches covered.">            for (int i = 0; i &lt; getNegLiteralCount(); i++) {</span>
+<span class="fc" id="L432">                bindings = this.getNegLiteral(i).variants(that.getNegLiteral(i), bindings);</span>
+<span class="fc bfc" id="L433" title="All 2 branches covered.">                if ( bindings == null ) {</span>
+<span class="fc" id="L434">                    return null;</span>
+                }
+            }
+
+<span class="fc" id="L438">            return bindings;</span>
+        }
+        else {
+<span class="nc" id="L441">            return null;</span>
+        }
+	}
+	
+    @Override
+	public boolean containsVariables() {
+<span class="nc bnc" id="L447" title="All 6 branches missed.">		if (posLiterals != null) for (Literal lit : posLiterals) if (lit.containsVariables()) { return true; }</span>
+<span class="nc bnc" id="L448" title="All 6 branches missed.">		if (negLiterals != null) for (Literal lit : negLiterals) if (lit.containsVariables()) { return true; }</span>
+<span class="nc" id="L449">		return false;</span>
+	}
+	
+	// Clauses are already in clausal form, so no need to convert them.
+    @Override
+	protected boolean containsThisFOPCtype(String marker) {
+<span class="nc" id="L455">		return false;</span>
+	}
+    @Override
+	protected Clause convertEquivalenceToImplication() {
+<span class="nc" id="L459">		return this;</span>
+	}
+    @Override
+	protected Sentence eliminateImplications() {
+
+<span class="nc" id="L464">        Sentence sentenceA = null;</span>
+<span class="nc bnc" id="L465" title="All 2 branches missed.">        if (posLiterals != null) {</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">            for (Literal literal : posLiterals) {</span>
+
+<span class="nc bnc" id="L468" title="All 2 branches missed.">                if (sentenceA == null) {</span>
+<span class="nc" id="L469">                    sentenceA = literal;</span>
+                }
+                else {
+<span class="nc" id="L472">                    sentenceA = stringHandler.getConnectedSentence(sentenceA, ConnectiveName.AND, literal);</span>
+                }
+<span class="nc" id="L474">            }</span>
+        }
+
+<span class="nc" id="L477">        Sentence sentenceB = null;</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">        if (negLiterals != null) {</span>
+<span class="nc bnc" id="L479" title="All 2 branches missed.">            for (Literal literal : negLiterals) {</span>
+
+<span class="nc" id="L481">                Sentence notLiteral = stringHandler.getConnectedSentence(ConnectiveName.NOT, literal);</span>
+
+<span class="nc bnc" id="L483" title="All 2 branches missed.">                if (sentenceB == null) {</span>
+<span class="nc" id="L484">                    sentenceB = literal;</span>
+                }
+                else {
+<span class="nc" id="L487">                    sentenceB = stringHandler.getConnectedSentence(sentenceB, ConnectiveName.OR, notLiteral);</span>
+                }
+<span class="nc" id="L489">            }</span>
+        }
+
+<span class="nc bnc" id="L492" title="All 4 branches missed.">        if ( sentenceA != null &amp;&amp; sentenceB != null ) {</span>
+<span class="nc" id="L493">            return stringHandler.getConnectedSentence(sentenceA, ConnectiveName.OR, sentenceB );</span>
+        }
+<span class="nc bnc" id="L495" title="All 2 branches missed.">        else if ( sentenceB != null ) {</span>
+<span class="nc" id="L496">            return sentenceB;</span>
+        }
+        else {
+<span class="nc" id="L499">            return sentenceA;</span>
+        }
+	}
+    @Override
+	protected Sentence negate() {
+		
+<span class="nc" id="L505">        Sentence negation = null;</span>
+
+<span class="nc bnc" id="L507" title="All 2 branches missed.">        if (posLiterals != null) {</span>
+<span class="nc bnc" id="L508" title="All 2 branches missed.">            for (Literal literal : posLiterals) {</span>
+<span class="nc" id="L509">                Sentence notLiteral = stringHandler.getConnectedSentence(ConnectiveName.NOT, literal);</span>
+
+<span class="nc bnc" id="L511" title="All 2 branches missed.">                if (negation == null) {</span>
+<span class="nc" id="L512">                    negation = notLiteral;</span>
+                }
+                else {
+<span class="nc" id="L515">                    negation = stringHandler.getConnectedSentence(negation, ConnectiveName.AND, notLiteral);</span>
+                }
+<span class="nc" id="L517">            }</span>
+        }
+
+<span class="nc bnc" id="L520" title="All 2 branches missed.">        if (negLiterals != null) {</span>
+<span class="nc bnc" id="L521" title="All 2 branches missed.">            for (Literal literal : negLiterals) {</span>
+<span class="nc bnc" id="L522" title="All 2 branches missed.">                if (negation == null) {</span>
+<span class="nc" id="L523">                    negation = literal;</span>
+                }
+                else {
+<span class="nc" id="L526">                    negation = stringHandler.getConnectedSentence(negation, ConnectiveName.AND, literal);</span>
+                }
+<span class="nc" id="L528">            }</span>
+        }
+
+<span class="nc" id="L531">        return negation;</span>
+	}
+
+    @Override
+    protected List&lt;Clause&gt; convertToListOfClauses() {
+<span class="nc" id="L536">        List&lt;Clause&gt; list =  new ArrayList&lt;&gt;(1);</span>
+<span class="nc" id="L537">        list.add(this);</span>
+<span class="nc" id="L538">        return list;</span>
+    }
+
+
+    @Override
+	protected Clause moveNegationInwards() {
+<span class="nc" id="L544">		return this; // Cannot go in any further.</span>
+	}
+    @Override
+	protected Clause skolemize(List&lt;Variable&gt; outerUniversalVars) {
+<span class="nc" id="L548">		return this; // Cannot go in any further.</span>
+	}
+    @Override
+	protected Sentence distributeDisjunctionOverConjunction() {
+<span class="nc" id="L552">		return this; // Cannot go in any further.</span>
+	}
+
+    @Override
+    protected Sentence distributeConjunctionOverDisjunction() {
+<span class="nc" id="L557">        return this;</span>
+    }
+
+
+    @Override
+	public String toPrettyString(String lineStarter, int precedenceOfCaller, BindingList bindingList) { // Allow the 'lineStarter' to be passed in, e.g., the caller might want this to be quoted text.
+<span class="fc" id="L563">		boolean useStdLogicNotation = stringHandler.printUsingStdLogicNotation();</span>
+<span class="fc" id="L564">		StringBuilder result     = new StringBuilder(returnWeightString());</span>
+<span class="fc bfc" id="L565" title="All 2 branches covered.">		String  extra      = (extraLabel == null ? &quot;&quot; : &quot; &quot; +  extraLabel + &quot; &quot;);</span>
+<span class="fc" id="L566">		boolean firstOne   = true;</span>
+<span class="fc" id="L567">		int     counter    = 0;</span>
+<span class="fc" id="L568">		int     counter2   = 0;</span>
+<span class="fc" id="L569">		int     numPosLits = Utils.getSizeSafely(posLiterals);</span>
+<span class="fc" id="L570">		int     numNegLits = Utils.getSizeSafely(negLiterals);</span>
+<span class="fc" id="L571">		int     precedence = stringHandler.getConnectivePrecedence(stringHandler.getConnectiveName(&quot;=&gt;&quot;));</span>
+<span class="fc" id="L572">		int currentMaxLiteralsToPrint = (AllOfFOPC.truncateStrings ? maxLiteralsToPrint : 1000000); // Still use a huge limit just in case there is an infinite loop/</span>
+		
+<span class="pc bpc" id="L574" title="3 of 4 branches missed.">		if (numPosLits == 0 &amp;&amp; numNegLits == 0) { return result + &quot;true&quot;  + extra; }</span>
+
+<span class="pc bpc" id="L576" title="1 of 4 branches missed.">		if (numPosLits == 1 &amp;&amp; numNegLits == 0) {</span>
+<span class="fc" id="L577">			return result       + posLiterals.get(0).toString(precedence, bindingList) + extra;</span>
+		}
+<span class="pc bpc" id="L579" title="3 of 4 branches missed.">		if (numPosLits == 0 &amp;&amp; numNegLits == 1) {</span>
+<span class="nc" id="L580">			return result + &quot;~&quot; + negLiterals.get(0).toString(precedence, bindingList) + extra;</span>
+		}
+<span class="pc bpc" id="L582" title="1 of 2 branches missed.">		if (numPosLits == 0) { // In this case, write out the negative literals as a negated conjunction. I.e., 'p,q-&gt;false' is the same as '~p v ~q v false' which is the same as '~(p ^ q)'.</span>
+<span class="nc" id="L583">			result.append(&quot;~(&quot;);</span>
+<span class="nc bnc" id="L584" title="All 4 branches missed.">            if (negLiterals != null) for (Literal literal : negLiterals) {</span>
+<span class="nc bnc" id="L585" title="All 2 branches missed.">				if (counter2++ &gt; currentMaxLiteralsToPrint) { result.append(&quot; ... [plus &quot;).append(Utils.comma(Utils.getSizeSafely(negLiterals) - currentMaxLiteralsToPrint)).append(&quot; more negative literals]&quot;); break; }</span>
+<span class="nc bnc" id="L586" title="All 2 branches missed.">				if (firstOne) { firstOne = false; } else {</span>
+<span class="nc" id="L587">					result.append(&quot; ^ &quot;); }</span>
+<span class="nc" id="L588">				result.append(literal.toString(precedence, bindingList));</span>
+<span class="nc" id="L589">			}</span>
+<span class="nc" id="L590">			return result + &quot;)&quot; + extra;</span>
+		}
+
+<span class="fc bfc" id="L593" title="All 2 branches covered.">		if (precedenceOfCaller &lt; precedence) { result.append(&quot;(&quot;); }</span>
+<span class="pc bpc" id="L594" title="1 of 2 branches missed.">		if (useStdLogicNotation) {</span>
+<span class="nc bnc" id="L595" title="All 2 branches missed.">			if (numNegLits &gt; 0) {</span>
+<span class="nc bnc" id="L596" title="All 2 branches missed.">				for (Literal literal : negLiterals) {</span>
+<span class="nc bnc" id="L597" title="All 2 branches missed.">					if (counter2++ &gt; currentMaxLiteralsToPrint) { result.append(&quot; ... [plus &quot;).append(Utils.comma(Utils.getSizeSafely(negLiterals) - currentMaxLiteralsToPrint)).append(&quot; more negative literals]&quot;); break; }</span>
+<span class="nc bnc" id="L598" title="All 2 branches missed.">					if (firstOne) { firstOne = false; }</span>
+					else {
+<span class="nc bnc" id="L600" title="All 2 branches missed.">						if (++counter % stringHandler.numberOfLiteralsPerRowInPrintouts == 0) { result.append(&quot; ^\n&quot;).append(lineStarter); }</span>
+<span class="nc" id="L601">						else { result.append(&quot; ^ &quot;); }</span>
+					}
+<span class="nc" id="L603">					result.append(literal.toString(precedence, bindingList));</span>
+<span class="nc" id="L604">				}</span>
+<span class="nc" id="L605">				result.append(&quot; =&gt; &quot;);</span>
+<span class="nc bnc" id="L606" title="All 4 branches missed.">				if (stringHandler.numberOfLiteralsPerRowInPrintouts &gt; 0 &amp;&amp; numNegLits &gt;= stringHandler.numberOfLiteralsPerRowInPrintouts) { result.append(&quot;\n&quot;).append(lineStarter); }</span>
+			}
+<span class="nc" id="L608">			counter = 0;</span>
+<span class="nc bnc" id="L609" title="All 2 branches missed.">			if (numPosLits &gt; 0) {</span>
+<span class="nc" id="L610">				firstOne = true;</span>
+<span class="nc" id="L611">				counter2 = 0;</span>
+<span class="nc bnc" id="L612" title="All 2 branches missed.">				for (Literal literal : posLiterals) {</span>
+<span class="nc bnc" id="L613" title="All 2 branches missed.">					if (counter2++ &gt; currentMaxLiteralsToPrint) { result.append(&quot; ... [plus &quot;).append(Utils.comma(Utils.getSizeSafely(posLiterals) - currentMaxLiteralsToPrint)).append(&quot; more positive literals]&quot;); break; }</span>
+<span class="nc bnc" id="L614" title="All 2 branches missed.">					if (firstOne) { firstOne = false; }</span>
+					else {
+<span class="nc bnc" id="L616" title="All 2 branches missed.">						if (++counter % stringHandler.numberOfLiteralsPerRowInPrintouts == 0) { result.append(&quot; v\n&quot;).append(lineStarter); }</span>
+<span class="nc" id="L617">						else { result.append(&quot; v &quot;); } // The POSITIVE literals didn't have deMorgan's law applied to them since they weren't negated:  '(P^Q)-&gt;(RvS)' becomes '~(P^Q) v R v S' which becomes '~P v ~Q v R v S'.</span>
+					}
+<span class="nc" id="L619">					result.append(literal.toString(precedence, bindingList));</span>
+<span class="nc" id="L620">				}</span>
+			}
+<span class="nc" id="L622">			else { Utils.error(&quot;Should not reach here (by construction).&quot;); }</span>
+		}
+		else {
+<span class="pc bpc" id="L625" title="1 of 2 branches missed.">			if (numPosLits &gt; 0) {</span>
+<span class="fc bfc" id="L626" title="All 2 branches covered.">				for (Literal literal : posLiterals) {</span>
+<span class="pc bpc" id="L627" title="1 of 2 branches missed.">					if (counter2++ &gt; currentMaxLiteralsToPrint) { result.append(&quot; ... [plus &quot;).append(Utils.comma(Utils.getSizeSafely(posLiterals) - currentMaxLiteralsToPrint)).append(&quot; more positive literals]&quot;); break; }</span>
+<span class="pc bpc" id="L628" title="1 of 2 branches missed.">					if (firstOne) { firstOne = false; }</span>
+					else {
+<span class="nc bnc" id="L630" title="All 2 branches missed.">						if (++counter % stringHandler.numberOfLiteralsPerRowInPrintouts == 0) { result.append(&quot;,\n&quot;).append(lineStarter); }</span>
+<span class="nc" id="L631">						else { result.append(&quot;, &quot;); }</span>
+					}
+<span class="fc" id="L633">					result.append(literal.toString(precedence, bindingList));</span>
+<span class="fc" id="L634">				}</span>
+<span class="pc bpc" id="L635" title="1 of 2 branches missed.">                if ( numNegLits &gt; 0 ) {</span>
+<span class="fc" id="L636">                    result.append(&quot; :- &quot;).append(extra);</span>
+                }
+<span class="pc bpc" id="L638" title="1 of 4 branches missed.">				if (stringHandler.numberOfLiteralsPerRowInPrintouts &gt; 0 &amp;&amp; numNegLits &gt;= stringHandler.numberOfLiteralsPerRowInPrintouts) { </span>
+<span class="fc" id="L639">					result.append(&quot;\n&quot;).append(lineStarter);</span>
+				}
+			}
+<span class="nc" id="L642">			else { Utils.error(&quot;Should not reach here (by construction).&quot;); }</span>
+<span class="fc" id="L643">			counter = 0;</span>
+<span class="pc bpc" id="L644" title="1 of 2 branches missed.">			if (numNegLits &gt; 0) {</span>
+<span class="fc" id="L645">				firstOne = true;</span>
+<span class="fc" id="L646">				counter2 = 0;</span>
+<span class="fc bfc" id="L647" title="All 2 branches covered.">				for (Literal literal : negLiterals) {</span>
+<span class="pc bpc" id="L648" title="1 of 2 branches missed.">					if (counter2++ &gt; currentMaxLiteralsToPrint) { result.append(&quot; ... [plus &quot;).append(Utils.comma(Utils.getSizeSafely(negLiterals) - currentMaxLiteralsToPrint)).append(&quot; more negative literals]&quot;); break; }</span>
+
+<span class="fc bfc" id="L650" title="All 2 branches covered.">					if (firstOne) { firstOne = false; }</span>
+					else {
+<span class="fc bfc" id="L652" title="All 2 branches covered.">						if (++counter % stringHandler.numberOfLiteralsPerRowInPrintouts == 0) { result.append(&quot;,\n&quot;).append(lineStarter); }</span>
+<span class="fc" id="L653">						else { result.append(&quot;, &quot;); }</span>
+					}
+<span class="fc" id="L655">					result.append(literal.toString(precedence, bindingList));</span>
+<span class="fc" id="L656">				}</span>
+            }
+		}
+<span class="fc bfc" id="L659" title="All 2 branches covered.">		if (precedenceOfCaller &lt; precedence) { result.append(&quot;)&quot;); }</span>
+<span class="fc" id="L660">		return result.toString();</span>
+	}
+
+    public String toPrettyString(String lineStarter, int precedenceOfCaller, int literalsPerRow, BindingList bindingList) {
+<span class="fc" id="L664">		int temp = stringHandler.numberOfLiteralsPerRowInPrintouts;</span>
+<span class="fc" id="L665">		stringHandler.numberOfLiteralsPerRowInPrintouts = literalsPerRow;</span>
+<span class="fc" id="L666">		String result = toPrettyString(lineStarter, precedenceOfCaller, bindingList);</span>
+<span class="fc" id="L667">		stringHandler.numberOfLiteralsPerRowInPrintouts = temp;</span>
+<span class="fc" id="L668">        return result;</span>
+	}
+
+    @Override
+        protected String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="fc bfc" id="L673" title="All 2 branches covered.">		if (stringHandler.prettyPrintClauses) {</span>
+<span class="fc" id="L674">			return toPrettyString(&quot;&quot;, precedenceOfCaller, 10, bindingList);</span>
+		}
+
+		// If we want these to print variables like in Yap, it will take some thought.
+		// Could add a flag (&quot;printMeAsIs&quot;) and when this is false, create a NEW literal, set printMeAsIs=true on it, call stringHandler.renameAllVariables(), and then toString(precedenceOfCaller) on the result ...
+		
+<span class="pc bpc" id="L680" title="1 of 2 branches missed.">		StringBuilder result = new StringBuilder(returnWeightString() + (AllOfFOPC.printUsingAlchemyNotation ? &quot;&quot; : &quot;{ &quot;));</span>
+<span class="fc" id="L681">		boolean firstOne = true;</span>
+<span class="fc" id="L682">		int currentMaxLiteralsToPrint = (AllOfFOPC.truncateStrings ? maxLiteralsToPrint : 1000000); // Still use a huge limit just in case there is an infinite loop/</span>
+		
+<span class="fc" id="L684">		int counter = 0;</span>
+<span class="pc bpc" id="L685" title="1 of 4 branches missed.">		if (posLiterals != null) for (Literal literal : posLiterals) {</span>
+<span class="pc bpc" id="L686" title="1 of 2 branches missed.">			if (counter++ &gt; currentMaxLiteralsToPrint) { result.append(&quot; ... [plus &quot;).append(Utils.comma(Utils.getSizeSafely(posLiterals) - currentMaxLiteralsToPrint)).append(&quot; more positive literals]&quot;); break; }</span>
+
+<span class="pc bpc" id="L688" title="1 of 2 branches missed.">			if (firstOne) { firstOne = false; } else {</span>
+<span class="nc" id="L689">				result.append(&quot; v &quot;); }</span>
+<span class="fc" id="L690">			result.append(literal.toString(precedenceOfCaller, bindingList));</span>
+<span class="fc" id="L691">		}</span>
+<span class="fc" id="L692">		counter = 0;</span>
+<span class="pc bpc" id="L693" title="1 of 4 branches missed.">		if (negLiterals != null) for (Literal literal : negLiterals) {</span>
+<span class="pc bpc" id="L694" title="1 of 2 branches missed.">			if (counter++ &gt; currentMaxLiteralsToPrint) { result.append(&quot; ... [plus &quot;).append(Utils.comma(Utils.getSizeSafely(negLiterals) - currentMaxLiteralsToPrint)).append(&quot; more negative literals]&quot;); break; }</span>
+<span class="pc bpc" id="L695" title="1 of 2 branches missed.">			if (firstOne) { firstOne = false; } else {</span>
+<span class="fc" id="L696">				result.append(&quot; v &quot;); }</span>
+<span class="pc bpc" id="L697" title="1 of 2 branches missed.">			result.append(AllOfFOPC.printUsingAlchemyNotation ? &quot;!&quot; : &quot;~&quot;).append(literal.toString(precedenceOfCaller, bindingList)); // NOTE: due to '!' WILL cannot read Alchemy files.  TODO fix.</span>
+<span class="fc" id="L698">		}</span>
+<span class="pc bpc" id="L699" title="2 of 4 branches missed.">		return result + (AllOfFOPC.printUsingAlchemyNotation ? &quot;&quot; : &quot; }&quot;) + (extraLabel == null ? &quot;&quot; : &quot; /* &quot; +  extraLabel + &quot; */&quot;);</span>
+
+	}
+
+    public Boolean getBodyContainsCut() {
+<span class="fc bfc" id="L704" title="All 2 branches covered.">        if ( bodyContainsCut == null ) checkForCut();</span>
+
+<span class="fc" id="L706">        return bodyContainsCut;</span>
+    }
+
+    /* Set the bodyContainsCut parameter.
+     *
+     * &lt;rant&gt;
+     * This really shouldn't be set directly, but since the
+     * posLiterals and negLiterals are exposed (to the whole damn
+     * world, ugg!) we have no choice but to handle this directly.
+     * This is an extremely good example of something that for some
+     * reason is being calculated on the outside, but should really
+     * just be done internally as a side-effect to the getter and
+     * setter code (or in this case the add/remove pos/neg literal
+     * code that should exist but doesn't).
+     * &lt;/rant&gt;
+     *
+     * @param bodyContainsCut the bodyContainsCut to set
+     */
+    public void setBodyContainsCut(Boolean bodyContainsCut) {
+<span class="fc" id="L725">        this.bodyContainsCut = bodyContainsCut;</span>
+<span class="fc" id="L726">    }</span>
+
+    public Clause getNegatedQueryClause() throws IllegalArgumentException {
+
+        Clause result;
+
+<span class="pc bpc" id="L732" title="1 of 2 branches missed.">        if ( getPosLiteralCount() == 0 ) {</span>
+<span class="nc" id="L733">            result = this;</span>
+        }
+<span class="pc bpc" id="L735" title="1 of 2 branches missed.">        else if ( getNegLiteralCount() == 0 ) {</span>
+            // If we have only positive literals, just flip things around.
+            // This would be convenient, but I am not sure what it would
+            // break, so I will comment it out for now.
+<span class="fc" id="L739">            result = stringHandler.getClause(null, posLiterals);</span>
+<span class="fc" id="L740">            result.extraLabel = extraLabel;</span>
+        }
+        else {
+<span class="nc" id="L743">            throw new IllegalArgumentException(&quot;Clause could not be converted to legal SLDQuery clause: &quot; + this + &quot;.&quot;);</span>
+        }
+<span class="fc" id="L745">        return result;</span>
+    }
+
+    @Override
+    public &lt;Return,Data&gt; Return accept(SentenceVisitor&lt;Return,Data&gt; visitor, Data data) {
+<span class="fc" id="L750">        return visitor.visitClause(this, data);</span>
+    }
+	@Override
+	   public int countVarOccurrencesInFOPC(Variable v) {
+<span class="fc" id="L754">        int total = 0;</span>
+<span class="pc bpc" id="L755" title="1 of 2 branches missed.">        if (posLiterals != null) {</span>
+<span class="fc bfc" id="L756" title="All 2 branches covered.">            for (Literal litP : posLiterals) {</span>
+<span class="fc" id="L757">                total += litP.countVarOccurrencesInFOPC(v);</span>
+<span class="fc" id="L758">            }</span>
+        }
+<span class="pc bpc" id="L760" title="1 of 2 branches missed.">        if (negLiterals != null) {</span>
+<span class="fc bfc" id="L761" title="All 2 branches covered.">            for (Literal litN : negLiterals) {</span>
+<span class="fc" id="L762">                total += litN.countVarOccurrencesInFOPC(v);</span>
+<span class="fc" id="L763">            }</span>
+        }
+<span class="fc" id="L765">        return total;</span>
+    }
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

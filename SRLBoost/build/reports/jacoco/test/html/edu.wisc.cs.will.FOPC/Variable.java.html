@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Variable.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">Variable.java</span></div><h1>Variable.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC.visitors.TermVisitor;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.*;
+
+public class Variable extends Term {
+
+    private static final boolean useShortNames = true; // If false, will write out x1, x2, etc so printouts are more readable during debugging.
+
+    public String name;
+
+    public long counter; // This isn't used in the internal code (instead, instances are compared, not string names), but each variable has a unique counter value, and printing this can help with debugging.
+
+    /*
+     * The way this works is that a request for variable 'x' will always return the SAME instance,
+     * UNTIL Variable.resetAllVariables() is called or a new instance is pushed onto the stack.  Each time a new sentence is created, this reset
+     * method should be called, so that new occurrences of 'x' become different instances (and hence wont unify).  The variables of a
+     * quantifier should be pushed then popped when the scope of the quantifier is exited.
+     *
+     */
+    Variable(HandleFOPCstrings stringHandler, String name, long counter, TypeSpec typeSpec) { // This is protected because getVariable(String name) should be used instead.
+<span class="fc" id="L24">        this(stringHandler, name, counter, typeSpec, false);</span>
+<span class="fc" id="L25">    }</span>
+<span class="fc" id="L26">    Variable(HandleFOPCstrings stringHandler, String name, long counter, TypeSpec typeSpec, boolean isaGeneratedVar) { // This is protected because getVariable(String name) should be used instead.</span>
+<span class="fc" id="L27">        this.name = name; // DON'T CALL THESE DIRECTLY.  GO VIA HandleFOPCstrings.</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        this.counter = 2 * counter; if (isaGeneratedVar) { this.counter++; } // Odd values indicate variables that are generated (say adding another instance variable).</span>
+<span class="fc" id="L29">        this.setTypeSpec(typeSpec);</span>
+<span class="fc" id="L30">        this.stringHandler = stringHandler;</span>
+<span class="fc" id="L31">    }</span>
+
+    // Note: here we are recursively looking up until no more lookup's possible.  Note this means that if not found, we return the var itself.
+    @Override
+    public Term applyTheta(Map&lt;Variable, Term&gt; theta) {
+<span class="fc" id="L36">        Term lookup = theta.get(this);</span>
+
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (lookup == this) {</span>
+<span class="nc" id="L39">            return this;</span>
+        } // When dealing with isVariant, need to match ?X to ?X sometimes, so prevent an infinite loop.
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        return (lookup == null ? this : lookup.applyTheta(theta)); // If not in the binding list (i.e., theta) then stays the same.</span>
+    }
+
+    public Term applyTheta(BindingList bindings) {
+<span class="nc" id="L45">        return super.applyTheta(bindings);</span>
+    }
+
+    @Override
+    public Variable copy(boolean recursiveCopy) {
+        // June 2010: JWS added the null below to skip the check for isaConstantType since we know this is a variable (but possibly some flag changed in between?).
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        Variable copy = (isaGeneratedVariable()</span>
+<span class="fc" id="L52">        					? stringHandler.getGeneratedVariable(typeSpec, getNameToUse(name), false)</span>
+<span class="fc" id="L53">        					: stringHandler.getExternalVariable( typeSpec, getNameToUse(name), false)); // If we make a copy, use the correct name for the settings of what denotes a variable.</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (typeSpec != null) {</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">            copy.typeSpec = (recursiveCopy ? typeSpec.copy() : typeSpec);</span>
+        }
+<span class="fc" id="L57">        return copy;</span>
+    }
+
+    @Override
+    public Variable copy2(boolean recursiveCopy, BindingList bindingList) {
+
+        Variable copy;
+
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if ( bindingList == null ) {</span>
+<span class="nc" id="L66">            return this;</span>
+        }
+        else {
+<span class="nc" id="L69">            Term term = bindingList.lookup(this);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if ( term != null ) {</span>
+<span class="nc" id="L71">                copy = (Variable) term;</span>
+            }
+            else {
+
+<span class="nc bnc" id="L75" title="All 2 branches missed.">                if (isaGeneratedVariable()) {</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                    if ( name == null ) {</span>
+<span class="nc" id="L77">                        copy = stringHandler.getNewUnamedVariable();</span>
+                    }
+                    else {
+<span class="nc" id="L80">                        copy = stringHandler.getGeneratedVariable(typeSpec, name, true);</span>
+                    }
+                }
+                else {
+<span class="nc" id="L84">                    copy = stringHandler.getExternalVariable(typeSpec, getNameToUse(name), true); // If we make a copy, use the correct name for the settings of what denotes a variable.</span>
+                }
+
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (typeSpec != null) {</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                    copy.typeSpec = (recursiveCopy ? typeSpec.copy() : typeSpec);</span>
+                }
+
+<span class="nc" id="L91">                bindingList.addBinding(this, copy);</span>
+            }
+
+<span class="nc" id="L94">            return copy;</span>
+        }
+    }
+
+
+    
+    private boolean isaGeneratedVariable() {
+<span class="fc bfc" id="L101" title="All 2 branches covered.">    	return (counter % 2 == 1);</span>
+    }
+
+    @Override
+    public Collection&lt;Variable&gt; collectFreeVariables(Collection&lt;Variable&gt; boundVariables) {
+<span class="fc bfc" id="L106" title="All 4 branches covered.">        if (boundVariables != null &amp;&amp; boundVariables.contains(this)) {</span>
+<span class="fc" id="L107">            return null;</span>
+        } // In the list, so not free.
+<span class="fc" id="L109">        Collection&lt;Variable&gt; result = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L110">        result.add(this);</span>
+<span class="fc" id="L111">        return result;</span>
+    }
+
+    @Override
+    public BindingList variants(Term other, BindingList bindings) {
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        if (!(other instanceof Variable)) {</span>
+<span class="fc" id="L117">            return null;</span>
+        } // Both must be variables.
+<span class="fc" id="L119">        Term lookupA = bindings.theta.get(this);</span>
+<span class="fc" id="L120">        Term lookupB = bindings.theta.get(other);</span>
+
+<span class="fc bfc" id="L122" title="All 4 branches covered.">        if (lookupA == null &amp;&amp; lookupB == null) { // Need to record these two are matched.</span>
+<span class="fc" id="L123">            bindings.theta.put(this, other);</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">            if (this != other) {</span>
+<span class="fc" id="L125">                bindings.theta.put((Variable) other, this);</span>
+            } // Need to map both to the other.
+<span class="fc" id="L127">            return bindings;</span>
+        }
+<span class="pc bpc" id="L129" title="1 of 4 branches missed.">        if (lookupA == other &amp;&amp; lookupB == this) {</span>
+<span class="fc" id="L130">            return bindings;</span>
+        } // If one is bound to something, then they must both be bound to each other.
+<span class="fc" id="L132">        return null;</span>
+    }
+
+    // Are these two variables equals?  Must be the same instance by construction.  Note: this is more strict than asking if two variables unify.
+
+    @Override
+    public boolean equals(Object other) {  //Utils.println(&quot;are these eq: &quot; + this + &quot; and &quot; + other);
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        return (this == other);</span>
+    }
+
+    // Append two lists, but don't include any duplicates (assume the two lists already are duplicate free).
+    static Collection&lt;Variable&gt; combineSetsOfVariables(Collection&lt;Variable&gt; listA, Collection&lt;Variable&gt; listB) {
+
+<span class="pc bpc" id="L145" title="3 of 4 branches missed.">        if (listA == null &amp;&amp; listB == null) {</span>
+<span class="nc" id="L146">            return null;</span>
+        }
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        if (listA == null) {</span>
+<span class="nc" id="L149">            return listB;</span>
+        }
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (listB == null) {</span>
+<span class="fc" id="L152">            return listA;</span>
+        }
+<span class="fc" id="L154">        List&lt;Variable&gt; result = new ArrayList&lt;&gt;(listA.size() + listB.size());</span>
+
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        for (Variable v : listA) {</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">            if (!result.contains(v)) {</span>
+<span class="fc" id="L158">                result.add(v);</span>
+            }
+<span class="fc" id="L160">        }</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        for (Variable v : listB) {</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            if (!result.contains(v)) {</span>
+<span class="fc" id="L163">                result.add(v);</span>
+            }
+<span class="fc" id="L165">        }</span>
+
+<span class="fc" id="L167">        return result;</span>
+    }
+
+    @Override
+    public boolean containsVariables() {
+<span class="fc" id="L172">        return true;</span>
+    }
+
+    @Override
+    public boolean freeVariablesAfterSubstitution(BindingList theta) {
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (theta == null) {</span>
+<span class="nc" id="L178">            return false;</span>
+        }
+        // Unbound.
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        return theta.lookup(this) == null;</span>
+    }
+
+    @Override
+    public BindingList isEquivalentUptoVariableRenaming(Term that, BindingList bindings) {
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (!(that instanceof Variable)) {</span>
+<span class="nc" id="L187">            return null;</span>
+        }
+
+<span class="nc" id="L190">        Variable thatVar = (Variable) that;</span>
+
+<span class="nc" id="L192">        Term boundTo = bindings.lookup(this);</span>
+        // If the lookup fails, there is still
+        // a chance that the variable was mapped
+        // to itself.  If that is so, then the new variable
+        // must map through correctly too.
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        if ( boundTo == null ) {</span>
+<span class="nc" id="L198">            boundTo = bindings.getMapping(this);</span>
+        }
+
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (boundTo != null) {</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            if (boundTo == thatVar) {</span>
+<span class="nc" id="L203">                return bindings;</span>
+            }
+            else {
+<span class="nc" id="L206">                return null;</span>
+            }
+        }
+
+<span class="nc" id="L210">        Variable reverseBinding = bindings.reverseLookup(thatVar);</span>
+
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (reverseBinding == null) {</span>
+<span class="nc" id="L213">            bindings.addBinding(this, thatVar);</span>
+<span class="nc" id="L214">            return bindings;</span>
+        }
+
+<span class="nc" id="L217">        return null;</span>
+
+    }
+
+    private String getNameToUse(String name) {
+<span class="fc bfc" id="L222" title="All 2 branches covered.">    	if (name == null) { return getAnonNameToUse(); }</span>
+        // See if we need to print this variable using a different notation for what was used when read.
+<span class="fc bfc" id="L224" title="All 2 branches covered.">        if (name.charAt(0) == '_') {</span>
+<span class="fc" id="L225">            return name;</span>
+        } // Variables starting with an underscores are the same in all notations.
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">        if (stringHandler.doVariablesStartWithQuestionMarks()) {</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">            if (name.charAt(0) != '?') {</span>
+<span class="nc" id="L229">                return &quot;?&quot; + name;</span>
+            }
+<span class="nc" id="L231">            return name;</span>
+        }
+<span class="fc bfc" id="L233" title="All 2 branches covered.">        else if (stringHandler.isaConstantType(name)) {</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">            if (name.charAt(0) == '?') {</span>
+<span class="nc" id="L235">                return getNameToUse(name.substring(1)); // Drop the leading question mark.</span>
+            }
+<span class="fc" id="L237">			return Utils.changeCaseFirstChar(name);</span>
+        }
+<span class="fc" id="L239">        return name;</span>
+    }
+
+    @Override
+    public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L244">        return toString(precedenceOfCaller, bindingList);</span>
+    }
+    
+    private String getAnonNameToUse() {
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">        if (!stringHandler.underscoredAnonymousVariables) {</span>
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">            if (stringHandler.doVariablesStartWithQuestionMarks()) { return &quot;?anon&quot; + counter; }</span>
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">            if (stringHandler.usingStdLogicNotation())             { return  &quot;anon&quot; + counter; }</span>
+<span class="fc" id="L251">            return &quot;Anon&quot; + counter;</span>
+        }
+<span class="nc bnc" id="L253" title="All 2 branches missed.">		if (stringHandler.doVariablesStartWithQuestionMarks()) { return &quot;?_&quot; + counter; }</span>
+<span class="nc" id="L254">        stringHandler.usingStdLogicNotation();</span>
+<span class="nc" id="L255">        return &quot;_&quot; + counter;</span>
+    }
+
+    public String toString(int precedenceOfCaller) {
+<span class="fc" id="L259">        return toString(precedenceOfCaller, null);</span>
+    }
+
+    @Override
+    protected String toString(int precedenceOfCaller, BindingList bindingList) {
+
+<span class="fc" id="L265">        String stringToPrint = null;</span>
+
+<span class="fc bfc" id="L267" title="All 2 branches covered.">        if (bindingList != null) {</span>
+<span class="fc" id="L268">            Term term = bindingList.lookup(this);</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">            if (term != null) {</span>
+<span class="fc" id="L270">                stringToPrint = ((StringConstant)term).getBareName();</span>
+            }
+            else {
+<span class="fc" id="L273">                StringConstant t = stringHandler.getAlphabeticalVariableName(bindingList.size());</span>
+<span class="fc" id="L274">                bindingList.addBinding(this, t);</span>
+<span class="fc" id="L275">                stringToPrint = t.getBareName();</span>
+            }
+        }
+<span class="fc bfc" id="L278" title="All 2 branches covered.">        if (stringToPrint == null) {</span>
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">            if (getName() == null) {</span>
+<span class="nc" id="L280">                stringToPrint = getAnonNameToUse();</span>
+            }
+            else {
+<span class="fc" id="L283">                stringToPrint = getNameToUse(getName());</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">                if (stringHandler.printVariableCounters) {</span>
+<span class="nc" id="L285">                    stringToPrint += &quot;_&quot; + counter;</span>
+                }
+                else if (!useShortNames &amp;&amp; counter &gt; 0) {
+                    stringToPrint += &quot;_v&quot; + counter;
+                }
+            }
+        }
+<span class="fc" id="L292">        return stringToPrint;</span>
+    }
+
+    /* Replace with the cached version from stringHandler.
+     */
+    private Object readResolve() {
+<span class="nc bnc" id="L298" title="All 2 branches missed.">    	if (isaGeneratedVariable()) {</span>
+<span class="nc" id="L299">    		return stringHandler.getGeneratedVariable(typeSpec, getNameToUse(getName()), false);</span>
+    	}
+<span class="nc" id="L301">        return     stringHandler.getExternalVariable( typeSpec, getNameToUse(getName()), false); // Use the current name for a variable.</span>
+    }
+
+    @Override
+    public &lt;Return, Data&gt; Return accept(TermVisitor&lt;Return, Data&gt; visitor, Data data) {
+<span class="fc" id="L306">        return visitor.visitVariable(this, data);</span>
+    }
+    
+	@Override
+	public int countVarOccurrencesInFOPC(Variable v) {
+<span class="fc bfc" id="L311" title="All 2 branches covered.">		return (this == v ? 1 : 0);</span>
+	}
+
+    public String getName() {
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        if ( name != null ) {</span>
+<span class="fc" id="L316">            return name;</span>
+        }
+        else {
+<span class="fc" id="L319">            return getNameToUse(null);</span>
+        }
+    }
+
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L326">        return Objects.hash(name, counter);</span>
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompressedInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Utils.condor</a> &gt; <span class="el_source">CompressedInputStream.java</span></div><h1>CompressedInputStream.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Utils.condor;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+
+/*
+ * @author twalker
+ */
+public class CompressedInputStream extends InputStream {
+
+    private InputStream realStream;
+
+<span class="nc" id="L18">    public CompressedInputStream(File file) throws IOException {</span>
+        
+<span class="nc" id="L20">        File gzFile   = CompressionUtilities.getGZFile(file);</span>
+<span class="nc" id="L21">        File noGZFile = CompressionUtilities.getNonGZFile(file);</span>
+
+        try {
+<span class="nc" id="L24">            Logger.getLogger(CompressedInputStream.class.getCanonicalName()).log(Level.FINE, &quot;Opening compressed file ''{0}'',&quot;, gzFile.toString());</span>
+<span class="nc" id="L25">            realStream = new GZIPInputStream(new CondorFileInputStream(gzFile));</span>
+        }
+<span class="nc" id="L27">        catch(FileNotFoundException ex) {</span>
+<span class="nc" id="L28">            Logger.getLogger(CompressedInputStream.class.getCanonicalName()).log(Level.FINE, &quot;Compressed file not found.  Opening uncompressed file ''{0}'',&quot;, noGZFile.toString());</span>
+<span class="nc" id="L29">            realStream = new CondorFileInputStream(noGZFile);</span>
+<span class="nc" id="L30">        }</span>
+<span class="nc" id="L31">    }</span>
+
+    CompressedInputStream(String fileName) throws IOException {
+<span class="nc" id="L34">        this(new File(fileName));</span>
+<span class="nc" id="L35">    }</span>
+
+    @Override
+    public int read() throws IOException {
+<span class="nc" id="L39">        return realStream.read();</span>
+    }
+
+    @Override
+    public int available() throws IOException {
+<span class="nc" id="L44">        return realStream.available();</span>
+    }
+
+    @Override
+    public void close() throws IOException {
+<span class="nc" id="L49">        realStream.close();</span>
+<span class="nc" id="L50">    }</span>
+
+    @Override
+    public synchronized void mark(int readlimit) {
+<span class="nc" id="L54">        realStream.mark(readlimit);</span>
+<span class="nc" id="L55">    }</span>
+
+    @Override
+    public boolean markSupported() {
+<span class="nc" id="L59">        return realStream.markSupported();</span>
+    }
+
+    @Override
+    public int read(byte[] b) throws IOException {
+<span class="nc" id="L64">        return realStream.read(b);</span>
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+<span class="nc" id="L69">        return realStream.read(b, off, len);</span>
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+<span class="nc" id="L74">        realStream.reset();</span>
+<span class="nc" id="L75">    }</span>
+
+    @Override
+    public long skip(long n) throws IOException {
+<span class="nc" id="L79">        return super.skip(n);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

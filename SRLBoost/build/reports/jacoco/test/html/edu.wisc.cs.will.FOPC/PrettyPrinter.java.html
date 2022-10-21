@@ -1,0 +1,672 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrettyPrinter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">PrettyPrinter.java</span></div><h1>PrettyPrinter.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC.visitors.SentenceVisitor;
+import edu.wisc.cs.will.FOPC.visitors.TermVisitor;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+
+/*
+ * @author twalker
+ */
+public class PrettyPrinter {
+
+<span class="fc" id="L16">    private static final PrettyPrinterVisitor PRETTY_PRINTER_VISITOR = new PrettyPrinterVisitor();</span>
+
+    private static final int MIN_PRECEDENCE = 0;
+
+    public static String print(Sentence s, String firstLinePrefix, String additionalLinesPrefix, PrettyPrinterOptions options, BindingList variableBindings) {
+
+<span class="fc" id="L22">        FOPCPrettyPrinterData data = new FOPCPrettyPrinterData();</span>
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">        if (variableBindings == null) {</span>
+<span class="fc" id="L24">            data.variableBindings = new BindingList();</span>
+        }
+        else {
+<span class="nc" id="L27">            data.variableBindings = variableBindings;</span>
+        }
+
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (options != null) {</span>
+<span class="fc" id="L31">            data.options = options;</span>
+        }
+
+<span class="fc" id="L34">        data.pushIndent(Math.max(additionalLinesPrefix.length(), firstLinePrefix.length()));</span>
+
+<span class="fc" id="L36">        PPResult r = s.accept(PRETTY_PRINTER_VISITOR, data);</span>
+
+<span class="fc" id="L38">        StringBuilder stringBuilder = new StringBuilder();</span>
+
+<span class="fc" id="L40">        stringBuilder.append(firstLinePrefix);</span>
+
+<span class="fc" id="L42">        appendWithPrefix(stringBuilder, r.getResultString(), additionalLinesPrefix);</span>
+
+<span class="fc" id="L44">        stringBuilder.append(&quot;.&quot;);</span>
+
+
+<span class="fc" id="L47">        return stringBuilder.toString();</span>
+    }
+
+    private static void appendWithPrefix(StringBuilder stringBuilder, String resultString, String prefix) {
+
+<span class="pc bpc" id="L52" title="2 of 6 branches missed.">        if (prefix != null &amp;&amp; !prefix.isEmpty() &amp;&amp; !resultString.isEmpty()) {</span>
+
+<span class="fc" id="L54">            int index = -1;</span>
+<span class="fc" id="L55">            int lastIndex = 0;</span>
+
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            while ((index = resultString.indexOf(&quot;\n&quot;, index + 1)) != -1) {</span>
+<span class="fc" id="L58">                String s = resultString.substring(lastIndex, index + 1);</span>
+
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">                if (!s.isEmpty()) {</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">                    if (lastIndex != 0) {</span>
+<span class="fc" id="L62">                        stringBuilder.append(prefix);</span>
+                    }
+<span class="fc" id="L64">                    stringBuilder.append(s);</span>
+                }
+
+<span class="fc" id="L67">                lastIndex = index + 1;</span>
+<span class="fc" id="L68">            }</span>
+
+<span class="fc bfc" id="L70" title="All 2 branches covered.">            if (lastIndex != 0) {</span>
+<span class="fc" id="L71">                stringBuilder.append(prefix);</span>
+            }
+<span class="fc" id="L73">            stringBuilder.append(resultString.substring(lastIndex));</span>
+
+<span class="fc" id="L75">        }</span>
+        else {
+<span class="fc" id="L77">            stringBuilder.append(resultString);</span>
+        }
+<span class="fc" id="L79">    }</span>
+
+    private static int getMaxLineLength(String s) {
+<span class="fc" id="L82">        int index = -1;</span>
+<span class="fc" id="L83">        int lastIndex = -1;</span>
+<span class="fc" id="L84">        int max = 0;</span>
+
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        while ((index = s.indexOf(&quot;\n&quot;, index + 1)) != -1) {</span>
+<span class="fc" id="L87">            max = Math.max(max, index - lastIndex - 1);</span>
+<span class="fc" id="L88">            lastIndex = index;</span>
+        }
+
+<span class="fc" id="L91">        max = Math.max(max, s.length() - lastIndex - 1);</span>
+<span class="fc" id="L92">        return max;</span>
+    }
+
+    public static String spaces(int count) {
+<span class="fc" id="L96">        StringBuilder stringBuilder = new StringBuilder();</span>
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        for (int i = 0; i &lt; count; i++) {</span>
+<span class="fc" id="L99">            stringBuilder.append(&quot; &quot;);</span>
+        }
+<span class="fc" id="L101">        return stringBuilder.toString();</span>
+    }
+
+    public static class PrettyPrinterVisitor implements SentenceVisitor&lt;PPResult, FOPCPrettyPrinterData&gt;, TermVisitor&lt;PPResult, FOPCPrettyPrinterData&gt; {
+
+        private PrettyPrinterVisitor() {
+        }
+
+        public PPResult visitOtherSentence(Sentence otherSentence) {
+<span class="nc" id="L110">            return new PPResult(otherSentence.toString(), false, Integer.MAX_VALUE);</span>
+        }
+
+        public PPResult visitConnectedSentence(ConnectedSentence sentence, FOPCPrettyPrinterData data) {
+
+<span class="nc" id="L115">            ConnectiveName connective = sentence.getConnective();</span>
+
+<span class="nc" id="L117">            PPResult result = new PPResult();</span>
+
+<span class="nc" id="L119">            int precedence = HandleFOPCstrings.getConnectivePrecedence_static(connective);</span>
+<span class="nc" id="L120">            result.setPrecedence(precedence);</span>
+
+<span class="nc" id="L122">            PPResult a = null;</span>
+<span class="nc" id="L123">            boolean multiline = false;</span>
+
+<span class="nc" id="L125">            data.pushIndent(connective.name.length());</span>
+
+<span class="nc bnc" id="L127" title="All 2 branches missed.">            if (sentence.getSentenceA() != null) {</span>
+<span class="nc" id="L128">                a = sentence.getSentenceA().accept(this, data);</span>
+<span class="nc" id="L129">                multiline = a.isMultiline();</span>
+            }
+
+<span class="nc" id="L132">            PPResult b = sentence.getSentenceB().accept(this, data);</span>
+<span class="nc bnc" id="L133" title="All 4 branches missed.">            multiline = multiline || b.isMultiline();</span>
+
+<span class="nc" id="L135">            StringBuilder stringBuilder = new StringBuilder();</span>
+
+<span class="nc" id="L137">            String prefix = &quot;&quot;;</span>
+<span class="nc" id="L138">            String prefix2 = &quot;&quot;;</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">            if (multiline) {</span>
+<span class="nc" id="L140">                prefix = spaces(connective.name.length());</span>
+<span class="nc" id="L141">                prefix2 = spaces(connective.name.length() + 2);</span>
+            }
+
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            if (a != null) {</span>
+<span class="nc" id="L145">                stringBuilder.append(prefix);</span>
+
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                if (a.getPrecedence() &gt; precedence) {</span>
+<span class="nc" id="L148">                    stringBuilder.append(&quot;(&quot;);</span>
+<span class="nc bnc" id="L149" title="All 4 branches missed.">                    if (multiline &amp;&amp; data.options.isNewLineAfterOpenParathesis()) {</span>
+<span class="nc" id="L150">                        stringBuilder.append(&quot;\n&quot;).append(prefix2);</span>
+                    }
+                }
+
+<span class="nc" id="L154">                appendWithPrefix(stringBuilder, a.resultString, prefix2);</span>
+
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                if (a.getPrecedence() &gt; precedence) {</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                    if (multiline) {</span>
+<span class="nc" id="L158">                        stringBuilder.append(&quot;\n&quot;).append(prefix);</span>
+                    }
+<span class="nc" id="L160">                    stringBuilder.append(&quot;)&quot;);</span>
+                }
+
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                if (multiline) {</span>
+<span class="nc" id="L164">                    stringBuilder.append(&quot;\n&quot;);</span>
+                }
+                else {
+<span class="nc" id="L167">                    stringBuilder.append(&quot; &quot;);</span>
+                }
+            }
+
+<span class="nc" id="L171">            stringBuilder.append(connective.name);</span>
+
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            if (multiline) {</span>
+<span class="nc" id="L174">                stringBuilder.append(&quot;\n&quot;);</span>
+            }
+            else {
+<span class="nc" id="L177">                stringBuilder.append(&quot; &quot;);</span>
+            }
+
+<span class="nc bnc" id="L180" title="All 2 branches missed.">            if (b != null) {</span>
+<span class="nc" id="L181">                stringBuilder.append(prefix2);</span>
+
+<span class="nc bnc" id="L183" title="All 2 branches missed.">                if (/*b.multiline ||*/b.getPrecedence() &gt; precedence) {</span>
+<span class="nc" id="L184">                    stringBuilder.append(&quot;(&quot;);</span>
+<span class="nc bnc" id="L185" title="All 4 branches missed.">                    if (multiline &amp;&amp; data.options.isNewLineAfterOpenParathesis()) {</span>
+<span class="nc" id="L186">                        stringBuilder.append(&quot;\n&quot;).append(prefix2);</span>
+                    }
+                }
+
+<span class="nc" id="L190">                appendWithPrefix(stringBuilder, b.resultString, prefix2);</span>
+
+<span class="nc bnc" id="L192" title="All 2 branches missed.">                if (/*b.multiline ||*/b.getPrecedence() &gt; precedence) {</span>
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                    if (multiline) {</span>
+<span class="nc" id="L194">                        stringBuilder.append(&quot;\n&quot;).append(prefix);</span>
+                    }
+<span class="nc" id="L196">                    stringBuilder.append(&quot;)&quot;);</span>
+                }
+            }
+
+<span class="nc" id="L200">            result.setMultiline(multiline);</span>
+<span class="nc" id="L201">            result.setResultString(stringBuilder.toString());</span>
+
+<span class="nc" id="L203">            data.popIndent();</span>
+
+<span class="nc" id="L205">            return result;</span>
+        }
+
+        public PPResult visitClause(Clause clause, FOPCPrettyPrinterData data) {
+
+            PPResult result;
+
+
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">            if (clause.getNegLiteralCount() == 0) {</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">                if (clause.getPosLiteralCount() == 0) {</span>
+<span class="nc" id="L215">                    result = new PPResult(&quot;true&quot;, false, MIN_PRECEDENCE);</span>
+                }
+                else {
+<span class="nc" id="L218">                    result = prettyPrintLiterals(clause.getPositiveLiterals(), data);</span>
+                }
+            }
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">            else if (clause.getPosLiteralCount() == 0) {</span>
+<span class="nc" id="L222">                PPResult negResult = prettyPrintLiterals(clause.getNegativeLiterals(), data);</span>
+<span class="nc" id="L223">                result = new PPResult(negResult.resultString, negResult.isMultiline(), MIN_PRECEDENCE);</span>
+
+<span class="nc" id="L225">            }</span>
+            else {
+
+<span class="fc" id="L228">                PPResult posResult = prettyPrintLiterals(clause.getPositiveLiterals(), data);</span>
+
+<span class="fc" id="L230">                data.pushIndent(posResult.getMaximumWidth() + 4);</span>
+
+<span class="fc" id="L232">                PPResult negResult = prettyPrintLiterals(clause.getNegativeLiterals(), data);</span>
+
+<span class="fc" id="L234">                data.popIndent();</span>
+
+<span class="fc" id="L236">                String prefix = spaces(Math.min(posResult.getMaximumWidth() + 4, data.options.getMaximumIndentationAfterImplication()));</span>
+
+<span class="fc" id="L238">                StringBuilder stringBuilder = new StringBuilder();</span>
+
+<span class="fc" id="L240">                stringBuilder.append(posResult.getResultString()).append(&quot; :- &quot;);</span>
+
+<span class="pc bpc" id="L242" title="1 of 4 branches missed.">                if (negResult.isMultiline() || posResult.isMultiline()) {</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">                    if (data.options.isNewLineAfterImplication()) {</span>
+<span class="fc" id="L244">                        stringBuilder.append(&quot;\n&quot;).append(prefix);</span>
+                    }
+<span class="fc" id="L246">                    appendWithPrefix(stringBuilder, negResult.resultString, prefix);</span>
+                }
+                else {
+<span class="fc" id="L249">                    stringBuilder.append(negResult.resultString);</span>
+
+                }
+
+<span class="pc bpc" id="L253" title="1 of 4 branches missed.">                result = new PPResult(stringBuilder.toString(), negResult.isMultiline() || posResult.isMultiline(), 1200);</span>
+            }
+
+<span class="fc" id="L256">            return result;</span>
+        }
+
+        public PPResult visitLiteral(Literal literal, FOPCPrettyPrinterData data) {
+
+<span class="fc" id="L261">            List&lt;? extends Term&gt; terms = literal.getArguments();</span>
+
+<span class="fc" id="L263">            String pred = literal.predicateName.name;</span>
+
+<span class="fc" id="L265">            return prettyPrintTerms(pred, terms, false, data);</span>
+        }
+
+        public PPResult visitFunction(Function function, FOPCPrettyPrinterData data) {
+
+<span class="nc" id="L270">            return prettyPrintTerms(function.functionName.name, function.getArguments(), function.functionName.printUsingInFixNotation, data);</span>
+        }
+
+        public PPResult visitVariable(Variable variable, FOPCPrettyPrinterData data) {
+
+            PPResult result;
+
+<span class="pc bpc" id="L277" title="1 of 2 branches missed.">            if (data.variableBindings != null) {</span>
+<span class="fc" id="L278">                Term binding = data.variableBindings.getMapping(variable);</span>
+
+<span class="fc bfc" id="L280" title="All 2 branches covered.">                if (binding != null) {</span>
+                    // We would like to allow binding to anything, but I don't think
+                    // that is possible (or at least easy) since the StringConstant
+                    // will always be quoted if we do an except on the constant.
+
+                    // For now, if the term is a string constant, assume we are the
+                    // onces who created the binding...
+<span class="pc bpc" id="L287" title="1 of 2 branches missed.">                    if (binding instanceof StringConstant) {</span>
+<span class="fc" id="L288">                        StringConstant stringConstant = (StringConstant) binding;</span>
+<span class="fc" id="L289">                        result = new PPResult(stringConstant.getBareName(), false, MIN_PRECEDENCE);</span>
+<span class="fc" id="L290">                    }</span>
+                    else {
+<span class="nc" id="L292">                        result = binding.accept(this, data);</span>
+                    }
+                }
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">                else if (data.options.isRenameVariables()) {</span>
+
+<span class="fc" id="L297">                    StringConstant variableName = data.getNextVariableName(variable);</span>
+
+<span class="fc" id="L299">                    data.variableBindings.addBinding(variable, variableName);</span>
+<span class="fc" id="L300">                    result = new PPResult(variableName.getBareName(), false, MIN_PRECEDENCE);</span>
+<span class="fc" id="L301">                }</span>
+                else {
+<span class="nc" id="L303">                    result = new PPResult(variable.getName(), false, MIN_PRECEDENCE);</span>
+                }
+<span class="fc" id="L305">            }</span>
+            else {
+<span class="nc" id="L307">                return new PPResult(variable.name, false, MIN_PRECEDENCE);</span>
+            }
+
+<span class="fc" id="L310">            return result;</span>
+
+
+        }
+
+        public PPResult visitNumericConstant(NumericConstant numericConstant) {
+<span class="fc" id="L316">            return new PPResult(numericConstant.getName(), false, MIN_PRECEDENCE);</span>
+        }
+
+        public PPResult visitStringConstant(StringConstant stringConstant) {
+<span class="fc" id="L320">            return new PPResult(stringConstant.toString(), false, MIN_PRECEDENCE);</span>
+        }
+
+        public PPResult visitOtherTerm(Term term) {
+<span class="nc" id="L324">            return new PPResult(term.toString(), false, MIN_PRECEDENCE);</span>
+        }
+
+        private PPResult prettyPrintLiterals(List&lt;Literal&gt; literals, FOPCPrettyPrinterData data) {
+
+<span class="fc" id="L329">            StringBuilder stringBuilder = new StringBuilder();</span>
+
+<span class="fc" id="L331">            boolean multiline = false;</span>
+
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">            if (literals.size() &gt; 0) {</span>
+
+<span class="fc" id="L335">                List&lt;PPResult&gt; list = new ArrayList&lt;&gt;(literals.size());</span>
+<span class="fc" id="L336">                int maxLineWidth = 0;</span>
+
+<span class="fc" id="L338">                int totalWidth = 0;</span>
+
+<span class="fc bfc" id="L340" title="All 2 branches covered.">                for (Literal literal : literals) {</span>
+<span class="fc" id="L341">                    PPResult tpp = literal.accept(this, data);</span>
+<span class="fc" id="L342">                    list.add(tpp);</span>
+
+<span class="pc bpc" id="L344" title="2 of 4 branches missed.">                    multiline = tpp.isMultiline() || multiline;</span>
+<span class="fc" id="L345">                    maxLineWidth = Math.max(maxLineWidth, tpp.getMaximumWidth());</span>
+
+<span class="fc" id="L347">                    totalWidth += tpp.getMaximumWidth();</span>
+<span class="fc" id="L348">                }</span>
+
+<span class="pc bpc" id="L350" title="2 of 4 branches missed.">                multiline = (multiline || totalWidth &gt; 130 - data.getCurrentIndentation());</span>
+
+<span class="fc" id="L352">                String prefix = &quot;&quot;;</span>
+
+<span class="fc" id="L354">                int maximumWidth = 130 - data.getCurrentIndentation();</span>
+
+<span class="fc" id="L356">                int currentWidth = 0;</span>
+<span class="fc" id="L357">                int termsOnLine = 0;</span>
+
+<span class="fc" id="L359">                boolean lastWasMultiline = false;</span>
+
+<span class="fc bfc" id="L361" title="All 2 branches covered.">                for (int i = 0; i &lt; list.size(); i++) {</span>
+<span class="fc" id="L362">                    PPResult tpp = list.get(i);</span>
+<span class="fc bfc" id="L363" title="All 2 branches covered.">                    if (i &gt; 0) {</span>
+<span class="fc" id="L364">                        stringBuilder.append(&quot;, &quot;);</span>
+<span class="pc bpc" id="L365" title="2 of 4 branches missed.">                        if (lastWasMultiline || tpp.multiline) {</span>
+<span class="nc" id="L366">                            stringBuilder.append(&quot;\n&quot;).append(prefix);</span>
+<span class="nc" id="L367">                            currentWidth = 0;</span>
+<span class="nc" id="L368">                            termsOnLine = 0;</span>
+<span class="nc" id="L369">                            lastWasMultiline = tpp.multiline;</span>
+<span class="nc" id="L370">                            multiline = true;</span>
+                        }
+                        else {
+<span class="pc bpc" id="L373" title="3 of 6 branches missed.">                            if (currentWidth + tpp.getMaximumWidth() &gt;= maximumWidth || (data.options.getMaximumLiteralsPerLine() &gt; 0 &amp;&amp; termsOnLine &gt;= data.options.getMaximumLiteralsPerLine())) {</span>
+<span class="fc" id="L374">                                stringBuilder.append(&quot;\n&quot;).append(prefix);</span>
+<span class="fc" id="L375">                                currentWidth = 0;</span>
+<span class="fc" id="L376">                                termsOnLine = 0;</span>
+<span class="fc" id="L377">                                multiline = true;</span>
+                            }
+                        }
+                    }
+
+<span class="fc" id="L382">                    appendWithPrefix(stringBuilder, tpp.resultString, prefix);</span>
+
+                    // We really should be adding the maximum width of the last line
+                    // of the PPResult string.  However, if we are printing multiline
+                    // statements, we will automatically add a
+<span class="fc" id="L387">                    currentWidth += tpp.getMaximumWidth();</span>
+<span class="fc" id="L388">                    termsOnLine++;</span>
+                }
+            }
+
+
+<span class="fc" id="L393">            return new PPResult(stringBuilder.toString(), multiline, 1000);</span>
+        }
+
+        private PPResult prettyPrintTerms(String pred, List&lt;? extends Term&gt; terms, boolean infix, FOPCPrettyPrinterData data) {
+
+<span class="fc" id="L398">            StringBuilder stringBuilder = new StringBuilder();</span>
+
+<span class="pc bpc" id="L400" title="1 of 2 branches missed.">            if (!infix) {</span>
+<span class="fc" id="L401">                stringBuilder.append(pred);</span>
+            }
+
+<span class="fc" id="L404">            int maxTermsPerLine = -1;</span>
+
+<span class="pc bpc" id="L406" title="1 of 2 branches missed.">            if (&quot;\\+&quot;.equals(pred)) {</span>
+                // Special handling of negation.  We should really generalize this
+                // for other things like call, forAll, etc.
+<span class="nc" id="L409">                maxTermsPerLine = data.options.getMaximumLiteralsPerLine();</span>
+            }
+
+<span class="fc" id="L412">            boolean multiline = false;</span>
+
+
+<span class="pc bpc" id="L415" title="1 of 2 branches missed.">            int precedence = infix ? HandleFOPCstrings.getOperatorPrecedence_static(pred) : 999;</span>
+
+<span class="pc bpc" id="L417" title="1 of 4 branches missed.">            if (terms != null &amp;&amp; !terms.isEmpty()) {</span>
+
+<span class="pc bpc" id="L419" title="1 of 2 branches missed.">                if (!infix) {</span>
+<span class="fc" id="L420">                    stringBuilder.append(&quot;(&quot;);</span>
+
+<span class="fc" id="L422">                    data.pushIndent(pred.length() + 1);</span>
+                }
+
+
+<span class="fc" id="L426">                List&lt;PPResult&gt; list = new ArrayList&lt;&gt;(terms.size());</span>
+<span class="fc" id="L427">                int maxLineWidth = 0;</span>
+
+<span class="fc" id="L429">                int totalWidth = 0;</span>
+
+<span class="fc bfc" id="L431" title="All 2 branches covered.">                for (int i = 0; i &lt; terms.size(); i++) {</span>
+
+<span class="fc" id="L433">                    Term term = terms.get(i);</span>
+
+<span class="pc bpc" id="L435" title="3 of 4 branches missed.">                    if (infix &amp;&amp; i == 1) {</span>
+                        // Insert the infix operator...
+<span class="nc" id="L437">                        PPResult tpp = new PPResult(&quot; &quot; + pred + &quot; &quot;, false, MIN_PRECEDENCE);</span>
+<span class="nc" id="L438">                        list.add(tpp);</span>
+
+<span class="nc" id="L440">                        totalWidth += tpp.getMaximumWidth();</span>
+                    }
+
+<span class="fc" id="L443">                    PPResult tpp = term.accept(this, data);</span>
+                    //System.out.println(tpp);
+<span class="pc bpc" id="L445" title="3 of 6 branches missed.">                    multiline = !infix &amp;&amp; (tpp.isMultiline() || multiline);</span>
+
+<span class="pc bpc" id="L447" title="1 of 2 branches missed.">                    if (precedence &lt; tpp.precedence) {</span>
+<span class="nc" id="L448">                        StringBuilder infixSB = new StringBuilder();</span>
+<span class="nc" id="L449">                        infixSB.append(&quot;(&quot;);</span>
+<span class="nc bnc" id="L450" title="All 4 branches missed.">                        if (tpp.isMultiline() &amp;&amp; data.options.isNewLineAfterOpenParathesis()) {</span>
+<span class="nc" id="L451">                            infixSB.append(&quot;\n &quot;);</span>
+                        }
+<span class="nc" id="L453">                        appendWithPrefix(infixSB, tpp.resultString, &quot; &quot;);</span>
+<span class="nc bnc" id="L454" title="All 4 branches missed.">                        if (tpp.isMultiline() &amp;&amp; data.options.isAlignParathesis()) {</span>
+<span class="nc" id="L455">                            infixSB.append(&quot;\n&quot;);</span>
+                        }
+<span class="nc" id="L457">                        infixSB.append(&quot;)&quot;);</span>
+<span class="nc" id="L458">                        tpp = new PPResult(infixSB.toString(), tpp.multiline, MIN_PRECEDENCE);</span>
+                    }
+
+<span class="fc" id="L461">                    list.add(tpp);</span>
+
+<span class="fc" id="L463">                    maxLineWidth = Math.max(maxLineWidth, tpp.getMaximumWidth());</span>
+
+<span class="fc" id="L465">                    totalWidth += tpp.getMaximumWidth();</span>
+                }
+
+<span class="pc bpc" id="L468" title="2 of 4 branches missed.">                multiline = (multiline || totalWidth &gt; 130 - data.getCurrentIndentation());</span>
+
+<span class="fc" id="L470">                String prefix = spaces(pred.length() + 1);</span>
+
+<span class="pc bpc" id="L472" title="3 of 4 branches missed.">                if (multiline &amp;&amp; data.options.isNewLineAfterOpenParathesis()) {</span>
+<span class="nc" id="L473">                    stringBuilder.append(&quot;\n&quot;).append(prefix);</span>
+                }
+
+<span class="fc" id="L476">                int maximumWidth = 130 - data.getCurrentIndentation();</span>
+
+<span class="fc" id="L478">                int currentWidth = 0;</span>
+<span class="fc" id="L479">                int termsOnLine = 0;</span>
+
+<span class="fc" id="L481">                boolean lastWasMultiline = false;</span>
+
+<span class="fc bfc" id="L483" title="All 2 branches covered.">                for (int i = 0; i &lt; list.size(); i++) {</span>
+<span class="fc" id="L484">                    PPResult tpp = list.get(i);</span>
+<span class="fc bfc" id="L485" title="All 2 branches covered.">                    if (i &gt; 0) {</span>
+<span class="pc bpc" id="L486" title="1 of 2 branches missed.">                        if (!infix) {</span>
+<span class="fc" id="L487">                            stringBuilder.append(&quot;, &quot;);</span>
+                        }
+<span class="pc bpc" id="L489" title="2 of 4 branches missed.">                        if (lastWasMultiline || tpp.multiline) {</span>
+<span class="nc" id="L490">                            stringBuilder.append(&quot;\n&quot;).append(prefix);</span>
+<span class="nc" id="L491">                            currentWidth = 0;</span>
+<span class="nc" id="L492">                            termsOnLine = 0;</span>
+<span class="nc" id="L493">                            lastWasMultiline = tpp.multiline;</span>
+<span class="nc" id="L494">                            multiline = true;</span>
+                        }
+                        else {
+<span class="pc bpc" id="L497" title="5 of 8 branches missed.">                            if (!infix &amp;&amp; (currentWidth + tpp.getMaximumWidth() &gt;= maximumWidth || (maxTermsPerLine &gt; 0 &amp;&amp; termsOnLine &gt;= maxTermsPerLine))) {</span>
+<span class="nc" id="L498">                                stringBuilder.append(&quot;\n&quot;).append(prefix);</span>
+<span class="nc" id="L499">                                currentWidth = 0;</span>
+<span class="nc" id="L500">                                termsOnLine = 0;</span>
+<span class="nc" id="L501">                                multiline = true;</span>
+                            }
+                        }
+                    }
+
+<span class="fc" id="L506">                    appendWithPrefix(stringBuilder, tpp.resultString, prefix);</span>
+
+<span class="fc" id="L508">                    currentWidth += tpp.getMaximumWidth();</span>
+<span class="fc" id="L509">                    termsOnLine++;</span>
+                }
+
+<span class="pc bpc" id="L512" title="3 of 4 branches missed.">                if (multiline &amp;&amp; data.options.isAlignParathesis()) {</span>
+<span class="nc" id="L513">                    stringBuilder.append(&quot;\n&quot;).append(spaces(pred.length()));</span>
+                }
+
+
+<span class="pc bpc" id="L517" title="1 of 2 branches missed.">                if (!infix) {</span>
+<span class="fc" id="L518">                    stringBuilder.append(&quot;)&quot;);</span>
+<span class="fc" id="L519">                    data.popIndent();</span>
+                }
+
+
+            }
+
+<span class="fc" id="L525">            return new PPResult(stringBuilder.toString(), multiline, precedence);</span>
+        }
+    }
+
+    static class FOPCPrettyPrinterData {
+
+<span class="fc" id="L531">        final Queue&lt;PrecedenceInfo&gt; precedenceInfo = new LinkedList&lt;&gt;();</span>
+
+<span class="fc" id="L533">        PrettyPrinterOptions options = new PrettyPrinterOptions();</span>
+
+        BindingList variableBindings;
+
+<span class="fc" id="L537">        int renamedVariableIndex = 0;</span>
+
+<span class="fc" id="L539">        FOPCPrettyPrinterData() {</span>
+<span class="fc" id="L540">            pushPrecedence();</span>
+<span class="fc" id="L541">        }</span>
+
+        void pushIndent(int additionalIndentation) {
+
+<span class="fc" id="L545">            String newPrefix = getPrefix() + spaces(additionalIndentation);</span>
+
+<span class="fc" id="L547">            precedenceInfo.add(new PrecedenceInfo(newPrefix));</span>
+<span class="fc" id="L548">        }</span>
+
+        final void pushPrecedence() {
+<span class="fc" id="L551">            precedenceInfo.add(new PrecedenceInfo());</span>
+<span class="fc" id="L552">        }</span>
+
+        PrecedenceInfo getCurrentPrecedence() {
+<span class="fc" id="L555">            return precedenceInfo.peek();</span>
+        }
+
+        void popIndent() {
+<span class="fc" id="L559">            precedenceInfo.remove();</span>
+<span class="fc" id="L560">        }</span>
+
+        String getPrefix() {
+<span class="fc" id="L563">            return getCurrentPrecedence().prefix;</span>
+        }
+
+        int getCurrentIndentation() {
+<span class="fc" id="L567">            return getCurrentPrecedence().currentIndentation;</span>
+        }
+
+        StringConstant getNextVariableName(Variable variable) {
+<span class="fc" id="L571">            StringConstant variableName = variable.getStringHandler().getAlphabeticalVariableName(renamedVariableIndex++);</span>
+
+<span class="pc bpc" id="L573" title="1 of 2 branches missed.">            while (isNameUsed(variableName)) {</span>
+<span class="nc" id="L574">                variableName = variable.getStringHandler().getAlphabeticalVariableName(renamedVariableIndex++);</span>
+            }
+
+<span class="fc" id="L577">            return variableName;</span>
+        }
+
+        private boolean isNameUsed(StringConstant name) {
+<span class="fc" id="L581">            boolean result = false;</span>
+
+<span class="pc bpc" id="L583" title="1 of 2 branches missed.">            if (variableBindings != null) {</span>
+<span class="fc bfc" id="L584" title="All 2 branches covered.">                for (Term term : variableBindings.theta.values()) {</span>
+<span class="pc bpc" id="L585" title="1 of 2 branches missed.">                    if (term.equals(name)) {</span>
+<span class="nc" id="L586">                        result = true;</span>
+<span class="nc" id="L587">                        break;</span>
+                    }
+<span class="fc" id="L589">                }</span>
+            }
+
+<span class="fc" id="L592">            return result;</span>
+        }
+    }
+
+    static class PrecedenceInfo {
+
+        String prefix;
+
+        int currentIndentation;
+
+<span class="fc" id="L602">        PrecedenceInfo(String prefix) {</span>
+<span class="fc" id="L603">            this.prefix = prefix;</span>
+<span class="fc" id="L604">        }</span>
+
+<span class="fc" id="L606">        PrecedenceInfo() {</span>
+<span class="fc" id="L607">            this.currentIndentation = 0;</span>
+<span class="fc" id="L608">        }</span>
+    }
+
+    public static final class PPResult {
+
+        private String resultString;
+
+        private boolean multiline;
+
+        private int precedence;
+
+        private int maximumWidth;
+
+<span class="fc" id="L621">        private PPResult(String resultString, boolean multiline, int precedence) {</span>
+<span class="fc" id="L622">            setResultString(resultString);</span>
+<span class="fc" id="L623">            this.multiline = multiline;</span>
+<span class="fc" id="L624">            this.precedence = precedence;</span>
+<span class="fc" id="L625">        }</span>
+
+        private PPResult() {
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L632">            return &quot;PPResult{&quot; + &quot;resultString=&quot; + getResultString() + &quot;, multi=&quot; + isMultiline() + &quot;, prec=&quot; + getPrecedence() + &quot;, maxWidth=&quot; + getMaximumWidth() + '}';</span>
+        }
+
+        String getResultString() {
+<span class="fc" id="L636">            return resultString;</span>
+        }
+
+        void setResultString(String resultString) {
+<span class="fc" id="L640">            this.resultString = resultString;</span>
+<span class="fc" id="L641">            setMaximumWidth(getMaxLineLength(resultString));</span>
+<span class="fc" id="L642">        }</span>
+
+        boolean isMultiline() {
+<span class="fc" id="L645">            return multiline;</span>
+        }
+
+        void setMultiline(boolean multiline) {
+<span class="nc" id="L649">            this.multiline = multiline;</span>
+<span class="nc" id="L650">        }</span>
+
+        int getPrecedence() {
+<span class="nc" id="L653">            return precedence;</span>
+        }
+
+        void setPrecedence(int precedence) {
+<span class="nc" id="L657">            this.precedence = precedence;</span>
+<span class="nc" id="L658">        }</span>
+
+        int getMaximumWidth() {
+<span class="fc" id="L661">            return maximumWidth;</span>
+        }
+
+        void setMaximumWidth(int maximumWidth) {
+<span class="fc" id="L665">            this.maximumWidth = maximumWidth;</span>
+<span class="fc" id="L666">        }</span>
+    }
+
+    private PrettyPrinter() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

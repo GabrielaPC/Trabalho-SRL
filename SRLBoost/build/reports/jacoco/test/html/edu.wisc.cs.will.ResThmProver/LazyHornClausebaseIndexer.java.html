@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LazyHornClausebaseIndexer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ResThmProver</a> &gt; <span class="el_source">LazyHornClausebaseIndexer.java</span></div><h1>LazyHornClausebaseIndexer.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ResThmProver;
+
+import edu.wisc.cs.will.FOPC.*;
+
+/*
+ * @author twalker
+ */
+class LazyHornClausebaseIndexer {
+
+  private final HornClausebase clausebase;
+
+    private final int indexWidth;
+
+<span class="fc" id="L14">    private LazyGroundNthArgumentClauseIndex[] singleGroundArgIndexArray = null;</span>
+
+<span class="fc" id="L16">    private LazyGroundClauseIndex groundClauseIndex = null;</span>
+
+<span class="fc" id="L18">    private PredicateIndex&lt;DefiniteClause&gt; predicateIndex = null;</span>
+
+<span class="fc" id="L20">    private long[] singleGroundArgIndexLookupCount = null;</span>
+
+<span class="fc" id="L22">    private long groundClauseLookupCount = 0;</span>
+
+<span class="fc" id="L24">    private long predicateLookupCount = 0;</span>
+
+<span class="fc" id="L26">    private long[] singleGroundArgIndexHitCount = null;</span>
+
+<span class="fc" id="L28">    private long groundClauseHitCount = 0;</span>
+
+<span class="fc" id="L30">    private long predicateHitCount = 0;</span>
+
+    LazyHornClausebaseIndexer(HornClausebase clausebase) {
+<span class="fc" id="L33">        this(clausebase, 2);</span>
+<span class="fc" id="L34">    }</span>
+
+<span class="fc" id="L36">    private LazyHornClausebaseIndexer(HornClausebase clausebase, int indexWidth) {</span>
+<span class="fc" id="L37">        this.clausebase = clausebase;</span>
+<span class="fc" id="L38">        this.indexWidth = indexWidth;</span>
+<span class="fc" id="L39">        resetIndex();</span>
+<span class="fc" id="L40">    }</span>
+
+    final void resetIndex() {
+<span class="fc bfc" id="L43" title="All 2 branches covered.">    	if (singleGroundArgIndexArray != null) { // Added by JWS to get a glimpse of how often this is happening.</span>
+<span class="fc" id="L44">    		System.out.println(&quot;\nResetting the LazyGroundNthArgumentClauseIndex.&quot;);</span>
+    	}
+<span class="fc" id="L46">        singleGroundArgIndexArray = new LazyGroundNthArgumentClauseIndex[indexWidth];</span>
+
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        for (int indexedArgument = 0; indexedArgument &lt; indexWidth; indexedArgument++) {</span>
+<span class="fc" id="L49">                singleGroundArgIndexArray[indexedArgument] = new LazyGroundNthArgumentClauseIndex(clausebase, indexedArgument);</span>
+        }
+        
+<span class="fc" id="L52">        predicateIndex = new PredicateIndex&lt;&gt;();</span>
+<span class="fc" id="L53">        groundClauseIndex = new LazyGroundClauseIndex(clausebase);</span>
+
+<span class="fc" id="L55">        singleGroundArgIndexLookupCount = new long[indexWidth];</span>
+<span class="fc" id="L56">        groundClauseLookupCount = 0;</span>
+<span class="fc" id="L57">        predicateLookupCount = 0;</span>
+
+<span class="fc" id="L59">        singleGroundArgIndexHitCount = new long[indexWidth];</span>
+<span class="fc" id="L60">        groundClauseHitCount = 0;</span>
+<span class="fc" id="L61">        predicateHitCount = 0;</span>
+<span class="fc" id="L62">    }</span>
+
+    void indexAssertion(DefiniteClause definiteClause) {
+
+<span class="pc bpc" id="L66" title="2 of 4 branches missed.">        if (definiteClause != null &amp;&amp; definiteClause.isDefiniteClause()) {</span>
+
+<span class="fc" id="L68">            PredicateNameAndArity key = new PredicateNameAndArity(definiteClause);</span>
+
+            // Even though we are lazy, we still need to notify the subindices that
+            // new clauses came along, just in case they have indexed that predicate
+            // already.
+
+<span class="fc" id="L74">            indexDefiniteClauseByAllArgs(key, definiteClause);</span>
+<span class="fc bfc" id="L75" title="All 4 branches covered.">            for (int i = 0; i &lt; indexWidth &amp;&amp; i &lt; key.getArity(); i++) {</span>
+<span class="fc" id="L76">                indexDefiniteClauseByNthArg(i, key, definiteClause);</span>
+            }
+            
+        }
+<span class="fc" id="L80">    }</span>
+
+    void removeAssertion(DefiniteClause definiteClause) {
+
+<span class="nc" id="L84">        PredicateNameAndArity key = new PredicateNameAndArity(definiteClause);</span>
+
+<span class="nc" id="L86">        removeDefiniteClauseByPredicate(key, definiteClause);</span>
+<span class="nc" id="L87">        removeDefiniteClauseByAllArgs(key, definiteClause);</span>
+<span class="nc bnc" id="L88" title="All 4 branches missed.">        for (int i = 0; i &lt; indexWidth &amp;&amp; i &lt; key.getArity(); i++) {</span>
+<span class="nc" id="L89">            removeDefiniteClauseByNthArg(i, key, definiteClause);</span>
+        }
+<span class="nc" id="L91">    }</span>
+
+    DefiniteClauseList getPossibleMatchingAssertions(Literal clauseHead, BindingList currentBindings) {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (clauseHead != null) {</span>
+            DefiniteClauseList set;
+
+<span class="fc" id="L97">            PredicateNameAndArity pnaa = clauseHead.getPredicateNameAndArity();</span>
+
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            if (!clausebase.getAssertionsMap().containsKey(pnaa)) {</span>
+                // Fast fail for predicates that don't exist in the clausebase.
+                // We might want to move this into the clausebase itself...
+<span class="fc" id="L102">                return null;</span>
+            }
+
+            // Short term, we are just going to apply the binding list to the clause head.
+<span class="pc bpc" id="L106" title="1 of 4 branches missed.">            Literal boundClauseHead = (clauseHead.isGrounded() || currentBindings == null) ? clauseHead : clauseHead.applyTheta(currentBindings.theta);</span>
+
+<span class="fc" id="L108">            set = lookupDefiniteClauseByAllArgs(boundClauseHead);</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if (set != null) {</span>
+<span class="fc" id="L110">                groundClauseHitCount++;</span>
+<span class="fc" id="L111">                return set;</span>
+            }
+            else {
+                DefiniteClauseList aSet;
+
+<span class="fc" id="L116">                int arity = clauseHead.numberArgs();</span>
+
+<span class="fc bfc" id="L118" title="All 2 branches covered.">                if (arity &gt;= 2) {</span>
+<span class="pc bpc" id="L119" title="1 of 4 branches missed.">                    for (int i = 0; i &lt; indexWidth &amp;&amp; i &lt; arity; i++) {</span>
+<span class="fc" id="L120">                        aSet = lookupDefiniteClausesByNthArgs(i, boundClauseHead);</span>
+
+<span class="fc bfc" id="L122" title="All 2 branches covered.">                        if (aSet != null) {</span>
+<span class="fc" id="L123">                            singleGroundArgIndexHitCount[i]++;</span>
+<span class="fc bfc" id="L124" title="All 4 branches covered.">                            if (set == null || aSet.size() &lt; set.size()) {</span>
+<span class="fc" id="L125">                                set = aSet;</span>
+                            }
+                        }
+                    }
+                }
+
+<span class="fc bfc" id="L131" title="All 2 branches covered.">                if (set == null) {</span>
+<span class="fc" id="L132">                    set = lookupDefiniteClausesByPredicate(pnaa);</span>
+<span class="pc bpc" id="L133" title="2 of 4 branches missed.">                    if (set != null &amp;&amp; !set.isEmpty()) {</span>
+<span class="fc" id="L134">                        predicateHitCount++;</span>
+                    }
+                }
+<span class="fc" id="L137">                return set;</span>
+            }
+        }
+
+<span class="nc" id="L141">        return null;</span>
+    }
+
+    DefiniteClauseList getPossibleMatchingAssertions(PredicateName predicateName, int arity) {
+<span class="fc" id="L145">        PredicateNameAndArity pnaa = new PredicateNameAndArity(predicateName, arity);</span>
+
+<span class="fc" id="L147">        return lookupDefiniteClausesByPredicate(pnaa);</span>
+    }
+
+    private void indexDefiniteClauseByNthArg(int indexedArgument, PredicateNameAndArity key, DefiniteClause sentence) {
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">        if (indexedArgument &lt; indexWidth) {</span>
+<span class="fc" id="L152">            singleGroundArgIndexArray[indexedArgument].indexDefiniteClause(key, sentence);</span>
+        }
+<span class="fc" id="L154">    }</span>
+
+    private void removeDefiniteClauseByNthArg(int indexedArgument, PredicateNameAndArity key, DefiniteClause sentence) {
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        if (indexedArgument &lt; indexWidth) {</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">            if (singleGroundArgIndexArray[indexedArgument] != null) {</span>
+<span class="nc" id="L159">                singleGroundArgIndexArray[indexedArgument].removeDefiniteClause(key, sentence);</span>
+            }
+        }
+<span class="nc" id="L162">    }</span>
+
+    private DefiniteClauseList lookupDefiniteClausesByNthArgs(int indexedArgument, Literal literal) {
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        if (singleGroundArgIndexArray[indexedArgument] != null) {</span>
+<span class="fc" id="L166">            singleGroundArgIndexLookupCount[indexedArgument]++;</span>
+<span class="fc" id="L167">            return singleGroundArgIndexArray[indexedArgument].lookupDefiniteClauses(literal);</span>
+        }
+<span class="nc" id="L169">        return null;</span>
+    }
+
+    private void indexDefiniteClauseByAllArgs(PredicateNameAndArity key, DefiniteClause sentence) {
+<span class="fc" id="L173">        groundClauseIndex.indexDefiniteClause(key, sentence);</span>
+<span class="fc" id="L174">    }</span>
+
+    private void removeDefiniteClauseByAllArgs(PredicateNameAndArity key, DefiniteClause sentence) {
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        if (groundClauseIndex != null) {</span>
+<span class="nc" id="L178">            groundClauseIndex.removeDefiniteClause(key, sentence);</span>
+        }
+<span class="nc" id="L180">    }</span>
+
+    private DefiniteClauseList lookupDefiniteClauseByAllArgs(Literal literalToLookup) {
+<span class="pc bpc" id="L183" title="2 of 6 branches missed.">        if (groundClauseIndex != null &amp;&amp; literalToLookup != null &amp;&amp; literalToLookup.isGrounded()) {</span>
+<span class="fc" id="L184">            groundClauseLookupCount++;</span>
+<span class="fc" id="L185">            return groundClauseIndex.lookupDefiniteClauses(literalToLookup);</span>
+        }
+<span class="fc" id="L187">        return null;</span>
+    }
+
+    private void removeDefiniteClauseByPredicate(PredicateNameAndArity key, DefiniteClause sentence) {
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (predicateIndex != null) {</span>
+<span class="nc" id="L192">            predicateIndex.removeDefiniteClause(key, sentence);</span>
+        }
+<span class="nc" id="L194">    }</span>
+
+    private DefiniteClauseList lookupDefiniteClausesByPredicate(PredicateNameAndArity pnaa) {
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">        if (predicateIndex != null) {</span>
+<span class="fc" id="L198">            predicateLookupCount++;</span>
+<span class="fc" id="L199">            return clausebase.getAssertionsMap().getValues(pnaa);</span>
+        }
+<span class="nc" id="L201">        return null;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L206">        StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L207">        sb.append(&quot;% DefaultHornClauseFactbaseIndexer:\n&quot;);</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        for (int i = 0; i &lt; indexWidth; i++) {</span>
+<span class="nc" id="L209">            sb.append(String.format(&quot;%%   Ground Argument %d  : Lookups = %d, Hits = %d, Efficiency = %.2f%%.\n&quot;, i, singleGroundArgIndexLookupCount[i], singleGroundArgIndexHitCount[i], 100.0 * singleGroundArgIndexHitCount[i] / singleGroundArgIndexLookupCount[i]));</span>
+        }
+
+<span class="nc" id="L212">        sb.append(String.format(&quot;%%   All ground index    : Lookups = %d, Hits = %d, Efficiency = %.2f%%.\n&quot;, groundClauseLookupCount, groundClauseHitCount, 100.0 * groundClauseHitCount / groundClauseLookupCount));</span>
+<span class="nc" id="L213">        sb.append(String.format(&quot;%%   Predicates Index    : Lookups = %d, Hits = %d, Efficiency = %.2f%%.\n&quot;, predicateLookupCount, predicateHitCount, 100.0 * predicateHitCount / predicateLookupCount));</span>
+
+<span class="nc bnc" id="L215" title="All 2 branches missed.">        if ( groundClauseIndex != null ) sb.append(groundClauseIndex);</span>
+<span class="nc bnc" id="L216" title="All 2 branches missed.">        for (LazyGroundNthArgumentClauseIndex lazyGroundNthArgumentClauseIndex : singleGroundArgIndexArray) {</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">            if (lazyGroundNthArgumentClauseIndex != null) sb.append(lazyGroundNthArgumentClauseIndex);</span>
+        }
+
+<span class="nc" id="L220">        return sb.toString();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

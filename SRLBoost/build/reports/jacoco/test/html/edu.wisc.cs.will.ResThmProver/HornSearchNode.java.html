@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HornSearchNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ResThmProver</a> &gt; <span class="el_source">HornSearchNode.java</span></div><h1>HornSearchNode.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ResThmProver;
+
+import edu.wisc.cs.will.FOPC.BindingList;
+import edu.wisc.cs.will.FOPC.Clause;
+import edu.wisc.cs.will.FOPC.Variable;
+import edu.wisc.cs.will.stdAIsearch.SearchNode;
+
+import java.util.Collection;
+
+/*
+ * @author shavlik
+ */
+public class HornSearchNode extends SearchNode {
+
+    Clause      clause;
+	final BindingList bindings;
+
+
+    HornSearchNode(HornClauseProver task, Clause clause) { // Used for the initial call (i.e., to create the root of the search space).
+<span class="fc" id="L20">		super(task);</span>
+<span class="fc" id="L21">		this.clause   = clause;</span>
+<span class="fc" id="L22">		this.bindings = null; // I don't think there will ever be bindings at the root, but leave a hook in here just in case.</span>
+<span class="fc" id="L23">    }</span>
+	HornSearchNode(HornSearchNode parentNode, Clause clause, BindingList bindings) {
+<span class="fc" id="L25">		super(parentNode);</span>
+<span class="fc" id="L26">		this.clause   = clause;</span>
+<span class="fc" id="L27">		this.bindings = bindings;</span>
+<span class="fc" id="L28">    }</span>
+
+    private BindingList getQueryVariables() {
+
+        BindingList bl;
+
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        if ( getParentNode() != null ) {</span>
+<span class="nc" id="L35">            bl = getParentNode().getQueryVariables();</span>
+        }
+        else {
+<span class="fc" id="L38">            Collection&lt;Variable&gt; queryVariables = clause.collectAllVariables();</span>
+
+<span class="fc" id="L40">            bl = new BindingList();</span>
+
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">            if ( queryVariables != null ) {</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">                for (Variable variable : queryVariables) {</span>
+<span class="fc" id="L44">                    bl.addBinding(variable, variable);</span>
+<span class="fc" id="L45">                }</span>
+            }
+        }
+
+<span class="fc" id="L49">        return bl;</span>
+    }
+
+    BindingList collectQueryBindings() {
+
+        BindingList bl;
+
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if ( getParentNode() != null ) {</span>
+<span class="fc" id="L57">            bl = getParentNode().collectQueryBindings();</span>
+
+<span class="pc bpc" id="L59" title="2 of 4 branches missed.">            if ( bindings != null &amp;&amp; bindings.theta != null ) {</span>
+<span class="fc" id="L60">                bl.applyThetaInPlace(bindings.theta);</span>
+            }
+        }
+        else {
+<span class="fc" id="L64">            bl = getQueryVariables();</span>
+        }
+
+<span class="fc" id="L67">        return bl;</span>
+
+    }
+
+    /* Returns the ParentNode.
+     *
+     * Jude, I know you don't like getters/setters, but this is a place where they
+     * really help.  The HornSearchNode's parent must also be a HornSearchNode.
+     * We use the setParentNode method to enforce that restriction.
+     * &lt;p&gt;
+     * Also, a nice side effect is that Java allows you to change the
+     * return type of a overriden method.  SearchNode.getParentNode()
+     * returns a SearchNode.  However, here I know that the parentNode
+     * is a HornSearchNode, so I change the return type appropriately.
+     * Previous to this, you just did the typecast when you used it.  Now,
+     * the cast is located just in the getter.
+     *
+     * @return the parentNode
+     */
+    @Override
+    public HornSearchNode getParentNode() {
+<span class="fc" id="L88">        return (HornSearchNode) super.getParentNode();</span>
+    }
+
+    boolean isSolution() {
+<span class="pc bpc" id="L92" title="1 of 4 branches missed.">        return ( clause != null &amp;&amp; clause.isEmptyClause());</span>
+    }
+
+    @Override
+	public String toString() {
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        return (getParentNode() == null ? &quot;&quot; : &quot;parent -&gt; &quot;) + clause.toString();</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

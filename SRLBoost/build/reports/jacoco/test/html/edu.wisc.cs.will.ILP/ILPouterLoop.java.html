@@ -1,0 +1,1261 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ILPouterLoop.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">ILPouterLoop.java</span></div><h1>ILPouterLoop.java</h1><pre class="source lang-java linenums">/*
+ * Notes:
+ * 
+ *  isaStack: need to label ALL examples in each world
+ *            maybe have 2-3 worlds, with 1-2 blocks in each
+ *            and all (most?) data labeled
+ *  
+ *  me TODO
+ *     make sure ok if NO negs can be created (eg, since all data is labelled)
+ *      - hand edit file
+ *      why isnt isablock(X) :- support(X, Y)?
+ *      
+ *      small penalty for 'unused' vars?
+ *      
+ *      clean up printing of rules?
+ */
+package edu.wisc.cs.will.ILP;
+
+
+import edu.wisc.cs.will.Boosting.RDN.RegressionRDNExample;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.DataSetUtils.RegressionExample;
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.ResThmProver.HornClauseContext;
+import edu.wisc.cs.will.Utils.*;
+import edu.wisc.cs.will.Utils.condor.CondorFile;
+import edu.wisc.cs.will.Utils.condor.CondorFileReader;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+import edu.wisc.cs.will.stdAIsearch.SearchMonitor;
+import edu.wisc.cs.will.stdAIsearch.SearchStrategy;
+
+import java.io.*;
+import java.util.*;
+
+
+/*
+ * @author shavlik
+ *
+ * 
+ *
+ * VERSION 0.1 of the Wisconsin Inductive Logic Learner (WILL) system (name subject to change :-)
+ *
+ *	This class provides a mechanism for performing the traditional outer loop of ILP algorithms.
+ *	The basic process is as follows:
+ * 		1) do a standard ILP run
+ * 		2) repeat using some new seed(s) examples until some stopping criteria met
+ * 		3) return a set of clauses (a 'theory') as the final 'model'
+ * 
+ *  Some properties of this ILP algorithm:
+ *      1) examples can be weighted
+ *      2) both standard ILP heuristic search and a random-sampling method (RRR) can be performed
+ *      3) the Gleaner idea (see Gleaner.java) is used to keep not only the best rule for iteration, but also the best rule per interval of recall (eg, the best rule whose recall is between 0.50 and 0,.55).
+ *      4) on each cycle, multiple seed examples can be specified; a node (ie, a possible clause) needs to satisfy some fraction of the pos seeds and no more than some fraction of the negative seeds.  
+ *      5) during successive iterations of the outer ILP loop, the pos examples can be down weighted and the covered neg examples can be up weighted (eg, a boosting-like mechanism, though the code currently does not compute the wgts defined by the boosting algo, but that would be a straightforward extension).
+ *      6) implementation detail: in the inner loop, each node records the examples REJECTED at this node (this means that on any path to a node, examples are stored at no more than one node)
+ *      7) hash tables (Java's hash maps, actually) are used for efficiency (eg, compared to linear lookups in lists)
+ *      8) currently this code does NOT construct a &quot;bottom clause&quot; - instead if uses the multiple seed idea mentioned above to guide the search of candidate clauses
+ *      9) no Prolog is needed; everything needed is provided in a set of Java projects (of course this means the code is slower than, say, Aleph+YAP Prolog, but computers get faster every year :-)
+ *     10) as in Aleph and other ILP systems, arguments are typed (eg, 'human' and 'dog') to help control search; in this code the typing is hierarchical.
+ *     11) as in Aleph, there is the ability for users to define prune(node), by which the user can cut off search trees.  Related to this is the built-in capability to process &quot;intervals&quot; such as isInThisInterval(1, value, 5).  If the previous literal is already in a clause, there is no need to add isInThisInterval(2, value, 4), since the latter will always be true given the former.  Similarly, there is no need to include isInThisInterval(7, value, 9) since it will always be false.  See PruneILPsearchTree.java for more detials. 
+ * 
+ * 	Note that with Gleaner as the searchMonitor, can create a theory from just one std ILP run.
+ *	In this code, each std ILP run has its own Gleaner data structure, plus one Gleaner stores the best over ALL iterations.  
+ *  Several different ways of returning a theory are provided (to do), as are various ways of stopping the outer loop.
+ *  
+ *  No support for this code is promised nor implied.  Suggestions and bug fixes may be sent to shavlik@cs.wisc.edu but please do not expect a reply.
+ *  
+ *  This code was heavily influenced by experience with Ashwin Srinivasan's Aleph (www.comlab.ox.ac.uk/oucl/research/areas/machlearn/Aleph/)
+ *
+ *  to do: count resolutions in theorem proving and throw if some max-value exceeded?
+ *         add bottom clause code?
+ */
+public class ILPouterLoop {
+	private static final String systemName = &quot;WILL&quot;; // See comment above for explanation.
+   
+	public final LearnOneClause innerLoopTask;  // LearnOnClause performs the inner loop of ILP.
+
+	/* The state of the outer loop.
+     *
+     * Everything that should be checkpointed goes inside the ILPouterLoopState.  Variables
+     * defined in ILPouterLoop will not be checkpointed.
+     *
+     */
+	private final ILPouterLoopState outerLoopState;
+
+	private String workingDirectory;
+   
+    // The weight on covered example functionality was not compatible with the
+    // new example weighting system.  If this functionality is needed we will have
+    // to reimplement using a different approach than previously.  -Trevor
+
+<span class="fc" id="L92">    public  int            maxNumberOfCycles             = 100;   // Call the inner loop at most this many times.</span>
+<span class="fc" id="L93">	public  int            maxNumberOfClauses            = 100;   // Same as above EXCEPT only counts if a clause was learned.</span>
+<span class="fc" id="L94">    public  int            max_total_nodesExpanded       = Integer.MAX_VALUE;</span>
+<span class="fc" id="L95">	public  int            max_total_nodesCreated        = Integer.MAX_VALUE;</span>
+<span class="fc" id="L96">    public  int            numberPosSeedsToUse           = 1;</span>
+<span class="fc" id="L97">	private int            numberNegSeedsToUse           = 0;</span>
+
+    ///////////////////////////////////////////////////////////////////
+	// Parameters that are used when learning tree-structured theories.
+<span class="fc" id="L101">	private  boolean        learningTreeStructuredTheory        = false;</span>
+<span class="fc" id="L102">	private int            maxNumberOfLiteralsAtAnInteriorNode =  2; // In calls to LearnOneClause, this is how much we are allowed to extend the current clause.  Initially it is the max body length, but since recursive calls extend the clause at the parent, we need to add this much to the current number of literals on the path to the current node (not counting the length of the tests that evaluate to false, i.e., for the FALSE branches).</span>
+<span class="fc" id="L103">    private int            maxTreeDepthInLiterals              = 25; // This is the sum of literals at all the nodes in a path from root to leaf, not just the number of interior nodes.</span>
+<span class="fc" id="L104">    private int			   maxTreeDepthInInteriorNodes         =  5; // Maximum height/depth of the tree in terms of interior nodes in the tree. NOTE: One node in the tree may have multiple literals.</span>
+<span class="fc" id="L105">    private boolean		   learnMLNTheory					   = false;</span>
+    ///////////////////////////////////////////////////////////////////
+
+    // All of the fields below are now in the ILPouterLoopState object.
+	// Any information needed to restart a run in the middle (from the chkpt)
+    // must reside in the ILPouterLoopState object.
+	//
+	// There are accessors for all of these variable. For example, to get and set
+	// numberOfCycles, there is now a getNumberOfCycles() and
+	// setNumberOfCycles().
+	// However, if you still want to access this variable directly, you can use
+	// 'outerLoopState.numberOfCycles'.
+
+    // These two allow one to randomly select a subset of the modes for each cycle.  (Added by JWS 6/24/10.)
+	private Set&lt;PredicateNameAndArity&gt; holdBodyModes;
+
+    public ILPouterLoop(String workingDir, String prefix, String[] args,
+                        SearchStrategy strategy, ScoreSingleClause scorer, SearchMonitor monitor,
+                        HornClauseContext context, boolean deferLoadingExamples) throws IOException {
+<span class="fc" id="L124">        this(workingDir, prefix, </span>
+<span class="fc" id="L125">                getBufferedReaderFromString(ILPouterLoop.getInputArgWithDefaultValue(args, 0, &quot;pos.txt&quot;)),</span>
+<span class="fc" id="L126">                getBufferedReaderFromString(ILPouterLoop.getInputArgWithDefaultValue(args, 1, &quot;neg.txt&quot;)),</span>
+<span class="fc" id="L127">                getBufferedReaderFromString(ILPouterLoop.getInputArgWithDefaultValue(args, 2, &quot;bk.txt&quot;)),</span>
+<span class="fc" id="L128">                getBufferedReaderFromString(ILPouterLoop.getInputArgWithDefaultValue(args, 3, &quot;facts.txt&quot;)),</span>
+                strategy, scorer, monitor, context, deferLoadingExamples);
+<span class="fc" id="L130">    }</span>
+
+    private ILPouterLoop(String workingDir, String prefix, Reader posExamplesReader, Reader negExamplesReader, Reader backgroundReader, Reader factsReader,
+<span class="fc" id="L133">                         SearchStrategy strategy, ScoreSingleClause scorer, SearchMonitor monitor, HornClauseContext context, boolean deferLoadingExamples) {</span>
+
+<span class="fc" id="L135">       outerLoopState = new ILPouterLoopState();</span>
+       
+<span class="fc" id="L137">       setWorkingDirectory(workingDir);</span>
+
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">       if ( prefix == null ) {</span>
+            // Oops, prefix was null.  This just means we probably used the shorter constructors.
+            // Just extract it from the working directory name.
+<span class="nc" id="L142">            prefix = new CondorFile(workingDirectory).getName();</span>
+        }
+
+<span class="fc" id="L145">        Utils.println(&quot;\n% Welcome to the &quot; + systemName + &quot; ILP/SRL systems.\n&quot;);</span>
+
+        // LearnOneClause performs the inner loop of ILP.
+		// TODO maybe we should send in the full outer loop instance (ie, this).
+
+<span class="fc" id="L150">		innerLoopTask = new LearnOneClause(workingDir, prefix, posExamplesReader, negExamplesReader, backgroundReader, factsReader, strategy, scorer, monitor, context, deferLoadingExamples);</span>
+
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (monitor instanceof Gleaner) {</span>
+<span class="fc" id="L153">            setGleaner((Gleaner) monitor);</span>
+        }
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        else if (monitor != null) {</span>
+<span class="nc" id="L156">            Utils.waitHere(&quot;The Search Monitor is not an instance of Gleaner: &quot; + monitor);</span>
+        } 
+<span class="fc" id="L158">    }</span>
+	
+	private String getFoldInfoString() {
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">		if (getCurrentFold() == -1) { return &quot;&quot;; }</span>
+<span class="nc" id="L162">		return &quot;_fold&quot; + getCurrentFold();</span>
+	}
+
+	private int getCurrentFold() {
+<span class="fc" id="L166">        return outerLoopState.getCurrentFold();</span>
+    }
+	
+	private static BufferedReader getBufferedReaderFromString(String string) throws IOException {
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">		if (string == null) { return null; }</span>
+<span class="fc" id="L171">		return new NamedReader(new CondorFileReader(string), string);</span>
+	}
+	
+	// Needed to get around need that &quot;constructor call must be the first statement in a constructor.&quot;
+	private static String getInputArgWithDefaultValue(String[] args, int N, String defaultString) {
+<span class="fc" id="L176">		Utils.println(&quot;\n% getInputArgWithDefaultValue: args=&quot; + Arrays.asList(args) + &quot;\n%  for N=&quot; + N + &quot;: args[N]=&quot; + args[N]);</span>
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">		return (args.length &lt; (N + 1) ? defaultString : args[N]);</span>
+	}
+
+	public void setMinPrecisionOfAcceptableClause(double precision) {
+<span class="pc bpc" id="L181" title="2 of 4 branches missed.">		if (precision &lt; 0.0 || precision &gt; 1.0) {</span>
+<span class="nc" id="L182">			Utils.error(&quot;Min precision (&quot; + precision + &quot;) must be in [0,1].&quot;);</span>
+		}
+<span class="fc" id="L184">		innerLoopTask.setMinPrecision(precision);</span>
+<span class="fc" id="L185">	}</span>
+
+	public void setMaxRecallOfAcceptableClause(double recall) {
+<span class="pc bpc" id="L188" title="2 of 4 branches missed.">		if (recall &lt; 0.0 || recall &gt; 1.0) {</span>
+<span class="nc" id="L189">			Utils.error(&quot;Max recall (&quot; + recall + &quot;) must be in [0,1].&quot;);</span>
+		}
+<span class="fc" id="L191">		innerLoopTask.setMaxRecall(recall);</span>
+<span class="fc" id="L192">	}</span>
+
+	public void setMaxBodyLength(int maxBodyLength) {
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">		if (maxBodyLength &lt; 0) {</span>
+<span class="nc" id="L196">			Utils.error(&quot;Length (&quot; + maxBodyLength + &quot;) must be a non-negative integer.&quot;);</span>
+		}
+		// Recall that in tree-structured runs, the length of all parent nodes is also included here.
+<span class="fc bfc" id="L199" title="All 2 branches covered.">		innerLoopTask.maxBodyLength = Math.min(maxBodyLength, learningTreeStructuredTheory ? maxTreeDepthInLiterals : Integer.MAX_VALUE);</span>
+<span class="fc" id="L200">	}</span>
+
+	private boolean isaGoodPosSeed(int index) { // If good, then set it as the positive seed to use.
+<span class="nc bnc" id="L203" title="All 4 branches missed.">		if (index &lt; 0 || index &gt;= getNumberOfPosExamples()) {</span>
+<span class="nc" id="L204">			return false;</span>
+		} // Simply skip over indices that are out of bounds.
+<span class="nc" id="L206">		Example chosenExample = innerLoopTask.getPosExamples().get(index);</span>
+<span class="nc bnc" id="L207" title="All 4 branches missed.">		if ((getSeedPosExamplesUsed() == null || !getSeedPosExamplesUsed().contains(chosenExample)) &amp;&amp; // Make sure that this wasn't previously a seed.</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">			!getCoveredPosExamples().contains(chosenExample)) { // Make sure this is an uncovered seed.</span>
+<span class="nc" id="L209">			int[] posSeeds = new int[1];</span>
+<span class="nc" id="L210">			posSeeds[0] = index;</span>
+<span class="nc" id="L211">			Utils.println(MessageType.ILP_OUTERLOOP, &quot;% Have selected pos example #&quot; + Utils.comma(index) + &quot; as the next seed: &quot; + chosenExample);</span>
+<span class="nc" id="L212">			innerLoopTask.selectTheseSeedsByIndex(posSeeds, getSeedPosExamplesUsed(), getSeedNegExamplesUsed()); // Use no negative seeds.</span>
+<span class="nc" id="L213">			return true;</span>
+		}
+<span class="nc" id="L215">		return false;</span>
+	}
+
+	private boolean collectMultipleSeeds() {
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">		if (numberPosSeedsToUse &lt; 1) { numberPosSeedsToUse = 1; }</span>
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">		if (numberNegSeedsToUse &lt; 0) { numberNegSeedsToUse = 0; }</span>
+		
+		// TODO - figure out how to report wrt to the flip-flop state.
+<span class="fc bfc" id="L223" title="All 2 branches covered.">		if (numberPosSeedsToUse &gt; getNumberOfPosExamples()) { Utils.warning(&quot;% Have only &quot; + Utils.comma(getNumberOfPosExamples()) + &quot; positive examples, so cannot choose &quot; + Utils.comma(numberPosSeedsToUse) + &quot; of them.&quot;); }</span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">		if (numberNegSeedsToUse &gt; getNumberOfNegExamples()) { Utils.warning(&quot;% Have only &quot; + Utils.comma(getNumberOfNegExamples()) + &quot; negative examples, so cannot choose &quot; + Utils.comma(numberNegSeedsToUse) + &quot; of them.&quot;); }</span>
+		
+<span class="fc" id="L226">		numberPosSeedsToUse = Math.min(numberPosSeedsToUse, getNumberOfPosExamples());</span>
+<span class="fc" id="L227">		numberNegSeedsToUse = Math.min(numberNegSeedsToUse, getNumberOfNegExamples());</span>
+		
+<span class="fc" id="L229">		int[] posSeeds = new int[numberPosSeedsToUse];</span>
+<span class="fc" id="L230">		int[] negSeeds = new int[numberNegSeedsToUse];</span>
+		
+<span class="fc" id="L232">		int posCounter = 0;</span>
+<span class="fc" id="L233">		int negCounter = 0;</span>
+<span class="fc" id="L234">		Set&lt;Integer&gt; posChosen = new HashSet&lt;&gt;(4);</span>
+<span class="fc" id="L235">		Set&lt;Integer&gt; negChosen = new HashSet&lt;&gt;(4);</span>
+		
+		// Could be really slow if selecting nearly all of the examples, but we're limiting this to 10X tries, so don't worry about it.
+        // It still looking, grab in order.
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">		if (posCounter &lt; numberPosSeedsToUse) {</span>
+<span class="fc" id="L240">			int i = 0;</span>
+			// Use the 1.1 to handle the case of not getting enough due to sampling effects.  This fraction is ratio of SEEDS_NEEDED over SEEDS_TO_SELECT_FROM.
+<span class="fc" id="L242">			double fraction = 1.1 * (numberPosSeedsToUse - posCounter) / (double) (innerLoopTask.getPosExamples().size() - getCoveredPosExamples().size() - posCounter);</span>
+<span class="fc bfc" id="L243" title="All 2 branches covered.">			for (Example pos : innerLoopTask.getPosExamples()) { // Would be nice to more cleanly randomly walk through the examples, but after the first cycle, will at least skip those already covered.</span>
+<span class="pc bpc" id="L244" title="1 of 6 branches missed.">				if (Utils.random() &lt; fraction &amp;&amp; !getCoveredPosExamples().contains(pos) &amp;&amp; !posChosen.contains(i)) {</span>
+<span class="fc" id="L245">					posChosen.add(i);</span>
+<span class="fc" id="L246">					posSeeds[posCounter++] = i;</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">					if (posCounter &gt;= numberPosSeedsToUse) { break; }</span>
+				}
+<span class="fc" id="L249">				i++;</span>
+<span class="fc" id="L250">			}</span>
+		}
+
+<span class="pc bpc" id="L253" title="1 of 2 branches missed.">        if (negCounter &lt; numberNegSeedsToUse) {</span>
+<span class="nc" id="L254">			int i = 0; // See comment above.</span>
+<span class="nc" id="L255">			double fraction = 1.1 * (numberNegSeedsToUse - negCounter) / (double) (innerLoopTask.getNegExamples().size() - outerLoopState.getNegExamplesUsedAsSeeds().size() - negCounter);</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">			for (Example neg : innerLoopTask.getNegExamples()) {</span>
+<span class="nc bnc" id="L257" title="All 6 branches missed.">				if (Utils.random() &lt; fraction &amp;&amp; !getNegExamplesUsedAsSeeds().contains(neg) &amp;&amp; !negChosen.contains(i)) {</span>
+<span class="nc" id="L258">					negChosen.add(i);</span>
+<span class="nc" id="L259">					negSeeds[negCounter++] = i;</span>
+<span class="nc" id="L260">					getNegExamplesUsedAsSeeds().add(neg); // TODO - when done using all the negative seeds, should reset to use all again. </span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">					if (negCounter &gt;= numberNegSeedsToUse) { break; }</span>
+				}
+<span class="nc" id="L263">				i++;</span>
+<span class="nc" id="L264">			}</span>
+		}
+		// If arrays still not full, shorten them.
+<span class="fc bfc" id="L267" title="All 2 branches covered.">		if (posCounter &lt; numberPosSeedsToUse) {</span>
+<span class="fc" id="L268">			int[] posSeedsShorter = new int[Math.max(0, posCounter)];</span>
+<span class="fc" id="L269">            System.arraycopy(posSeeds, 0, posSeedsShorter, 0, posCounter);</span>
+<span class="fc" id="L270">			posSeeds = posSeedsShorter;</span>
+		}
+<span class="pc bpc" id="L272" title="1 of 2 branches missed.">		if (negCounter &lt; numberNegSeedsToUse) {</span>
+<span class="nc" id="L273">			int[] negSeedsShorter = new int[Math.max(0, negCounter)];</span>
+<span class="nc" id="L274">            System.arraycopy(negSeeds, 0, negSeedsShorter, 0, negCounter);</span>
+<span class="nc" id="L275">			negSeeds = negSeedsShorter;</span>
+<span class="nc" id="L276">			   getNegExamplesUsedAsSeeds().clear(); // If ran short on negative seeds, allow old ones to be used again (BUG: should add more now, but live with one cycle with a shortage of negative seeds).</span>
+		}
+<span class="fc" id="L278">		int maxToPrint = 100;</span>
+<span class="pc bpc" id="L279" title="2 of 6 branches missed.">		if (posSeeds.length &gt; 0) { Utils.print(&quot;\n% Have these &quot; + Utils.comma(posSeeds.length) + &quot; positive seeds:&quot;); for (int i = 0; i &lt; Math.min(maxToPrint, posSeeds.length); i++) Utils.print(&quot; &quot; + posSeeds[i]); if (posSeeds.length &gt; maxToPrint) Utils.println(&quot; ...&quot;); else Utils.println(&quot;&quot;); }</span>
+<span class="pc bpc" id="L280" title="5 of 6 branches missed.">		if (negSeeds.length &gt; 0) { Utils.print(&quot;\n% Have these &quot; + Utils.comma(negSeeds.length) + &quot; negative seeds:&quot;); for (int i = 0; i &lt; Math.min(maxToPrint, negSeeds.length); i++) Utils.print(&quot; &quot; + negSeeds[i]); if (negSeeds.length &gt; maxToPrint) Utils.println(&quot; ...&quot;); else Utils.println(&quot;&quot;); }</span>
+<span class="fc" id="L281">		innerLoopTask.selectTheseSeedsByIndex(posSeeds, negSeeds, false, getSeedPosExamplesUsed(), getSeedNegExamplesUsed()); // OK if reused (e.g., if not covered or if a negative seed).</span>
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">		return (posCounter &gt; 0); // Need at least one positive seed.</span>
+	}
+
+    /* Executes the outer ILP loop.
+     *
+     * This will attempt to find one or more clauses that cover the positive and
+     * negative examples.  executeOuterLoop will completely reset the search and
+     * start from scratch.
+     *
+     * @return The learned theory.
+     * @throws edu.wisc.cs.will.stdAIsearch.SearchInterrupted Thrown if the search is interrupted prior
+     * to completion.
+     */
+	public Theory executeOuterLoop() throws SearchInterrupted {
+<span class="fc" id="L296">        resetAll();</span>
+<span class="fc" id="L297">        ILPSearchAction action = innerLoopTask.fireOuterLoopStarting(this);</span>
+
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">        if (action == ILPSearchAction.PERFORM_LOOP) {</span>
+
+            // If no body modes, no need to run.
+<span class="pc bpc" id="L302" title="1 of 2 branches missed.">            if (Utils.getSizeSafely(innerLoopTask.bodyModes) &lt; 1) {</span>
+<span class="nc" id="L303">				Utils.waitHere(&quot;Have no body modes.&quot;);</span>
+<span class="nc" id="L304">				return new Theory(innerLoopTask.getStringHandler());</span>
+            }
+
+<span class="fc" id="L307">            boolean stoppedBecauseNoMoreSeedsToTry         = false;</span>
+<span class="fc" id="L308">            boolean stoppedBecauseTreeStructuredQueueEmpty = false;</span>
+
+<span class="pc bpc" id="L310" title="1 of 4 branches missed.">            if (learningTreeStructuredTheory &amp;&amp; outerLoopState.queueOfTreeStructuredLearningTasksIsEmpty()) {</span>
+<span class="nc" id="L311">                stoppedBecauseTreeStructuredQueueEmpty = true;</span>
+<span class="nc" id="L312">                Utils.waitHere(&quot;Have learningTreeStructuredTheory=true but stack of tasks is empty (or equal to null).&quot;);</span>
+            }
+
+<span class="fc" id="L315">            SingleClauseNode savedBestNode = null; // When learning tree-structured models, we need to remember the node learned at the parent.</span>
+            long start;
+            boolean foundUncoveredPosSeed;
+            // Stop when this fraction of the positive examples are covered by some acceptable clause.
+
+            // TODO(@hayesall): `minFractionOfPosCoveredToStop` is always `0.9`, this might be an interesting parameter to tune, particularly with more boosted trees.
+<span class="fc" id="L321">            double minFractionOfPosCoveredToStop = 0.90;</span>
+<span class="pc bpc" id="L322" title="1 of 4 branches missed.">            while (!stoppedBecauseNoMoreSeedsToTry &amp;&amp; !stoppedBecauseTreeStructuredQueueEmpty &amp;&amp;</span>
+<span class="fc bfc" id="L323" title="All 2 branches covered.">                    getNumberOfLearnedClauses() &lt; maxNumberOfClauses &amp;&amp;</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">                    getNumberOfCycles() &lt; maxNumberOfCycles &amp;&amp;</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">                    getFractionOfPosCovered() &lt; minFractionOfPosCoveredToStop &amp;&amp;</span>
+<span class="pc bpc" id="L326" title="1 of 2 branches missed.">                    getTotal_nodesConsidered() &lt; max_total_nodesExpanded &amp;&amp;</span>
+<span class="pc bpc" id="L327" title="1 of 2 branches missed.">                    getTotal_nodesCreated() &lt; max_total_nodesCreated &amp;&amp;</span>
+<span class="pc bpc" id="L328" title="1 of 2 branches missed.">                    getClockTimeUsedInMillisec() &lt; getMaximumClockTimeInMillisec()</span>
+                   ) {
+
+<span class="fc" id="L331">                start = System.currentTimeMillis();</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">                if (learningTreeStructuredTheory) {</span>
+<span class="fc" id="L333">                    innerLoopTask.resetAllForReal(); // Clear OPEN and CLOSED (and other things).</span>
+<span class="fc" id="L334">                    outerLoopState.setCurrentTreeLearningTask(outerLoopState.popQueueOfTreeStructuredLearningTasks()); // Set in outerloopState class instead of here?</span>
+<span class="fc" id="L335">                    savedBestNode = outerLoopState.getCurrentTreeLearningTask().getCreatingNode();</span>
+<span class="fc" id="L336">                    clearSeedPosExamplesUsed();</span>
+<span class="fc" id="L337">                    clearSeedNegExamplesUsed();</span>
+<span class="fc" id="L338">                    innerLoopTask.setPosExamples(   outerLoopState.getCurrentTreeLearningTask().getPosExamples()); // Need to do these AFTER the setMinPosCoverage since that might be a fraction.</span>
+<span class="fc" id="L339">                    innerLoopTask.setNegExamples(   outerLoopState.getCurrentTreeLearningTask().getNegExamples());</span>
+<span class="fc" id="L340">                    innerLoopTask.setMinPosCoverage(outerLoopState.getOverallMinPosWeight()); // Even when we have fewer examples, we want the minPosWeight to be that from the first call.</span>
+                    
+<span class="fc bfc" id="L342" title="All 2 branches covered.">                    if (savedBestNode != null) { // Have to recompute this because the examples have changed.</span>
+<span class="fc" id="L343">                        Utils.println(&quot;\n% Working on expanding this node: '&quot; + savedBestNode + &quot;'&quot;);</span>
+<span class="fc" id="L344">                        ((LearnOneClause)savedBestNode.task).currentStartingNode = savedBestNode.getStartingNodeForReset(); // Only setting this while resetting the score for savedBestNode.</span>
+<span class="fc" id="L345">                        savedBestNode.resetAssumingAllExamplesCovered();</span>
+<span class="fc" id="L346">                        savedBestNode.setDontAddMeToOPEN(false);</span>
+<span class="fc" id="L347">                        innerLoopTask.scorer.scoreThisNode(savedBestNode);</span>
+<span class="fc" id="L348">                        setMaxBodyLength(Math.min(maxTreeDepthInLiterals, savedBestNode.bodyLength() + maxNumberOfLiteralsAtAnInteriorNode));</span>
+                    } else {
+<span class="fc" id="L350">                        setMaxBodyLength(Math.min(maxTreeDepthInLiterals, maxNumberOfLiteralsAtAnInteriorNode));</span>
+                    }
+<span class="fc" id="L352">					innerLoopTask.currentStartingNode = savedBestNode;</span>
+                }
+
+<span class="fc" id="L355">                setNumberOfCycles( getNumberOfCycles() + 1 );</span>
+
+<span class="fc" id="L357">                Stopwatch stopwatch = new Stopwatch();</span>
+
+                // WE NEED TO PICK A NEW SET OF SEEDS EACH TIME SINCE SEEDS CHOSEN AT THE ROOT WILL FOLLOW VARIOUS PATHS THROUGH THE TREE.  if (!foundUncoveredPosSeed || !learningTreeStructuredTheory) { // If tree-structured task, we want to use the same seeds for the full tree (otherwise maybe no [new] seeds reach the current interior node).
+				// Specify the specific seeds to use if requested.
+<span class="fc" id="L361">				foundUncoveredPosSeed = false;</span>
+<span class="pc bpc" id="L362" title="3 of 4 branches missed.">				if (numberPosSeedsToUse &gt; 1 || numberNegSeedsToUse &gt; 0) { foundUncoveredPosSeed = collectMultipleSeeds(); }</span>
+
+                // Otherwise randomly select one positive seed be used.
+<span class="fc" id="L365">				int tries = 0;</span>
+<span class="pc bpc" id="L366" title="3 of 4 branches missed.">				while (!foundUncoveredPosSeed &amp;&amp; tries++ &lt; 1000) { // 1000 might be low if a very large number of pos ex's, but if hard to find, grabbing seeds in numerical order (next step) should be fine.</span>
+<span class="nc" id="L367">					int index = Utils.random0toNminus1(getNumberOfPosExamples());</span>
+<span class="nc" id="L368">					foundUncoveredPosSeed = isaGoodPosSeed(index);</span>
+<span class="nc" id="L369">				}</span>
+				// If still no luck, walk through in order until an uncovered seed is found. Should always be able to find an uncovered seed because we know fraction covered less than 1.0 ...
+<span class="pc bpc" id="L371" title="1 of 2 branches missed.">				if (!foundUncoveredPosSeed) {</span>
+<span class="nc" id="L372">					int randomOffset = Utils.random0toNminus1(getNumberOfPosExamples());  // Start at a random location in the array, and do a &quot;wrap around&quot; walk through the values.</span>
+<span class="nc bnc" id="L373" title="All 2 branches missed.">					for (int index = 0; index &lt; getNumberOfPosExamples(); index++) {</span>
+<span class="nc" id="L374">						int indexToUse = (randomOffset + index)	% getNumberOfPosExamples();</span>
+<span class="nc" id="L375">						foundUncoveredPosSeed = isaGoodPosSeed(indexToUse);</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">                        if (foundUncoveredPosSeed) { break; }</span>
+					}
+				}
+
+<span class="pc bpc" id="L380" title="1 of 2 branches missed.">				if (!foundUncoveredPosSeed) { // Since there is a minimum coverage on the best clause, some seeds won't be covered and we might run out of seeds before meeting some other termination criterion.</span>
+<span class="nc" id="L381">                    stoppedBecauseNoMoreSeedsToTry = true;</span>
+                } else {
+                    // Do the ILP inner loop.
+                    //    First clear Gleaner and set up a new Gleaner set (i.e., will keep best rules PER CYCLE).
+<span class="fc" id="L385">                    Gleaner theGleaner = (Gleaner) innerLoopTask.searchMonitor;</span>
+<span class="fc" id="L386">                    theGleaner.clearBestNode();</span>
+
+<span class="fc" id="L388">                    innerLoopTask.callerName = &quot;outerLoop #&quot; + getNumberOfCycles() + getFoldInfoString();</span>
+<span class="fc" id="L389">                    theGleaner.setCurrentMarker(innerLoopTask.callerName);</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">                    if (!learningTreeStructuredTheory) { innerLoopTask.stringHandler.resetVarCounters(); } // When learning a tree-structured theory, we need a consistent set of variables.</span>
+<span class="fc" id="L391">                    innerLoopTask.checkIfAcceptableClausePossible();</span>
+
+<span class="pc bpc" id="L393" title="1 of 2 branches missed.">                    if (getMaximumClockTimeInMillisec() &lt; Long.MAX_VALUE) {</span>
+<span class="fc" id="L394">                        double denominator = 1.0; // If there is a time limit, leave some for later cycles, but allow at least 25% of the time for this one.</span>
+<span class="pc bpc" id="L395" title="2 of 4 branches missed.">                        if (maxNumberOfCycles &gt; 1 &amp;&amp; getMaximumClockTimeInMillisec() != Long.MAX_VALUE) {</span>
+<span class="fc" id="L396">                            denominator = Math.max(1.0, Math.min(4.0, maxNumberOfCycles / (1 + getNumberOfCycles())));</span>
+                        }
+<span class="fc" id="L398">                        long innerLoopTimeLimit = (long) (getTimeAvailableInMillisec() / denominator);</span>
+<span class="fc" id="L399">                        innerLoopTask.setMaximumClockTimePerIterationInMillisec(innerLoopTimeLimit);</span>
+<span class="fc" id="L400">                    } else {</span>
+<span class="nc" id="L401">                        innerLoopTask.setMaximumClockTimePerIterationInMillisec(getMaximumClockTimeInMillisec());</span>
+                    }
+
+<span class="fc" id="L404">                    ((ChildrenClausesGenerator) innerLoopTask.childrenGenerator).countOfPruningDueToVariantChildren = 0;</span>
+
+                    // If we are learning a tree-structured theory, then we continue where we left off.
+<span class="fc bfc" id="L407" title="All 2 branches covered.">                    innerLoopTask.performSearch(learningTreeStructuredTheory ? savedBestNode : null);</span>
+
+                    // Want limits on (and statistics about) the full ILP search as well.
+<span class="fc" id="L410">                    setTotal_nodesConsidered(getTotal_nodesConsidered() + innerLoopTask.getNodesConsidered());</span>
+<span class="fc" id="L411">                    setTotal_nodesCreated(   getTotal_nodesCreated()    + innerLoopTask.getNodesCreated());</span>
+<span class="fc" id="L412">                    setTotal_nodesNotAddedToOPENsinceMaxScoreTooLow(    getTotal_nodesNotAddedToOPENsinceMaxScoreTooLow()     + innerLoopTask.nodesNotAddedToOPENsinceMaxScoreTooLow);</span>
+<span class="fc" id="L413">                    setTotal_nodesRemovedFromOPENsinceMaxScoreNowTooLow(getTotal_nodesRemovedFromOPENsinceMaxScoreNowTooLow() + innerLoopTask.nodesRemovedFromOPENsinceMaxScoreNowTooLow);</span>
+<span class="fc" id="L414">                    setTotal_countOfPruningDueToVariantChildren(getTotal_countOfPruningDueToVariantChildren() + ((ChildrenClausesGenerator) innerLoopTask.childrenGenerator).countOfPruningDueToVariantChildren);</span>
+                    // Report what happened (TODO have an output 'results' file).
+
+                    // TODO(@hayesall): `SingleClauseNode bestNode = theGleaner.bestNode;`
+<span class="fc" id="L418">                    SingleClauseNode bestNode = theGleaner.bestNode;</span>
+                    
+<span class="fc" id="L420">                    Utils.println(&quot;\n% The best node found: &quot; + bestNode); // TEMP</span>
+                    
+<span class="pc bpc" id="L422" title="1 of 4 branches missed.">                    if (bestNode != null &amp;&amp; bestNode != savedBestNode) { // Also need to check to make sure we didn't simply return the previous root when doing tree-structured learning.</span>
+<span class="fc" id="L423">                        Utils.println(&quot;\n% The best node found: &quot; + bestNode);</span>
+<span class="fc" id="L424">                        List&lt;Example&gt; coveredPosExamplesThisCycle = innerLoopTask.collectPosExamplesCovered(bestNode);</span>
+<span class="fc" id="L425">                        List&lt;Example&gt; coveredNegExamplesThisCycle = innerLoopTask.collectNegExamplesCovered(bestNode);</span>
+<span class="fc" id="L426">                        int newlyCoveredPosExamples = 0;</span>
+<span class="fc" id="L427">                        int newlyCoveredNegExamples = 0;</span>
+<span class="fc" id="L428">                        int coveredPosExamplesCount = Utils.getSizeSafely(coveredPosExamplesThisCycle);</span>
+<span class="fc" id="L429">                        int coveredNegExamplesCount = Utils.getSizeSafely(coveredNegExamplesThisCycle);</span>
+
+<span class="pc bpc" id="L431" title="1 of 2 branches missed.">                        if (coveredPosExamplesCount &gt; 0) {</span>
+<span class="fc bfc" id="L432" title="All 2 branches covered.">                            for (Example ex : coveredPosExamplesThisCycle) {</span>
+                                // Utils.println(&quot;   covered pos: &quot; + ex);
+<span class="fc bfc" id="L434" title="All 2 branches covered.">                                if (!getCoveredPosExamples().contains(ex)) {</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">                                    if (!learningTreeStructuredTheory) { // When learning trees we don't need to count coverings by possibly overlapping rules.</span>
+<span class="fc" id="L436">                                        getCoveredPosExamples().add(ex);</span>
+<span class="fc" id="L437">                                        setNumberOfPosExamplesCovered(getNumberOfPosExamplesCovered() + 1); // An awkward way to increment ...</span>
+                                    }
+<span class="fc" id="L439">                                    newlyCoveredPosExamples++;</span>
+                                }
+<span class="fc" id="L441">                            }</span>
+                        }
+<span class="pc bpc" id="L443" title="1 of 2 branches missed.">                        if (coveredNegExamplesCount &gt; 0) {</span>
+<span class="nc bnc" id="L444" title="All 2 branches missed.">                            for (Example ex : coveredNegExamplesThisCycle) {</span>
+                                // Utils.println(&quot; covered neg: &quot; + ex);
+<span class="nc bnc" id="L446" title="All 2 branches missed.">                                if (!getCoveredNegExamples().contains(ex)) {</span>
+<span class="nc bnc" id="L447" title="All 2 branches missed.">                                    if (!learningTreeStructuredTheory) {  // See comment above.</span>
+<span class="nc" id="L448">                                        getCoveredNegExamples().add(ex);</span>
+<span class="nc" id="L449">                                        setNumberOfNegExamplesCovered(getNumberOfNegExamplesCovered() + 1); // An awkward way to increment ...</span>
+                                    }
+<span class="nc" id="L451">                                    newlyCoveredNegExamples++;</span>
+                                }
+<span class="nc" id="L453">                            }</span>
+                        }
+
+                        // The following line of code allowed covered examples to be reweighted on the fly during theory search.
+                        //
+                        // While an interesting idea, there are all sorts of problems the way you implemented it
+                        // (even in the old map-based weight implementation), the biggest being that you never retain
+                        // their original weights, so post-learning scoring would have been wacky.  Covered examples
+                        // would have been down weighted in the final coverage scores...this could happen on both
+                        // negative and positive examples, so it would be hard to say exactly what the effect would
+                        // be, but it wouldn't have been the expected final score.
+                        //
+                        // I am commenting it out for now, but we can re-implement later if desired.
+                        // -Trevor
+
+<span class="pc bpc" id="L468" title="1 of 2 branches missed.">                        if (coveredPosExamplesCount &lt; 1) {</span>
+<span class="nc" id="L469">                            Utils.warning(&quot;Have a bestNode that covers no positive examples.  That shouldn't happen.  Best node = &quot; + bestNode);</span>
+                        }
+<span class="fc" id="L471">                        setNumberOfLearnedClauses(getNumberOfLearnedClauses() + 1);</span>
+<span class="fc" id="L472">                        Clause newClause = new LearnedClause(innerLoopTask, bestNode, getNumberOfCycles(),</span>
+<span class="fc" id="L473">                                                             getNumberOfPosExamplesCovered(), coveredPosExamplesCount, newlyCoveredPosExamples,</span>
+<span class="fc" id="L474">                                                             getNumberOfPosExamples(), getNumberOfNegExamplesCovered(),  coveredNegExamplesCount,</span>
+<span class="fc" id="L475">                                                             newlyCoveredNegExamples, getNumberOfNegExamples());</span>
+
+<span class="fc bfc" id="L477" title="All 2 branches covered.">                        if (learningTreeStructuredTheory) {</span>
+
+<span class="fc" id="L479">                            TreeStructuredLearningTask       currentTask  = outerLoopState.getCurrentTreeLearningTask();</span>
+<span class="fc" id="L480">                            TreeStructuredTheoryInteriorNode interiorNode = currentTask.getNode();</span>
+<span class="fc" id="L481">                            interiorNode.setSearchNodeThatLearnedTheClause(bestNode); // Be sure to set this before the next call.</span>
+<span class="fc" id="L482">                            interiorNode.setNodeTestFromFullNodeTest(newClause);</span>
+                            // Set the task used to learn this node.
+<span class="fc" id="L484">                            bestNode.setStartingNodeForReset(innerLoopTask.currentStartingNode);</span>
+<span class="fc" id="L485">							Utils.println(&quot;\n% Expanding node at Level &quot; + interiorNode.getLevel() + &quot; with score = &quot; + Utils.truncate(currentTask.getScore(), 3) + &quot;.\n% Will extend: &quot; + interiorNode.getSearchNodeThatLearnedTheClause());</span>
+
+<span class="fc bfc" id="L487" title="All 2 branches covered.">							boolean atMaxDepth = (interiorNode.getLevel() &gt;= maxTreeDepthInInteriorNodes);</span>
+                            
+                            TreeStructuredTheoryNode trueBranch;
+                            TreeStructuredTheoryNode falseBranch;
+<span class="fc bfc" id="L491" title="All 4 branches covered.">                            boolean goodEnoughFitTrueBranch  = atMaxDepth || bestNode.acceptableScoreTrueBranch( outerLoopState.maxAcceptableNodeScoreToStop);</span>
+<span class="fc bfc" id="L492" title="All 4 branches covered.">                            boolean goodEnoughFitFalseBranch = atMaxDepth || bestNode.acceptableScoreFalseBranch(outerLoopState.maxAcceptableNodeScoreToStop);</span>
+
+<span class="fc" id="L494">                            List&lt;Example&gt; trueBranchPosExamples  = null;</span>
+<span class="fc" id="L495">                            List&lt;Example&gt; falseBranchPosExamples = null;</span>
+<span class="fc" id="L496">                            List&lt;Example&gt; trueBranchNegExamples  = null;</span>
+<span class="fc" id="L497">                            List&lt;Example&gt; falseBranchNegExamples = null;</span>
+
+<span class="fc" id="L499">                            double wgtedCountTrueBranchPos  = 0.0;</span>
+<span class="fc" id="L500">                            double wgtedCountTrueBranchNeg  = 0.0;</span>
+<span class="fc" id="L501">                            double wgtedCountFalseBranchPos = 0.0;</span>
+<span class="fc" id="L502">                            double wgtedCountFalseBranchNeg = 0.0;</span>
+
+<span class="fc" id="L504">                            List&lt;Example&gt; posEx = currentTask.getPosExamples();</span>
+<span class="fc" id="L505">                            List&lt;Example&gt; negEx = currentTask.getNegExamples();</span>
+
+                            // Since we are collecting 'extra labels' for leaf nodes, we need always to collect examples.
+<span class="pc bpc" id="L508" title="1 of 2 branches missed.">                            if (posEx != null) {</span>
+<span class="fc" id="L509">                                trueBranchPosExamples  = new ArrayList&lt;&gt;(8);</span>
+<span class="fc" id="L510">                                falseBranchPosExamples = new ArrayList&lt;&gt;(8);</span>
+<span class="fc bfc" id="L511" title="All 2 branches covered.">                                for (Example ex : posEx) {</span>
+<span class="fc bfc" id="L512" title="All 2 branches covered.">                                    if (bestNode.matchesThisExample(ex, true)) {</span>
+<span class="fc" id="L513">										trueBranchPosExamples.add(ex);</span>
+<span class="fc" id="L514">										wgtedCountTrueBranchPos += ex.getWeightOnExample();</span>
+                                    } else {
+<span class="fc" id="L516">										falseBranchPosExamples.add(ex);</span>
+<span class="fc" id="L517">										wgtedCountFalseBranchPos += ex.getWeightOnExample();</span>
+                                    }
+<span class="fc" id="L519">                                }</span>
+                            }
+                            // Since we are collecting 'extra labels' for leaf nodes, we need always to collect examples.
+<span class="pc bpc" id="L522" title="1 of 2 branches missed.">                            if (negEx != null) {</span>
+<span class="fc" id="L523">                                trueBranchNegExamples  = new ArrayList&lt;&gt;(8);</span>
+<span class="fc" id="L524">                                falseBranchNegExamples = new ArrayList&lt;&gt;(8);</span>
+<span class="pc bpc" id="L525" title="1 of 2 branches missed.">                                for (Example ex : negEx) {</span>
+<span class="nc bnc" id="L526" title="All 2 branches missed.">                                    if (bestNode.matchesThisExample(ex, false)) {</span>
+<span class="nc" id="L527">										trueBranchNegExamples.add(ex);</span>
+<span class="nc" id="L528">										wgtedCountTrueBranchNeg += ex.getWeightOnExample();</span>
+                                    } else {
+<span class="nc" id="L530">										falseBranchNegExamples.add(ex);</span>
+<span class="nc" id="L531">										wgtedCountFalseBranchNeg += ex.getWeightOnExample();</span>
+                                    }
+<span class="nc" id="L533">                                }</span>
+                            }
+
+							double meanTrue;
+
+<span class="fc bfc" id="L538" title="All 2 branches covered.">                            if (learnMLNTheory) {</span>
+<span class="fc" id="L539">                            	meanTrue = bestNode.mlnRegressionForTrue();</span>
+                            } else {
+<span class="fc" id="L541">                                meanTrue = bestNode.meanIfTrue();</span>
+                            }
+
+                            // We use 2.1 * getMinPosCoverage() here since we assume each branch needs to have getMinPosCoverage() (could get by with 2, but then would need a perfect split).
+                            // Since getLength() includes the head, we see if current length EXCEEDS the maxTreeDepthInLiterals.
+                            // Since 'maxTreeDepthInLiterals' includes bridgers, count them as well.
+<span class="fc bfc" id="L547" title="All 2 branches covered.">                            if (atMaxDepth) { Utils.println(&quot;%   Creating a TRUE-branch and FALSE-branch leaves because level = &quot;  + interiorNode.getLevel() + &quot; &gt;= &quot; + maxTreeDepthInInteriorNodes); }</span>
+							// If false, then sort by TOTAL score of the examples reaching that node.
+<span class="fc bfc" id="L549" title="All 4 branches covered.">                            if (atMaxDepth || goodEnoughFitTrueBranch ||</span>
+<span class="fc bfc" id="L550" title="All 2 branches covered.">                                newClause.getLength()   &gt;  maxTreeDepthInLiterals || // We use '&gt;' here since we don't count the head literal in depth.</span>
+<span class="fc bfc" id="L551" title="All 2 branches covered.">                                wgtedCountTrueBranchPos &lt;  2.1 * innerLoopTask.getMinPosCoverage() ||</span>
+<span class="pc bpc" id="L552" title="1 of 2 branches missed.">                                wgtedCountTrueBranchPos &lt;  outerLoopState.getOverallMinPosWeight()) {</span>
+                                
+
+<span class="fc bfc" id="L555" title="All 2 branches covered.">                                if (!atMaxDepth) {</span>
+<span class="fc bfc" id="L556" title="All 2 branches covered.">                                    if      (newClause.getLength()   &gt;  maxTreeDepthInLiterals)                  { Utils.println(&quot;%   Creating a TRUE-branch leaf because length = &quot; + newClause.getLength()   + &quot; &gt; &quot; + maxTreeDepthInLiterals); }</span>
+<span class="fc bfc" id="L557" title="All 2 branches covered.">                                    else if (wgtedCountTrueBranchPos &lt;  2.1 * innerLoopTask.getMinPosCoverage()) { Utils.println(&quot;%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = &quot;  + Utils.truncate(wgtedCountTrueBranchPos, 1) + &quot; &lt; 2.1 * minPosCov = &quot; + Utils.truncate(2.1 * innerLoopTask.getMinPosCoverage(), 1)); }</span>
+<span class="pc bpc" id="L558" title="1 of 2 branches missed.">                                    else if (wgtedCountTrueBranchPos &lt;  outerLoopState.getOverallMinPosWeight()) { Utils.println(&quot;%   Creating a TRUE-branch leaf because wgtedCountTrueBranchPos = &quot;  + Utils.truncate(wgtedCountTrueBranchPos, 1) + &quot; &lt; minPosWgt = &quot;       + Utils.truncate(outerLoopState.getOverallMinPosWeight(), 1)); }</span>
+<span class="pc bpc" id="L559" title="1 of 2 branches missed.">                                    else if (goodEnoughFitTrueBranch) 											 { Utils.println(&quot;%   Creating a TRUE-branch leaf because good enough fit since score &lt; &quot; +  outerLoopState.maxAcceptableNodeScoreToStop); }</span>
+                                }
+                                Term leaf;
+<span class="fc" id="L562">                                leaf = createLeafNodeFromCurrentExamples(meanTrue);</span>
+<span class="fc" id="L563">                                trueBranch = new TreeStructuredTheoryLeaf(wgtedCountTrueBranchPos, wgtedCountTrueBranchNeg, bestNode.getVarianceTrueBranch(), leaf, Example.makeLabel(trueBranchPosExamples));</span>
+<span class="fc" id="L564">                            } else {</span>
+                                // Have another learning task.
+<span class="fc" id="L566">                                TreeStructuredTheoryInteriorNode newTreeNode = new TreeStructuredTheoryInteriorNode(wgtedCountTrueBranchPos, wgtedCountTrueBranchNeg, null, null, null);</span>
+<span class="fc" id="L567">                                TreeStructuredLearningTask       newTask     = new TreeStructuredLearningTask(      trueBranchPosExamples,   trueBranchNegExamples, newTreeNode);</span>
+<span class="fc" id="L568">                                trueBranch = newTreeNode;</span>
+<span class="fc" id="L569">                                newTreeNode.setParent(interiorNode); // Need a back pointer in case we later make this interior node a leaf.</span>
+<span class="fc" id="L570">                                newTreeNode.setBoolPath(interiorNode.returnBoolPath()); newTreeNode.addToPath(true);// Set the path taken to this node</span>
+<span class="fc" id="L571">                                newTreeNode.setRegressionValueIfLeaf(meanTrue);</span>
+
+                                // Since elsewhere we negate the score, do so here as well.
+<span class="fc" id="L574">                                Utils.println(&quot;%   Creating a TRUE-branch interior node with wgtedCountTrueBranchPos = &quot; + Utils.truncate(wgtedCountTrueBranchPos, 1));</span>
+<span class="fc" id="L575">                                outerLoopState.addToQueueOfTreeStructuredLearningTasks(newTask, newTreeNode, bestNode, -bestNode.getVarianceTrueBranch(true));</span>
+                            }
+                            double meanFalse;
+
+<span class="fc bfc" id="L579" title="All 2 branches covered.">                            if (learnMLNTheory) {</span>
+<span class="fc" id="L580">                            	meanFalse = bestNode.mlnRegressionForFalse();</span>
+                            } else {
+<span class="fc" id="L582">                                meanFalse = bestNode.meanIfFalse();</span>
+                            }
+
+                            // No need to check max clause length (maxTreeDepthInLiterals) since that should have been checked at parent's call (since no literals added for FALSE branch).
+<span class="fc bfc" id="L586" title="All 4 branches covered.">                            if (atMaxDepth || goodEnoughFitFalseBranch ||</span>
+<span class="fc bfc" id="L587" title="All 2 branches covered.">                                wgtedCountFalseBranchPos &lt;  2.1 * innerLoopTask.getMinPosCoverage() ||</span>
+<span class="pc bpc" id="L588" title="1 of 2 branches missed.">                                wgtedCountFalseBranchPos &lt;  outerLoopState.getOverallMinPosWeight()) {</span>
+          
+                                Term leaf;
+<span class="fc" id="L591">                                leaf = createLeafNodeFromCurrentExamples(meanFalse);</span>
+
+
+<span class="fc bfc" id="L594" title="All 2 branches covered.">                                if (!atMaxDepth) {</span>
+<span class="pc bpc" id="L595" title="1 of 2 branches missed.">                                    if      (interiorNode.getLevel() &gt;= maxTreeDepthInInteriorNodes) { Utils.println(&quot;%   Creating a FALSE-branch leaf because level = &quot;  + interiorNode.getLevel() + &quot; &gt; &quot; + maxTreeDepthInInteriorNodes); }</span>
+<span class="fc bfc" id="L596" title="All 2 branches covered.">                                    else if (wgtedCountFalseBranchPos &lt;  2.1 * innerLoopTask.getMinPosCoverage()) { Utils.println(&quot;%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = &quot;  + Utils.truncate(wgtedCountFalseBranchPos, 1) + &quot; &lt; 2.1 * minPosCov = &quot; + Utils.truncate(2.1 * innerLoopTask.getMinPosCoverage(), 1)); }</span>
+<span class="pc bpc" id="L597" title="1 of 2 branches missed.">                                    else if (wgtedCountFalseBranchPos &lt;  outerLoopState.getOverallMinPosWeight()) { Utils.println(&quot;%   Creating a FALSE-branch leaf because wgtedCountFalseBranchPos = &quot;  + Utils.truncate(wgtedCountFalseBranchPos, 1) + &quot; &lt; minPosWgt = &quot;       + Utils.truncate(outerLoopState.getOverallMinPosWeight(), 1)); }</span>
+<span class="pc bpc" id="L598" title="1 of 2 branches missed.">                                    else if (goodEnoughFitFalseBranch) 									   		  { Utils.println(&quot;%   Creating a FALSE-branch leaf because good enough fit since score &lt; &quot; +  outerLoopState.maxAcceptableNodeScoreToStop); }</span>
+                                }
+
+<span class="fc" id="L601">                                falseBranch = new TreeStructuredTheoryLeaf(wgtedCountFalseBranchPos, wgtedCountFalseBranchNeg, bestNode.getVarianceFalseBranch(), leaf, Example.makeLabel(falseBranchPosExamples));</span>
+<span class="fc" id="L602">                            } else {</span>
+                                // Have another learning task.
+<span class="fc" id="L604">                                TreeStructuredTheoryInteriorNode newTreeNode = new TreeStructuredTheoryInteriorNode(wgtedCountFalseBranchPos, wgtedCountFalseBranchNeg, null, null, null);</span>
+<span class="fc" id="L605">                                TreeStructuredLearningTask       newTask     = new TreeStructuredLearningTask(      falseBranchPosExamples,   falseBranchNegExamples, newTreeNode);</span>
+                                // On the FALSE branch, we need to use the PARENT's node (since the latest node failed).  There should always be a parent, but play it safe here.
+                                // NOTE: we need to get the parent in the TREE and not in the LearnOneClause search.  I.e., bestNode might have more than 1 literal!  So can't do bestNode.getParentNode().
+                                // Also, need to get the TIME A TRUE BRANCH WAS TAKEN.
+<span class="fc" id="L609">                                TreeStructuredTheoryInteriorNode parentOfCurrentNode = interiorNode.getLastParentOnTrueBranch(interiorNode);</span>
+<span class="fc bfc" id="L610" title="All 2 branches covered.">                                SingleClauseNode parentSearchNode = (parentOfCurrentNode == null ? null : parentOfCurrentNode.getSearchNodeThatLearnedTheClause());</span>
+<span class="fc" id="L611">                                falseBranch = newTreeNode;</span>
+<span class="fc" id="L612">                                newTreeNode.setParent(interiorNode); // Need a back pointer in case we later make this interior node a leaf.</span>
+<span class="fc" id="L613">                                newTreeNode.setBoolPath(interiorNode.returnBoolPath()); newTreeNode.addToPath(false);// Set the path taken to this node</span>
+
+<span class="fc" id="L615">                                newTreeNode.setRegressionValueIfLeaf(meanFalse);</span>
+                                // Since elsewhere we negate the score, do so here as well.
+<span class="fc" id="L617">                                Utils.println(&quot;%   Creating a FALSE-branch interior node with wgtedCountFalseBranchPos = &quot; + Utils.truncate(wgtedCountFalseBranchPos, 1));</span>
+<span class="fc" id="L618">                                outerLoopState.addToQueueOfTreeStructuredLearningTasks(newTask, newTreeNode, parentSearchNode, -bestNode.getVarianceFalseBranch(true)); // We want to sort by TOTAL error, not AVERAGE.</span>
+                            }
+<span class="fc" id="L620">                            interiorNode.setTreeForTrue( trueBranch);</span>
+<span class="fc" id="L621">                            interiorNode.setTreeForFalse(falseBranch);</span>
+<span class="fc" id="L622">                        }</span>
+                        else {
+<span class="fc" id="L624">                            getStdILPtheory().addMainClause(newClause, innerLoopTask.getInlineManager()); // The inline manager probably has already been sent, but send it again anyway.</span>
+<span class="pc bpc" id="L625" title="2 of 4 branches missed.">                            if (learnMLNTheory &amp;&amp; !learningTreeStructuredTheory) {</span>
+<span class="fc" id="L626">                            	double reg = bestNode.mlnRegressionForTrue();</span>
+<span class="fc" id="L627">                            	Utils.println(&quot;Setting &quot; + reg + &quot; for &quot; + newClause);</span>
+<span class="fc" id="L628">                            	int len = getStdILPtheory().getClauses().size();</span>
+<span class="fc" id="L629">                            	getStdILPtheory().getClauses().get(len-1).setWeightOnSentence(reg);</span>
+                            	// Update gradients
+<span class="fc bfc" id="L631" title="All 2 branches covered.">                            	for (Example eg : coveredPosExamplesThisCycle) {</span>
+<span class="fc" id="L632">									((RegressionRDNExample)eg).setOutputValue(((RegressionRDNExample)eg)</span>
+<span class="fc" id="L633">											.getOutputValue() - reg); </span>
+<span class="fc" id="L634">								}</span>
+                            }
+                        }
+
+<span class="fc" id="L638">                        long end = System.currentTimeMillis();</span>
+<span class="fc bfc" id="L639" title="All 2 branches covered.">                        if (learningTreeStructuredTheory) {</span>
+<span class="fc" id="L640">                            Utils.println(&quot;\n% Time for loop #&quot; + getNumberOfCycles() + &quot;: &quot; + Utils.convertMillisecondsToTimeSpan(end - start, 3) + &quot;.&quot;);</span>
+<span class="fc" id="L641">                            Utils.println(  &quot;% Internal node max length = &quot; + getMaxNumberOfLiteralsAtAnInteriorNode());</span>
+<span class="fc" id="L642">                            Utils.println(  &quot;% Max tree depth in lits   = &quot; + getMaxTreeDepthInLiterals());</span>
+<span class="fc" id="L643">                            Utils.println(  &quot;% Max tree depth in nodes  = &quot; + getMaxTreeDepth());</span>
+<span class="fc" id="L644">                            Utils.println(  &quot;% Max number of clauses    = &quot; + maxNumberOfClauses);</span>
+                        }
+
+<span class="fc" id="L647">						setFractionOfPosCovered((double) getNumberOfPosExamplesCovered() / (double) getNumberOfPosExamples());</span>
+<span class="fc" id="L648">						setFractionOfNegCovered((double) getNumberOfNegExamplesCovered() / (double) getNumberOfNegExamples());</span>
+<span class="fc" id="L649">						Utils.println(&quot;\n% On cycle #&quot; + getNumberOfCycles()+ &quot;, the best clause found is:&quot;);</span>
+<span class="fc" id="L650">						Utils.println(&quot;%      &quot; + bestNode);</span>
+<span class="fc" id="L651">						Utils.println(&quot;% This clause covers &quot; + coveredPosExamplesCount + &quot; positive examples, of which &quot; + newlyCoveredPosExamples + &quot; are newly covered.&quot;);</span>
+<span class="fc" id="L652">						Utils.println(&quot;% It also covers &quot;	  + coveredNegExamplesCount + &quot; negative examples, of which &quot; + newlyCoveredNegExamples + &quot; are newly covered.&quot;);</span>
+<span class="fc bfc" id="L653" title="All 2 branches covered.">						if (!learningTreeStructuredTheory) {</span>
+<span class="fc" id="L654">							Utils.println(&quot;% The current set of &quot; + Utils.getSizeSafely(getStdILPtheory().getClauses()) + &quot; best clauses covers &quot;</span>
+<span class="fc" id="L655">										  + Utils.truncate(100 * getFractionOfPosCovered(), 1) + &quot;% of the positive examples and &quot;</span>
+<span class="fc" id="L656">										  + Utils.truncate(100 * getFractionOfNegCovered(), 1) + &quot;% of the negatives.&quot; + &quot;}&quot;);</span>
+						}
+<span class="fc" id="L658">					} else {</span>
+<span class="fc" id="L659">						Utils.println(MessageType.ILP_INNERLOOP, &quot;\n% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).&quot;);</span>
+<span class="fc" id="L660">						Utils.println(MessageType.ILP_INNERLOOP,   &quot;% The closest-to-acceptable node found (score = &quot; + Utils.truncate(theGleaner.bestScoreRegardless, 4) + &quot;):\n%  &quot; + theGleaner.bestNodeRegardless);</span>
+						//     Utils.waitHere();
+
+<span class="fc bfc" id="L663" title="All 2 branches covered.">						if (learningTreeStructuredTheory) { // Need to make the current node a leaf.</span>
+<span class="fc" id="L664">                            TreeStructuredLearningTask currentTask = outerLoopState.getCurrentTreeLearningTask();</span>
+<span class="fc" id="L665">                            createTreeStructuredLearningTaskLeaf(currentTask);</span>
+                        }
+                    }
+                }
+
+                // Increment clock time used.
+<span class="fc" id="L671">                long clockTimeUsed = getClockTimeUsedInMillisec();</span>
+<span class="fc" id="L672">                clockTimeUsed += stopwatch.getTotalTimeInMilliseconds();</span>
+<span class="fc" id="L673">                setClockTimeUsedInMillisec(clockTimeUsed);</span>
+
+
+<span class="fc bfc" id="L676" title="All 2 branches covered.">                if (learningTreeStructuredTheory) {</span>
+<span class="fc" id="L677">                    stoppedBecauseTreeStructuredQueueEmpty = outerLoopState.queueOfTreeStructuredLearningTasksIsEmpty();</span>
+                }
+
+<span class="fc" id="L680">            } // End of WHILE</span>
+
+<span class="fc" id="L682">			Utils.println(MessageType.ILP_INNERLOOP, &quot;\n% ******************************************\n&quot;);</span>
+<span class="pc bpc" id="L683" title="3 of 4 branches missed.">			if (!innerLoopTask.regressionTask &amp;&amp; getFractionOfPosCovered() &gt;= minFractionOfPosCoveredToStop) {</span>
+<span class="nc" id="L684">				Utils.println(MessageType.ILP_INNERLOOP, &quot;% Have stopped ILP's outer loop because have exceeded the minimal fraction (&quot;</span>
+								+ minFractionOfPosCoveredToStop + &quot;) of positive examples to cover.&quot;);
+			} else {
+<span class="fc bfc" id="L687" title="All 2 branches covered.">                if (stoppedBecauseTreeStructuredQueueEmpty) {</span>
+<span class="fc" id="L688">                    Utils.println(MessageType.ILP_INNERLOOP, &quot;%  Have stopped ILP's outer loop because the tree-structured queue is empty.&quot;);</span>
+<span class="fc bfc" id="L689" title="All 2 branches covered.">                } else if (getNumberOfCycles() &gt;= maxNumberOfCycles) {</span>
+<span class="fc" id="L690">                    Utils.println(MessageType.ILP_INNERLOOP, &quot;% Have stopped ILP's outer loop because have reached the maximum number of iterations (&quot; + maxNumberOfCycles + &quot;).&quot;);</span>
+<span class="fc bfc" id="L691" title="All 2 branches covered.">                } else if (getNumberOfLearnedClauses() &gt;= maxNumberOfClauses) {</span>
+<span class="fc" id="L692">                    Utils.println(MessageType.ILP_INNERLOOP, &quot;% Have stopped ILP's outer loop because have reached the maximum number of learned clauses (&quot; + maxNumberOfClauses + &quot;).&quot;);</span>
+<span class="pc bpc" id="L693" title="1 of 2 branches missed.">                } else if (stoppedBecauseNoMoreSeedsToTry) {</span>
+<span class="nc" id="L694">                    Utils.println(MessageType.ILP_INNERLOOP, &quot;% Have stopped ILP's outer loop because have run out of seed positive examples to try.&quot;);</span>
+<span class="pc bpc" id="L695" title="1 of 2 branches missed.">                } else if (getTotal_nodesConsidered() &gt;= max_total_nodesExpanded) {</span>
+<span class="nc" id="L696">                    Utils.println(MessageType.ILP_INNERLOOP, &quot;% Have stopped ILP's outer loop because have reached the maximum number of nodes to consider.&quot;);</span>
+<span class="pc bpc" id="L697" title="1 of 2 branches missed.">                } else if (getTotal_nodesCreated() &gt;= max_total_nodesCreated) {</span>
+<span class="nc" id="L698">                    Utils.println(MessageType.ILP_INNERLOOP, &quot;% Have stopped ILP's outer loop because have reached the maximum number of nodes to created.&quot;);</span>
+<span class="pc bpc" id="L699" title="1 of 2 branches missed.">                } else if (getClockTimeUsedInMillisec() &gt;=  getMaximumClockTimeInMillisec()) {</span>
+<span class="nc" id="L700">                    Utils.println(MessageType.ILP_INNERLOOP, &quot;%  Have stopped ILP's outer loop because have reached the maximum clock time.&quot;);</span>
+                }
+            }
+<span class="fc" id="L703">			Utils.println(MessageType.ILP_INNERLOOP, &quot;\n% ******************************************&quot;);</span>
+
+<span class="fc bfc" id="L705" title="All 2 branches covered.">			if (learningTreeStructuredTheory ) {</span>
+                // May have stopped for reasons other than the queue is empty.  In that case, need to convert all pending nodes to leaves.
+<span class="fc bfc" id="L707" title="All 2 branches covered.">                while (!outerLoopState.queueOfTreeStructuredLearningTasksIsEmpty()) {</span>
+<span class="fc" id="L708">                    createTreeStructuredLearningTaskLeaf(outerLoopState.popQueueOfTreeStructuredLearningTasks());</span>
+                }
+            }
+
+<span class="pc bpc" id="L712" title="1 of 2 branches missed.">            if (holdBodyModes != null) {</span>
+<span class="nc" id="L713">                innerLoopTask.setBodyModes(holdBodyModes);</span>
+<span class="nc" id="L714">                holdBodyModes = null;</span>
+            }
+<span class="fc" id="L716">            Theory finalTheory = produceFinalTheory();</span>
+
+<span class="fc" id="L718">            innerLoopTask.fireOuterLoopFinished(this);</span>
+
+<span class="fc" id="L720">            return finalTheory;</span>
+
+        }
+<span class="nc bnc" id="L723" title="All 2 branches missed.">        else if (action == ILPSearchAction.SKIP_ITERATION) {</span>
+<span class="nc" id="L724">            Utils.println(&quot;ILPSearchListener skipped outer-loop execution.&quot;);</span>
+<span class="nc" id="L725">            return null;</span>
+        }
+        else {
+<span class="nc" id="L728">            Utils.println(&quot;ILPSearchListener terminated outer-loop execution.&quot;);</span>
+<span class="nc" id="L729">            throw new SearchInterrupted(&quot;ILPSearchListener terminated outer-loop execution.&quot;);</span>
+        }
+	}
+
+
+	private void createTreeStructuredLearningTaskLeaf(TreeStructuredLearningTask currentTask) {
+<span class="fc" id="L735">		Term val = null;</span>
+<span class="pc bpc" id="L736" title="1 of 2 branches missed.">			if (currentTask.getNode() != null) {</span>
+<span class="fc" id="L737">                val = createLeafNodeFromCurrentExamples(currentTask.getNode().getRegressionValueIfLeaf());</span>
+            } else {
+<span class="nc" id="L739">				Utils.error(&quot;task is not interior node!!&quot;);</span>
+			}
+<span class="fc" id="L741">		TreeStructuredTheoryLeaf leaf = new TreeStructuredTheoryLeaf(currentTask.getNode().getWeightedCountOfPositiveExamples(),</span>
+<span class="fc" id="L742">																	 currentTask.getNode().getWeightedCountOfNegativeExamples(),</span>
+<span class="fc" id="L743">																	 computeVarianceOverTheseExamples( currentTask.getPosExamples()),</span>
+																	 val,
+<span class="fc" id="L745">																	 Example.makeLabel(currentTask.getPosExamples()));</span>
+		// The parent had been expecting an interior node, so need to do some surgery.
+<span class="fc" id="L747">		TreeStructuredTheoryNode node   = currentTask.getNode();</span>
+<span class="fc" id="L748">		TreeStructuredTheoryInteriorNode parent = node.getParent();</span>
+<span class="pc bpc" id="L749" title="1 of 2 branches missed.">		if (parent == null) {</span>
+<span class="nc" id="L750">			outerLoopState.getTreeBasedTheory().setRoot(leaf);</span>
+		} else {
+<span class="fc" id="L752">			Utils.println(&quot;Created a leaf under &quot; + parent.getNodeTest());</span>
+<span class="fc" id="L753">			parent.changeChild(node, leaf);</span>
+<span class="fc" id="L754">			leaf.setParent(parent);</span>
+		}
+<span class="fc" id="L756">	}</span>
+
+   private Term createLeafNodeFromCurrentExamples(double value) {
+<span class="fc" id="L759">	   return innerLoopTask.stringHandler.getNumericConstant(value);</span>
+   }
+
+    private double computeVarianceOverTheseExamples(Collection&lt;Example&gt; currentExamples) {
+<span class="pc bpc" id="L763" title="1 of 2 branches missed.">		if (innerLoopTask.regressionTask) {</span>
+
+<span class="pc bpc" id="L765" title="1 of 2 branches missed.">			if (Utils.getSizeSafely(currentExamples) &lt; 1) {</span>
+<span class="nc" id="L766">				Utils.error(&quot;Should not reach here with ZERO examples!&quot;);</span>
+<span class="nc" id="L767">				return -1;</span>
+			}
+
+            // Compute the mean value over all the (weighted) examples.
+<span class="fc" id="L771">			double totalOfOutputValues  = 0.0;</span>
+<span class="fc" id="L772">			double totalSquaredOfOutput = 0.0;</span>
+<span class="fc" id="L773">			double weightedCount        = 0.0;</span>
+<span class="pc bpc" id="L774" title="1 of 4 branches missed.">			if (currentExamples != null) for (Example ex : currentExamples) {</span>
+<span class="fc" id="L775">				double output = ex.getWeightOnExample() * ((RegressionExample) ex).getOutputValue();</span>
+<span class="fc" id="L776">				totalOfOutputValues  += output; </span>
+<span class="fc" id="L777">				totalSquaredOfOutput += output * output;</span>
+<span class="fc" id="L778">				weightedCount        += ex.getWeightOnExample();</span>
+<span class="fc" id="L779">			}</span>
+			
+<span class="pc bpc" id="L781" title="1 of 2 branches missed.">			double result = (weightedCount &lt;= 0.0 ? 0.0</span>
+					          : (    totalSquaredOfOutput / weightedCount)
+<span class="fc" id="L783">						          - ((totalOfOutputValues  / weightedCount * totalOfOutputValues / weightedCount)));</span>
+			// Be robust to numeric errors.
+<span class="fc" id="L785">			return Math.max(result, 0.0);</span>
+		}
+		// Else return -1 to save this is not relevant (though could compute variance for the binomial distribution).
+<span class="nc" id="L788">		return -1;</span>
+   }
+
+	/* Resets the state of the search from the beginning.
+	 *
+	 * This should reset the state of both the outer and inner loop
+	 * so that a new search can be started.
+	 */
+	public void resetAll() {
+<span class="fc" id="L797">        innerLoopTask.resetAll();  // Clean up the inner loop in case we are starting a new fold...</span>
+<span class="fc" id="L798">        outerLoopState.clearAll();</span>
+<span class="fc" id="L799">        innerLoopTask.stringHandler.resetVarCounters();</span>
+
+<span class="fc" id="L801">        setStdILPtheory(new Theory(innerLoopTask.stringHandler, null, innerLoopTask.getInlineManager()));</span>
+<span class="fc" id="L802">        setCoveredPosExamples(new HashSet&lt;&gt;());</span>
+<span class="fc" id="L803">        setCoveredNegExamples(new HashSet&lt;&gt;());</span>
+<span class="fc" id="L804">        setNumberOfCycles(0);</span>
+<span class="fc" id="L805">        setNumberOfLearnedClauses(0);</span>
+<span class="fc" id="L806">        setNumberOfPosExamplesCovered(0);  // These are normal (ie, UNweighted) counts.  Wgt'ing of examples happens when they are covered (so the next round they can count 1.0 [fully], 0.0 [not at all], or somewhere in between).</span>
+<span class="fc" id="L807">        setNumberOfNegExamplesCovered(0);</span>
+<span class="fc" id="L808">        setFractionOfPosCovered(0.0);</span>
+<span class="fc" id="L809">        setTotal_nodesConsidered(0);</span>
+<span class="fc" id="L810">        setTotal_nodesCreated(0);</span>
+<span class="fc" id="L811">        setTotal_nodesNotAddedToOPENsinceMaxScoreTooLow(0);</span>
+<span class="fc" id="L812">        setTotal_nodesRemovedFromOPENsinceMaxScoreNowTooLow(0);</span>
+<span class="fc" id="L813">        setTotal_countOfPruningDueToVariantChildren(0);</span>
+<span class="fc" id="L814">        clearSeedPosExamplesUsed();</span>
+<span class="fc" id="L815">        clearSeedNegExamplesUsed();</span>
+<span class="fc" id="L816">        setClockTimeUsedInMillisec(0);</span>
+
+<span class="fc bfc" id="L818" title="All 2 branches covered.">        if (learningTreeStructuredTheory) {</span>
+<span class="fc" id="L819">        	TreeStructuredTheoryInteriorNode newTreeNode = new TreeStructuredTheoryInteriorNode(innerLoopTask.getTotalPosWeight(), innerLoopTask.getTotalNegWeight(), null, null, null);</span>
+<span class="fc" id="L820">        	TreeStructuredLearningTask         firstTask = new TreeStructuredLearningTask(      innerLoopTask.getPosExamples(),    innerLoopTask.getNegExamples(), newTreeNode);</span>
+<span class="fc" id="L821">        	TreeStructuredTheory         treeBasedTheory = new TreeStructuredTheory(innerLoopTask.stringHandler, getTargetLiteral(), newTreeNode);</span>
+<span class="fc" id="L822">        	newTreeNode.setLevel(0);</span>
+<span class="fc" id="L823">        	outerLoopState.setTreeBasedTheory(treeBasedTheory);</span>
+<span class="fc" id="L824">        	outerLoopState.setOverallMinPosWeight(innerLoopTask.getMinPosCoverage()); // We want to keep this constant for all the recursive tree-building calls.</span>
+<span class="fc" id="L825">        	outerLoopState.addToQueueOfTreeStructuredLearningTasks(firstTask, newTreeNode, null, Double.MAX_VALUE);</span>
+        	// Set the acceptable score based on variance at root
+<span class="fc" id="L827">        	double totalVariance = firstTask.getVariance();</span>
+<span class="fc" id="L828">        	Utils.println(&quot;Variance:&quot; + totalVariance);</span>
+<span class="fc" id="L829">        	setMaxAcceptableNodeScoreToStop(Math.min(getMaxAcceptableNodeScoreToStop(), totalVariance*0.25));</span>
+<span class="fc" id="L830">        	Utils.println(&quot;Set score:&quot; + getMaxAcceptableNodeScoreToStop());</span>
+        }
+<span class="fc" id="L832">    }</span>
+    
+    private Literal getTargetLiteral() {
+<span class="fc" id="L835">    	List&lt;Literal&gt; targets = innerLoopTask.targets;</span>
+    	
+<span class="pc bpc" id="L837" title="1 of 2 branches missed.">    	if (Utils.getSizeSafely(targets) == 1) { return targets.get(0); }</span>
+<span class="nc" id="L838">    	Utils.error(&quot;Have too many/few (&quot; + Utils.getSizeSafely(targets) + &quot;) targets (should have exactly one): &quot; + targets); </span>
+<span class="nc" id="L839">    	return null;</span>
+    }
+
+    public void initialize(boolean creatingCompoundFeaturesOnly) { // Pull this out from the constructor so that the caller can set some globals in innerLoopTask after that instance is created.
+    	
+		// All the stuff that used to be here was moved to resetAll()...
+    	
+<span class="fc" id="L846">        innerLoopTask.initialize(creatingCompoundFeaturesOnly);</span>
+        // Calling it here as one might be setting the parameters to initial values.
+<span class="fc" id="L848">    	overwriteParametersFromBK();</span>
+<span class="fc" id="L849">	}</span>
+    
+    private void overwriteParametersFromBK() {
+		////////////////////////////////////////////////////////
+		// Set parameters using setParams:
+		////////////////////////////////////////////////////////
+
+        // TODO(hayesall): Move this into `FileParser`?
+        //  It feels like bad practice to be dynamically parsing new options in multiple places.
+
+		String lookup;
+<span class="pc bpc" id="L860" title="1 of 2 branches missed.">		if ((lookup = innerLoopTask.getStringHandler().getParameterSetting(&quot;maxTreeDepth&quot;)) != null) {</span>
+<span class="fc" id="L861">			setMaxTreeDepth(Integer.parseInt(lookup));</span>
+		}
+<span class="pc bpc" id="L863" title="1 of 2 branches missed.">		if ((lookup = innerLoopTask.getStringHandler().getParameterSetting(&quot;nodeSize&quot;)) != null) {</span>
+<span class="fc" id="L864">			setMaxNumberOfLiteralsAtAnInteriorNode(Integer.parseInt(lookup));</span>
+<span class="fc" id="L865">			innerLoopTask.maxBodyLength = getMaxNumberOfLiteralsAtAnInteriorNode();</span>
+		}
+<span class="fc bfc" id="L867" title="All 2 branches covered.">		if ((lookup = innerLoopTask.getStringHandler().getParameterSetting(&quot;numOfClauses&quot;)) != null) {</span>
+<span class="fc" id="L868">			maxNumberOfClauses = Integer.parseInt(lookup);</span>
+		}
+<span class="fc bfc" id="L870" title="All 2 branches covered.">		if ((lookup = innerLoopTask.getStringHandler().getParameterSetting(&quot;numOfCycles&quot;)) != null) {</span>
+<span class="fc" id="L871">			maxNumberOfCycles = Integer.parseInt(lookup);</span>
+		}
+<span class="fc" id="L873">	}		</span>
+
+    // TODO - put all this RDN stuff in a subclass of ILPouterLoop.
+    public  void setLearnMLNTheory(boolean val) {
+<span class="fc" id="L877">    	learnMLNTheory = val;</span>
+<span class="fc" id="L878">    	innerLoopTask.setMlnRegressionTask(val);</span>
+<span class="fc" id="L879">    }</span>
+
+    public void setFlagsForRegressionTask(boolean notLearnTrees) {
+<span class="fc" id="L882">    	innerLoopTask.regressionTask           = true;</span>
+<span class="fc" id="L883">		innerLoopTask.stopIfPerfectClauseFound = false;</span>
+		
+<span class="fc" id="L885">		innerLoopTask.stopWhenUnacceptableCoverage = false;</span>
+<span class="fc bfc" id="L886" title="All 2 branches covered.">		learningTreeStructuredTheory           = !notLearnTrees;</span>
+<span class="fc bfc" id="L887" title="All 2 branches covered.">		innerLoopTask.setIsaTreeStructuredTask(!notLearnTrees); // TODO - couple this with setting the above (via a setter)</span>
+<span class="fc" id="L888">    }</span>
+    
+    public void morphToRDNRegressionOuterLoop(double all_pos_wt, double all_neg_wt, double ratioOfNegToPositiveEx,
+                                              double samplePositiveProb, boolean notLearnTrees, boolean areRegressionEgs) {
+
+<span class="fc" id="L893">        setFlagsForRegressionTask(notLearnTrees);</span>
+		
+<span class="fc" id="L895">		List&lt;Example&gt;  origPosExamples = getPosExamples();</span>
+<span class="fc" id="L896">		List&lt;Example&gt; positiveExamples = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L897">		int        numbOrigPosExamples = Utils.getSizeSafely(origPosExamples);</span>
+
+        // Less than zero means we dont want to sample.
+
+<span class="fc" id="L901">        int countOfPosKept = 0;</span>
+        // TODO integrate this better if we decide to keep it.
+        // TODO - should this also be sampling with replacement of the expected number to collect?  Correctly no duplicates, but number collected can vary.
+<span class="pc bpc" id="L904" title="1 of 4 branches missed.">        if (numbOrigPosExamples &gt; 0) for (Example eg : origPosExamples) { // Should we ignore this positive example?</span>
+<span class="pc bpc" id="L905" title="5 of 6 branches missed.">            if (samplePositiveProb &gt;= 0 &amp;&amp; samplePositiveProb &lt; 1 &amp;&amp; Utils.random() &gt; samplePositiveProb) {	continue; }</span>
+<span class="fc" id="L906">            double outputVal = all_pos_wt;</span>
+<span class="fc bfc" id="L907" title="All 2 branches covered.">            if (areRegressionEgs) {</span>
+<span class="pc bpc" id="L908" title="1 of 2 branches missed.">                if (eg instanceof RegressionExample) {</span>
+<span class="fc" id="L909">                    outputVal = ((RegressionExample)eg).getOutputValue();</span>
+                } else {
+<span class="nc" id="L911">                    Utils.waitHere(&quot;Expected regression examples for learning regression trees&quot;);</span>
+                }
+            }
+<span class="fc" id="L914">            RegressionRDNExample regEx = new RegressionRDNExample(eg.getStringHandler(), eg.extractLiteral(),</span>
+                                                                  outputVal, eg.provenance, eg.extraLabel, true);
+<span class="fc bfc" id="L916" title="All 2 branches covered.">            if (areRegressionEgs) {</span>
+<span class="fc" id="L917">                regEx.originalRegressionOrProbValue = regEx.getOutputValue();</span>
+            }
+<span class="fc" id="L919">            positiveExamples.add(regEx);</span>
+<span class="fc" id="L920">            countOfPosKept++;</span>
+<span class="fc" id="L921">        }</span>
+
+        // TODO - Handle skew in both directions.
+		// Now move the negative examples to positives (since for regression all examples are positives).
+<span class="fc" id="L925">		List&lt;Example&gt; origNegExamples = getNegExamples();</span>
+<span class="fc" id="L926">		int       numbOrigNegExamples = Utils.getSizeSafely(origNegExamples);</span>
+<span class="fc" id="L927">		double   probOfSelectingNegEx = (ratioOfNegToPositiveEx * (double) countOfPosKept)      / (double) numbOrigNegExamples; // Use the NEW number of positive examples, NOT the original!</span>
+		
+		// If #positives = 0, we do need few negative example but not all. 
+<span class="pc bpc" id="L930" title="1 of 2 branches missed.">		if (countOfPosKept == 0) {</span>
+<span class="nc" id="L931">			probOfSelectingNegEx = ratioOfNegToPositiveEx / (double) numbOrigNegExamples;</span>
+		}
+<span class="fc" id="L933">		int           countOfNegsKept = 0;</span>
+
+        /*  TUSHAR - I (JWS) replaced this (above) with random sampling with replacement.  Will be faster if we have a lot of negatives (though that probably doesn't matter much),
+		 *           but maybe more importantly we'll always get the same number of negatives.
+		 */
+<span class="fc bfc" id="L938" title="All 4 branches covered.">		if (numbOrigNegExamples &gt; 0) for (Example eg : origNegExamples) {</span>
+<span class="pc bpc" id="L939" title="1 of 6 branches missed.">			if (probOfSelectingNegEx &gt;= 0 &amp;&amp; probOfSelectingNegEx &lt; 1 &amp;&amp; Utils.random() &gt; probOfSelectingNegEx)	{ continue; }</span>
+<span class="fc" id="L940">			double outputVal = all_neg_wt;</span>
+<span class="pc bpc" id="L941" title="1 of 2 branches missed.">			if (areRegressionEgs) {</span>
+<span class="nc bnc" id="L942" title="All 2 branches missed.">				if (eg instanceof RegressionExample) {</span>
+<span class="nc" id="L943">					outputVal = ((RegressionExample)eg).getOutputValue();</span>
+				}
+			}
+<span class="fc" id="L946">			RegressionRDNExample regEx = new RegressionRDNExample(eg.getStringHandler(), eg.extractLiteral(),</span>
+																  outputVal, eg.provenance, eg.extraLabel, false);
+<span class="pc bpc" id="L948" title="1 of 2 branches missed.">			if (areRegressionEgs) {</span>
+<span class="nc" id="L949">				regEx.originalRegressionOrProbValue = regEx.getOutputValue();</span>
+			}
+<span class="fc" id="L951">            positiveExamples.add(regEx);</span>
+<span class="fc" id="L952">			countOfNegsKept++;</span>
+<span class="fc" id="L953">		}</span>
+
+<span class="fc" id="L955">		Utils.println(&quot;% Kept &quot; + &quot;&quot; + Utils.comma(countOfPosKept) + &quot; of the &quot; + Utils.comma(numbOrigPosExamples) + &quot; positive examples.&quot;);</span>
+<span class="fc" id="L956">		Utils.println(&quot;% Kept &quot; + &quot;&quot; + Utils.comma(countOfNegsKept) + &quot; of the &quot; + Utils.comma(numbOrigNegExamples) + &quot; negative examples.&quot;);</span>
+<span class="fc" id="L957">		setPosExamples(positiveExamples);</span>
+<span class="fc" id="L958">		setNegExamples(new ArrayList&lt;&gt;(0));</span>
+<span class="fc" id="L959">    }</span>
+
+    private Theory produceFinalTheory() {
+		// TODO allow theories to come from some covering algorithm, possibly based on all the Gleaners.		
+		Theory result;
+<span class="fc bfc" id="L964" title="All 2 branches covered.">		if (learningTreeStructuredTheory) {</span>
+			// Note: this code assumes all the heads have the same arguments, other than the last variables that stores the numeric answer. 
+			// The renameAllVariables() is only used to make the tree-structured theory a bit more human readable.
+<span class="fc" id="L967">			result = outerLoopState.getTreeBasedTheory().renameAllVariables().convertToStandardTheory(innerLoopTask.getInlineManager()).renameAllClausesWithUniqueBodyVariables(); // Cleanup the variable names and then convert to Horn clauses.</span>
+
+		} else {
+<span class="fc" id="L970">			result = getStdILPtheory(); // Is in-lining properly handled here?  Presumably this should happen when clauses are learned?</span>
+<span class="pc bpc" id="L971" title="1 of 2 branches missed.">			if (learnMLNTheory) {</span>
+<span class="fc" id="L972">				Utils.println(&quot;adding regression values&quot;);</span>
+<span class="fc bfc" id="L973" title="All 2 branches covered.">				for (Clause cl : result.getClauses()) {</span>
+<span class="fc" id="L974">					Term leafValue =  innerLoopTask.stringHandler.getNumericConstant(cl.getWeightOnSentence());</span>
+<span class="fc" id="L975">					Utils.println(&quot;Added &quot; + cl.getWeightOnSentence() + &quot; to &quot; + cl);</span>
+<span class="fc" id="L976">					Literal      headCopy = cl.getDefiniteClauseHead();</span>
+<span class="fc" id="L977">					List&lt;String&gt; argNames = headCopy.getArgumentNames();</span>
+<span class="pc bpc" id="L978" title="1 of 2 branches missed.">					if (argNames != null) {</span>
+<span class="nc" id="L979">						headCopy.addArgument(leafValue, &quot;OutputVarTreeLeaf&quot;);</span>
+					} else {
+<span class="fc" id="L981">						headCopy.addArgument(leafValue);</span>
+					}
+<span class="fc" id="L983">				}</span>
+				
+			}
+		}
+		
+<span class="pc bpc" id="L988" title="1 of 2 branches missed.">		if (result == null) { return null; }</span>
+
+        // Set inline mgr before simplifying
+<span class="fc" id="L991">		result.setInlineHandler(this.innerLoopTask.getInlineManager());</span>
+<span class="fc bfc" id="L992" title="All 2 branches covered.">		if (learningTreeStructuredTheory) { // Need to wait until any pre/post-fix stuff has been applied.</span>
+<span class="fc" id="L993">			return ((TreeStructuredTheory) result).createFlattenedClauses().simplify();</span>
+		}
+<span class="fc" id="L995">		return result.simplify();</span>
+	}
+
+    private void clearSeedPosExamplesUsed() {
+<span class="fc" id="L999">        outerLoopState.clearSeedPosExamplesUsed();</span>
+<span class="fc" id="L1000">    }</span>
+
+    private void clearSeedNegExamplesUsed() {
+<span class="fc" id="L1003">        outerLoopState.clearSeedNegExamplesUsed();</span>
+<span class="fc" id="L1004">    }</span>
+
+    private void setGleaner(Gleaner gleaner) {
+<span class="fc" id="L1007">    	Gleaner oldGleaner = (Gleaner) innerLoopTask.getGleaner(); // cth updated to pass structured output flag</span>
+<span class="fc" id="L1008">        innerLoopTask.setGleaner(gleaner);</span>
+        
+<span class="pc bpc" id="L1010" title="1 of 2 branches missed.">    	if ( gleaner == null ) { return; }</span>
+<span class="fc" id="L1011">        gleaner.setILPouterLooper(this);	</span>
+<span class="pc bpc" id="L1012" title="1 of 2 branches missed.">      	if (oldGleaner != null) { gleaner.setUseStructuredOutput(oldGleaner.getUseStructuredOutput()); }</span>
+        // cth updated to make structured output flag (for visualizer) persistent, based on notes from Jude
+<span class="pc bpc" id="L1014" title="1 of 2 branches missed.">        if (oldGleaner != null) { gleaner.setUseStructuredOutput(oldGleaner.getUseStructuredOutput()); }</span>
+		// These two hold on to gleaners when we do flip-flops.  The gleaner is 'really' stored in LearnOneClause.
+<span class="fc" id="L1016">		Gleaner gleanerFlipFlopped = new Gleaner();</span>
+<span class="fc" id="L1017">      	gleanerFlipFlopped.setILPouterLooper(this); </span>
+<span class="fc" id="L1018">      	gleanerFlipFlopped.setUseStructuredOutput(gleaner.getUseStructuredOutput());</span>
+<span class="fc" id="L1019">    }</span>
+
+    public boolean proveExample(Clause clause, Example ex) {
+<span class="fc" id="L1022">        return innerLoopTask.proveExample(clause, ex);</span>
+    }
+
+    private void setTotal_nodesRemovedFromOPENsinceMaxScoreNowTooLow(int total_nodesRemovedFromOPENsinceMaxScoreNowTooLow) {
+<span class="fc" id="L1026">        outerLoopState.setTotal_nodesRemovedFromOPENsinceMaxScoreNowTooLow(total_nodesRemovedFromOPENsinceMaxScoreNowTooLow);</span>
+<span class="fc" id="L1027">    }</span>
+
+	private void setTotal_nodesNotAddedToOPENsinceMaxScoreTooLow(int total_nodesNotAddedToOPENsinceMaxScoreTooLow) {
+<span class="fc" id="L1030">        outerLoopState.setTotal_nodesNotAddedToOPENsinceMaxScoreTooLow(total_nodesNotAddedToOPENsinceMaxScoreTooLow);</span>
+<span class="fc" id="L1031">    }</span>
+
+	private void setTotal_nodesCreated(int total_nodesCreated) {
+<span class="fc" id="L1034">        outerLoopState.setTotal_nodesCreated(total_nodesCreated);</span>
+<span class="fc" id="L1035">    }</span>
+
+	private void setTotal_nodesConsidered(int total_nodesConsidered) {
+<span class="fc" id="L1038">        outerLoopState.setTotal_nodesConsidered(total_nodesConsidered);</span>
+<span class="fc" id="L1039">    }</span>
+
+	private void setTotal_countOfPruningDueToVariantChildren(int total_countOfPruningDueToVariantChildren) {
+<span class="fc" id="L1042">        outerLoopState.setTotal_countOfPruningDueToVariantChildren(total_countOfPruningDueToVariantChildren);</span>
+<span class="fc" id="L1043">    }</span>
+
+	private void setStdILPtheory(Theory stdILPtheory) {
+<span class="fc" id="L1046">        outerLoopState.setStdILPtheory(stdILPtheory);</span>
+<span class="fc" id="L1047">    }</span>
+
+	private void setNumberOfPosExamplesCovered(int numberOfPosExamplesCovered) {
+<span class="fc" id="L1050">        outerLoopState.setNumberOfPosExamplesCovered(numberOfPosExamplesCovered);</span>
+<span class="fc" id="L1051">    }</span>
+
+	private void setNumberOfNegExamplesCovered(int numberOfNegExamplesCovered) {
+<span class="fc" id="L1054">        outerLoopState.setNumberOfNegExamplesCovered(numberOfNegExamplesCovered);</span>
+<span class="fc" id="L1055">    }</span>
+
+	private void setNumberOfLearnedClauses(int numberOfLearnedClauses) {
+<span class="fc" id="L1058">        outerLoopState.setNumberOfLearnedClauses(numberOfLearnedClauses);</span>
+<span class="fc" id="L1059">    }</span>
+
+	private void setNumberOfCycles(int numberOfCycles) {
+<span class="fc" id="L1062">        outerLoopState.setNumberOfCycles(numberOfCycles);</span>
+<span class="fc" id="L1063">    }</span>
+
+    private void setFractionOfPosCovered(double fractionOfPosCovered) {
+<span class="fc" id="L1066">        outerLoopState.setFractionOfPosCovered(fractionOfPosCovered);</span>
+<span class="fc" id="L1067">    }</span>
+
+	private void setFractionOfNegCovered(double fractionOfNegCovered) {
+<span class="fc" id="L1070">        outerLoopState.setFractionOfNegCovered(fractionOfNegCovered);</span>
+<span class="fc" id="L1071">    }</span>
+
+	private void setCoveredPosExamples(Collection&lt;Example&gt; coveredPosExamples) {
+<span class="fc" id="L1074">        outerLoopState.setCoveredPosExamples(coveredPosExamples);</span>
+<span class="fc" id="L1075">    }</span>
+
+	private void setCoveredNegExamples(Collection&lt;Example&gt; coveredNegExamples) {
+<span class="fc" id="L1078">        outerLoopState.setCoveredNegExamples(coveredNegExamples);</span>
+<span class="fc" id="L1079">    }</span>
+
+	private int getTotal_nodesRemovedFromOPENsinceMaxScoreNowTooLow() {
+<span class="fc" id="L1082">        return outerLoopState.getTotal_nodesRemovedFromOPENsinceMaxScoreNowTooLow();</span>
+    }
+
+    private int getTotal_nodesNotAddedToOPENsinceMaxScoreTooLow() {
+<span class="fc" id="L1086">        return outerLoopState.getTotal_nodesNotAddedToOPENsinceMaxScoreTooLow();</span>
+    }
+
+    int getTotal_nodesCreated() {
+<span class="fc" id="L1090">        return outerLoopState.getTotal_nodesCreated();</span>
+    }
+
+    int getTotal_nodesConsidered() {
+<span class="fc" id="L1094">        return outerLoopState.getTotal_nodesExpanded();</span>
+    }
+
+	private int getTotal_countOfPruningDueToVariantChildren() {
+<span class="fc" id="L1098">        return outerLoopState.getTotal_countOfPruningDueToVariantChildren();</span>
+    }
+
+    private Theory getStdILPtheory() {
+<span class="fc" id="L1102">        return outerLoopState.getStdILPtheory();</span>
+    }
+
+    private int getNumberOfPosExamplesCovered() {
+<span class="fc" id="L1106">        return outerLoopState.getNumberOfPosExamplesCovered();</span>
+    }
+
+    public int getNumberOfPosExamples() {
+<span class="fc" id="L1110">        return innerLoopTask.getNumberOfPosExamples();</span>
+    }
+
+	private int getNumberOfNegExamplesCovered() {
+<span class="fc" id="L1114">        return outerLoopState.getNumberOfNegExamplesCovered();</span>
+    }
+
+    public int getNumberOfNegExamples() {
+<span class="fc" id="L1118">        return innerLoopTask.getNumberOfNegExamples();</span>
+    }
+
+	private int getNumberOfLearnedClauses() {
+<span class="fc" id="L1122">        return outerLoopState.getNumberOfLearnedClauses();</span>
+    }
+
+	private int getNumberOfCycles() {
+<span class="fc" id="L1126">        return outerLoopState.getNumberOfCycles();</span>
+    }
+
+    private double getFractionOfPosCovered() {
+<span class="fc" id="L1130">        return outerLoopState.getFractionOfPosCovered();</span>
+    }
+
+	private double getFractionOfNegCovered() {
+<span class="fc" id="L1134">        return outerLoopState.getFractionOfNegCovered();</span>
+    }
+
+	private Collection&lt;Example&gt; getCoveredPosExamples() {
+<span class="fc" id="L1138">        return outerLoopState.getCoveredPosExamples();</span>
+    }
+
+    private Collection&lt;Example&gt; getCoveredNegExamples() {
+<span class="nc" id="L1142">        return outerLoopState.getCoveredNegExamples();</span>
+    }
+
+	public void setOverallMinPosWeight(double wgt) {
+<span class="fc" id="L1146">        outerLoopState.setOverallMinPosWeight(wgt);</span>
+<span class="fc" id="L1147">    }</span>
+
+    public String getWorkingDirectory() {
+<span class="fc" id="L1150">        return workingDirectory;</span>
+    }
+
+    private void setWorkingDirectory(String workingDirectory) {
+<span class="fc" id="L1154">        this.workingDirectory = workingDirectory;</span>
+<span class="fc" id="L1155">    }</span>
+
+    /* Sets the PosExamples to use for the search.
+     *
+     * This is just a convenience method.  The list is actually stored in the LearnOneClause object.
+     *
+     * @param posExamples the posExamples to set
+     */
+    public void setPosExamples(List&lt;Example&gt; posExamples) {
+<span class="fc" id="L1164">        innerLoopTask.setPosExamples(posExamples);</span>
+<span class="fc" id="L1165">    }</span>
+
+    /* Sets the NegExamples to use for the search.
+     *
+     * This is just a convenience method.  The list is actually stored in the LearnOneClause object.
+     *
+     * @param negExamples the negExamples to set
+     */
+    public void setNegExamples(List&lt;Example&gt; negExamples) {
+<span class="fc" id="L1174">        innerLoopTask.setNegExamples(negExamples);</span>
+<span class="fc" id="L1175">    }</span>
+
+    /* Returns the PosExamples to use for the search.
+     *
+     * This is just a convenience method.  The list is actually stored in the LearnOneClause object.
+     */
+    public List&lt;Example&gt; getPosExamples() {
+<span class="fc" id="L1182">        return innerLoopTask.getPosExamples();</span>
+    }
+
+    /* Returns the NegExamples to use for the search.
+     *
+     * This is just a convenience method.  The list is actually stored in the LearnOneClause object.
+     */
+    public List&lt;Example&gt; getNegExamples() {
+<span class="fc" id="L1190">        return innerLoopTask.getNegExamples();</span>
+    }
+
+
+    private Set&lt;Example&gt; getNegExamplesUsedAsSeeds() {
+<span class="nc" id="L1195">        return outerLoopState.getNegExamplesUsedAsSeeds();</span>
+    }
+
+	private Set&lt;Example&gt; getSeedPosExamplesUsed() {
+<span class="fc" id="L1199">        return outerLoopState.getSeedPosExamplesUsed();</span>
+    }
+
+	private Set&lt;Example&gt; getSeedNegExamplesUsed() {
+<span class="fc" id="L1203">        return outerLoopState.getSeedNegExamplesUsed();</span>
+    }
+
+
+    public void setMaximumClockTimeInMillisec(long maximumClockTime) {
+<span class="pc bpc" id="L1208" title="1 of 2 branches missed.">    	if (maximumClockTime &lt; 0) { Utils.waitHere(&quot;setMaximumClockTime = &quot; + maximumClockTime); }</span>
+<span class="fc" id="L1209">        outerLoopState.setMaximumClockTimeInMillisec(maximumClockTime);</span>
+<span class="fc" id="L1210">    }</span>
+
+    private void setClockTimeUsedInMillisec(long clockTimeUsed) {
+<span class="fc" id="L1213">        outerLoopState.setClockTimeUsedInMillisec(clockTimeUsed);</span>
+<span class="fc" id="L1214">    }</span>
+
+    private long getMaximumClockTimeInMillisec() {
+<span class="fc" id="L1217">        return outerLoopState.getMaximumClockTimeInMillisec();</span>
+    }
+
+    private long getClockTimeUsedInMillisec() {
+<span class="fc" id="L1221">        return outerLoopState.getClockTimeUsedInMillisec();</span>
+    }
+
+	private long getTimeAvailableInMillisec() {
+<span class="pc bpc" id="L1225" title="1 of 2 branches missed.">       return getMaximumClockTimeInMillisec() == Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(0, getMaximumClockTimeInMillisec() - getClockTimeUsedInMillisec());</span>
+    }
+
+	public void setMaxAcceptableNodeScoreToStop(double score) {
+<span class="fc" id="L1229">    	outerLoopState.maxAcceptableNodeScoreToStop = score;</span>
+<span class="fc" id="L1230">    }</span>
+
+    public double getMaxAcceptableNodeScoreToStop() {
+<span class="fc" id="L1233">    	return outerLoopState.maxAcceptableNodeScoreToStop;</span>
+    }
+
+	public int getMaxNumberOfLiteralsAtAnInteriorNode() {
+<span class="fc" id="L1237">		return maxNumberOfLiteralsAtAnInteriorNode;</span>
+	}
+
+	public void setMaxNumberOfLiteralsAtAnInteriorNode(int maxNumberOfLiteralsAtAnInteriorNode) {
+<span class="fc" id="L1241">		this.maxNumberOfLiteralsAtAnInteriorNode = Math.max(1, maxNumberOfLiteralsAtAnInteriorNode);</span>
+<span class="fc" id="L1242">	}</span>
+
+	public int getMaxTreeDepthInLiterals() {
+<span class="fc" id="L1245">		return maxTreeDepthInLiterals;</span>
+	}
+
+	public void setMaxTreeDepthInLiterals(int maxTreeDepthInLiterals) {
+<span class="fc" id="L1249">		this.maxTreeDepthInLiterals = Math.max(1, maxTreeDepthInLiterals);</span>
+<span class="fc" id="L1250">	}</span>
+
+    public int getMaxTreeDepth() {
+<span class="fc" id="L1253">		return maxTreeDepthInInteriorNodes;</span>
+	}
+
+	public void setMaxTreeDepth(int maxTreeDepth) {
+<span class="fc" id="L1257">		this.maxTreeDepthInInteriorNodes = Math.max(1, maxTreeDepth);</span>
+<span class="fc" id="L1258">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

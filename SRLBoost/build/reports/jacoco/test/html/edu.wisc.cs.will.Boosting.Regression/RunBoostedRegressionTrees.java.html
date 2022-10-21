@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RunBoostedRegressionTrees.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Regression</a> &gt; <span class="el_source">RunBoostedRegressionTrees.java</span></div><h1>RunBoostedRegressionTrees.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Regression;
+
+import edu.wisc.cs.will.Boosting.Common.RunBoostedModels;
+import edu.wisc.cs.will.Boosting.Common.SRLInference;
+import edu.wisc.cs.will.Boosting.RDN.ConditionalModelPerPredicate;
+import edu.wisc.cs.will.Boosting.RDN.JointRDNModel;
+import edu.wisc.cs.will.Boosting.RDN.LearnBoostedRDN;
+import edu.wisc.cs.will.Boosting.Utils.BoostingUtils;
+import edu.wisc.cs.will.Utils.Utils;
+
+/*
+ * MLN-Boost specific code for learning and inference
+ * For e.g. RDN-Boost learns all the trees for one predicate at a time whereas MLN-Boost learns
+ * one tree at a time for every predicate
+ * Also sets the required flags for MLN-Boost.
+ * @author tkhot
+ *
+ */
+<span class="fc" id="L19">public class RunBoostedRegressionTrees extends RunBoostedModels {</span>
+
+<span class="fc" id="L21">	private JointRDNModel fullModel = null;</span>
+	
+	public void learn() {
+
+<span class="fc" id="L25">		fullModel = new JointRDNModel();</span>
+
+<span class="fc bfc" id="L27" title="All 2 branches covered.">		for (String pred : cmdArgs.getTargetPredVal()) {</span>
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">			if (cmdArgs.getTargetPredVal().size() &gt; 1) {</span>
+<span class="nc" id="L29">				Utils.error(&quot;Yap is not available.&quot;);</span>
+			}
+
+<span class="fc" id="L32">			LearnBoostedRDN      learner       = new LearnBoostedRDN(cmdArgs, setup);</span>
+<span class="fc" id="L33">			String               saveModelName = BoostingUtils.getModelFile(cmdArgs, pred, true);</span>
+<span class="fc" id="L34">			learner.setTargetPredicate(pred);</span>
+
+<span class="fc" id="L36">			ConditionalModelPerPredicate model = new ConditionalModelPerPredicate(setup);</span>
+
+<span class="fc" id="L38">			SRLInference sampler = new RegressionTreeInference(model, setup);</span>
+<span class="fc" id="L39">			learner.learnNextModel(sampler, model, cmdArgs.getMaxTreesVal());</span>
+<span class="fc" id="L40">			model.saveModel(saveModelName);</span>
+			// Do a final save since learnModel doesn't save every time (though we should make it do so at the end).
+			// No need for checkpoint file anymore
+<span class="fc" id="L43">			clearCheckPointFiles(saveModelName);</span>
+<span class="fc" id="L44">			fullModel.put(pred, model); </span>
+<span class="fc" id="L45">		}</span>
+	
+<span class="fc" id="L47">	}</span>
+
+	public void loadModel() {
+
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">		if (fullModel == null) {</span>
+<span class="fc" id="L52">			fullModel = new JointRDNModel();</span>
+		}
+
+<span class="fc" id="L55">		Utils.println(&quot;\n% Getting bRDN's target predicates.&quot;);</span>
+
+<span class="fc bfc" id="L57" title="All 2 branches covered.">		for (String pred : cmdArgs.getTargetPredVal()) {</span>
+			ConditionalModelPerPredicate rdn;
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">			if (fullModel.containsKey(pred)) {</span>
+<span class="nc" id="L60">				rdn = fullModel.get(pred);</span>
+<span class="nc" id="L61">				rdn.reparseModel(setup);</span>
+			} else {
+<span class="fc" id="L63">				Utils.println(&quot;% Did not learn a model for '&quot; + pred + &quot;' this run.&quot;);</span>
+<span class="fc" id="L64">				rdn = new ConditionalModelPerPredicate(setup);</span>
+
+<span class="fc" id="L66">				rdn.setTargetPredicate(pred);</span>
+<span class="fc" id="L67">				rdn.loadModel(BoostingUtils.getModelFile(cmdArgs, pred, true), setup, cmdArgs.getMaxTreesVal());</span>
+<span class="fc" id="L68">				rdn.setNumTrees(cmdArgs.getMaxTreesVal());</span>
+<span class="fc" id="L69">				fullModel.put(pred, rdn);</span>
+			}
+<span class="fc" id="L71">		}</span>
+<span class="fc" id="L72">	}</span>
+	
+	public void infer() {
+<span class="fc" id="L75">		InferRegressionTrees infer = new InferRegressionTrees(cmdArgs, setup);</span>
+<span class="fc" id="L76">		infer.runInference(fullModel);</span>
+<span class="fc" id="L77">	}</span>
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Theory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">Theory.java</span></div><h1>Theory.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.ILP.ChildrenClausesGenerator;
+import edu.wisc.cs.will.ILP.InlineManager;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.Serializable;
+import java.util.*;
+
+/*
+ * @author shavlik
+ *
+ * A 'theory' is a collection of first-order predicate calculus sentences, represented (for us) in clausal form.
+ * 
+ */
+public class Theory extends AllOfFOPC implements Serializable, Iterable&lt;Sentence&gt; {
+
+	// TODO(hayesall): This deals with quite a few of the terms I've been factoring out:
+	//		inline, temporary, prune, support
+
+<span class="fc" id="L21">	private InlineManager              inlineHandler       = null;</span>
+
+	public void setInlineHandler(InlineManager inlineHandler) {
+<span class="fc" id="L24">		this.inlineHandler = inlineHandler;</span>
+<span class="fc" id="L25">	}</span>
+
+	private List&lt;Clause&gt;               clauses;
+	private List&lt;Clause&gt;               supportClauses;  // These clauses are needed to support evaluation of the theory.  Let's keep these in a list, in case the order matters.
+	private Collection&lt;Sentence&gt;       sentences;       // The original sentences.  Note: one sentence can become many clauses, so not a one-to-one match (could do so if needed).
+	private List&lt;Clause&gt;               originalClauses; // Before dealing with IN-LINES.
+<span class="fc" id="L31">	private List&lt;Clause&gt;               unsimplifiedClauses        = null; // Before simplification is called.</span>
+<span class="fc" id="L32">	private List&lt;Clause&gt;               unsimplifiedSupportClauses = null;</span>
+<span class="fc" id="L33">	private boolean                    somethingSimplified        = false; // See if the simplified version is different.	</span>
+	
+	final transient public HandleFOPCstrings stringHandler;
+
+<span class="fc" id="L37">	private PrettyPrinterOptions prettyPrinterOptions = null;</span>
+	
+<span class="fc" id="L39">	public Theory(HandleFOPCstrings stringHandler) {</span>
+<span class="fc" id="L40">		this.clauses              = null;</span>
+<span class="fc" id="L41">		this.stringHandler        = stringHandler;</span>
+<span class="fc" id="L42">	}</span>
+
+	public Theory(HandleFOPCstrings stringHandler, Collection&lt;? extends Sentence&gt; standardSentences) {
+<span class="fc" id="L45">		this(stringHandler, standardSentences, null);</span>
+<span class="fc" id="L46">	}</span>
+	public Theory(HandleFOPCstrings stringHandler, Collection&lt;? extends Sentence&gt; standardSentences, InlineManager inlineHandler) {
+<span class="fc" id="L48">		this(stringHandler);</span>
+<span class="fc" id="L49">		this.inlineHandler = inlineHandler;</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">		if (standardSentences == null) { sentences = null;  clauses = null; }</span>
+<span class="fc" id="L51">		else { addTheseSentences(standardSentences, inlineHandler);	}</span>
+		
+<span class="fc" id="L53">		originalClauses = clauses;</span>
+<span class="fc" id="L54">	}</span>
+
+	// This assumes any desired inlining etc. has already been done.
+	public Theory simplify() {
+<span class="fc" id="L58">		collectAnyRemainingInliners();</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">    	if (unsimplifiedClauses != null) { Utils.warning(&quot;Have already simplified the clauses.&quot;);  return this; }</span>
+<span class="fc" id="L60">    	unsimplifiedClauses        = clauses;</span>
+<span class="fc" id="L61">    	unsimplifiedSupportClauses = supportClauses;</span>
+<span class="fc" id="L62">    	clauses        = simplify(unsimplifiedClauses);</span>
+<span class="fc" id="L63">    	supportClauses = simplify(unsimplifiedSupportClauses);</span>
+<span class="fc" id="L64">    	return this;</span>
+    }
+
+	private List&lt;Clause&gt; simplify(List&lt;Clause&gt; theseClauses) {
+<span class="fc bfc" id="L68" title="All 2 branches covered.">    	if (theseClauses == null) { return null; }</span>
+<span class="fc" id="L69">    	List&lt;Clause&gt; results = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L70">    	somethingSimplified  = false;</span>
+		// I am not sure why this is outside the clause FOR loop, but that is the way it was when simplifyListOfLiterals's code was pulled out (to allow recursion), and so I left it that way (7/30/10).
+<span class="fc bfc" id="L72" title="All 2 branches covered.">		for (Clause cRaw : theseClauses) {</span>
+<span class="fc" id="L73">			List&lt;Literal&gt; newNegLits = simplifyListOfLiterals(cRaw.negLiterals);</span>
+<span class="fc" id="L74">			Clause newC = stringHandler.getClause(cRaw.posLiterals, newNegLits, cRaw.getExtraLabel());</span>
+<span class="fc" id="L75">    		results.add(newC);</span>
+<span class="fc" id="L76">    	}</span>
+<span class="fc" id="L77">    	return results;</span>
+    }
+    
+    // It is possible some in-liners are still in a theory (eg, due to some bug).
+    // So if a theory is to 'stand alone' in a new task, we need to keep the definitions of these in-liners.
+<span class="fc" id="L82">    private boolean haveCollectedRemainingInLiners = false;</span>
+<span class="fc" id="L83">    private final Set&lt;Clause&gt; collectedSupporters = new HashSet&lt;&gt;(4);</span>
+    private void collectAnyRemainingInliners() {
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">    	if (haveCollectedRemainingInLiners) {</span>
+<span class="nc" id="L86">			return;</span>
+		}
+<span class="fc" id="L88">    	collectedSupporters.clear();</span>
+<span class="fc" id="L89">    	help_collectAnyRemainingInliners(clauses);</span>
+<span class="fc" id="L90">    	help_collectAnyRemainingInliners(supportClauses);</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">    	if (!collectedSupporters.isEmpty()) {</span>
+<span class="nc" id="L92">    		supportClauses.addAll(collectedSupporters);</span>
+<span class="nc" id="L93">    	   	collectedSupporters.clear();</span>
+    	}
+<span class="fc" id="L95">    	haveCollectedRemainingInLiners = true;    	</span>
+<span class="fc" id="L96">    }</span>
+    
+    private void help_collectAnyRemainingInliners(List&lt;Clause&gt; theseClauses) {
+<span class="fc bfc" id="L99" title="All 2 branches covered.">    	if (theseClauses == null) {</span>
+<span class="fc" id="L100">			return;</span>
+		}
+<span class="fc bfc" id="L102" title="All 2 branches covered.">		for (Clause cRaw : theseClauses) {</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">			if (cRaw.negLiterals != null) {</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">				for (Literal lit : cRaw.negLiterals) {</span>
+<span class="fc" id="L105">					help_collectAnyRemainingInliners(lit);</span>
+<span class="fc" id="L106">				}</span>
+			}
+<span class="fc" id="L108">    	}</span>
+<span class="fc" id="L109">    }</span>
+
+	private void help_collectAnyRemainingInliners(Literal lit) {
+<span class="fc bfc" id="L112" title="All 2 branches covered.">		if (lit.getArity() &gt; 0) {</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">			for (Term ignored : lit.getArguments()) {</span>
+<span class="fc" id="L114">				help_collectAnyRemainingInliners();</span>
+<span class="fc" id="L115">			}</span>
+		}
+<span class="fc" id="L117">    }</span>
+    
+    private void help_collectAnyRemainingInliners() {
+		// TODO(hayesall): Deprecate all of this.
+<span class="fc" id="L121">	}</span>
+    
+    private List&lt;Literal&gt; simplifyListOfLiterals(List&lt;Literal&gt; inputList) {
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">    	if (inputList == null) { return null; }</span>
+<span class="fc" id="L125">		List&lt;Literal&gt; newNegLits     = new ArrayList&lt;&gt;(inputList.size());</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">		for (Literal nLit : inputList) {</span>
+<span class="fc" id="L127">			boolean saveIt = true;</span>
+
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">			if (canPrune()) {</span>
+<span class="nc" id="L130">				continue;</span>
+			}
+
+			// TODO(hayesall): Check for side effects and remove.
+<span class="fc" id="L134">			nLit.numberArgs();</span>
+<span class="fc" id="L135">			nLit.numberArgs();</span>
+<span class="fc" id="L136">			nLit.numberArgs();</span>
+
+<span class="fc bfc" id="L138" title="All 2 branches covered.">			for (Literal savedLit : newNegLits) {</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">				if (savedLit.equals(nLit)) {</span>
+<span class="nc" id="L140">					saveIt = false;</span>
+<span class="nc" id="L141">					break;</span>
+				}
+<span class="fc" id="L143">			}</span>
+			
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">			if (saveIt) {</span>
+<span class="fc" id="L146">				newNegLits.add(nLit);</span>
+			} else {
+<span class="nc" id="L148">				somethingSimplified = true;</span>
+			}
+<span class="fc" id="L150">		}</span>
+
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">		if (newNegLits.size() &lt; 1) { newNegLits.add(stringHandler.trueLiteral); } // Could propagate this 'true' but it is an unlikely case and so don't bother.</span>
+<span class="fc" id="L153">		return newNegLits;</span>
+    }
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+<span class="fc" id="L158">	private StringConstant[] constantsToUse = null; // These are used to replace variables when matching for pruning.</span>
+
+	private boolean canPrune() {
+<span class="fc bfc" id="L161" title="All 2 branches covered.">		if (constantsToUse == null) {</span>
+<span class="fc" id="L162">    		constantsToUse = new StringConstant[ChildrenClausesGenerator.numberofConstantsToCreate];</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">    		for (int i = 0; i &lt; ChildrenClausesGenerator.numberofConstantsToCreate; i++) { // Task is not yet assigned when instance created, so need an extra call.  Plus good to all a resetting of all instance variables.</span>
+<span class="fc" id="L164">    			constantsToUse[i] = stringHandler.getStringConstant(&quot;WillConst&quot; + (i + 1));  // Need something that is unlikely to also appear in a clause &quot;of its own right.&quot;  Also, recall that these count from ONE.</span>
+    		}
+    		
+    	}
+<span class="fc" id="L168">		return false;</span>
+
+	}
+
+	private void addTheseSentences(Collection&lt;? extends Sentence&gt; standardSentences, InlineManager checkForInlinersAndSupportingClauses) {
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">		if (standardSentences == null) { return; }</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">		if (clauses   == null) { clauses   = new ArrayList&lt;&gt;(standardSentences.size()); }</span>
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">		if (sentences == null) { sentences = new ArrayList&lt;&gt;(standardSentences);      }</span>
+<span class="nc" id="L176">		else                   { sentences.addAll(standardSentences); }</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">		for (Sentence s : standardSentences) {</span>
+<span class="fc" id="L178">			boolean hold = stringHandler.prettyPrintClauses;</span>
+<span class="fc" id="L179">			stringHandler.prettyPrintClauses = false;</span>
+<span class="fc" id="L180">			List&lt;Clause&gt; theseClauses = s.convertToClausalForm();</span>
+<span class="fc" id="L181">			stringHandler.prettyPrintClauses = hold;</span>
+<span class="fc" id="L182">			addAllMainClauses(theseClauses, checkForInlinersAndSupportingClauses);</span>
+<span class="fc" id="L183">		}</span>
+<span class="fc" id="L184">	}</span>
+
+	final void addAllMainClauses(List&lt;? extends Clause&gt; clausesToAdd, InlineManager checkForInlinersAndSupportingClauses) {
+<span class="fc bfc" id="L187" title="All 2 branches covered.">		for (Clause c : clausesToAdd) {</span>
+<span class="fc" id="L188">			addMainClause(c, checkForInlinersAndSupportingClauses);</span>
+<span class="fc" id="L189">		}	</span>
+<span class="fc" id="L190">	}</span>
+
+	public void addMainClause(Clause clause, InlineManager checkForInlinersAndSupportingClauses) {
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">		if (clause == null) { return; }</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">		if (clauses         == null) { clauses         = new ArrayList&lt;&gt;(4); }</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">		if (originalClauses == null) { originalClauses = new ArrayList&lt;&gt;(4); }</span>
+<span class="fc" id="L196">		originalClauses.add(clause);</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">		if (checkForInlinersAndSupportingClauses != null) {</span>
+<span class="fc" id="L198">			List&lt;Clause&gt; doubleResults = checkForInlinersAndSupportingClauses.handleInlinerAndSupportingClauses(clause);</span>
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">			if (doubleResults == null) { Utils.error(&quot;Should not get a NULL here using: &quot; + clause); }</span>
+<span class="fc" id="L200">			clauses.add(doubleResults.remove(0));</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">			for (Clause sc : doubleResults) { addSupportingClause(sc); }</span>
+<span class="fc" id="L202">		} else {</span>
+<span class="fc" id="L203">			clauses.add(clause);</span>
+		}
+<span class="fc" id="L205">	}</span>
+
+	private void addSupportingClause(Clause clause) {
+<span class="nc bnc" id="L208" title="All 2 branches missed.">		if (clause == null) { return; }</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">		if (supportClauses == null) { supportClauses = new ArrayList&lt;&gt;(4); }</span>
+		
+<span class="nc" id="L211">        boolean found = false;</span>
+        
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        for (Clause aSupportClause : supportClauses) {</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">            if ( clause.isEquivalentUptoVariableRenaming(aSupportClause) ){</span>
+<span class="nc" id="L215">                found = true;</span>
+<span class="nc" id="L216">                break;</span>
+            }
+<span class="nc" id="L218">        }</span>
+
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        if (!found) supportClauses.add(clause);</span>
+<span class="nc" id="L221">	}</span>
+
+    public List&lt;Clause&gt; getClauses() {
+<span class="fc" id="L224">        return clauses;</span>
+    }
+
+	public List&lt;Clause&gt; getSupportClauses() {
+<span class="fc" id="L228">		return supportClauses;</span>
+	}
+	void setSupportClauses(List&lt;Clause&gt; supportClauses) {
+<span class="nc" id="L231">		this.supportClauses = supportClauses;</span>
+<span class="nc" id="L232">	}</span>
+
+	void setClauses(List&lt;Clause&gt; clauses) {
+<span class="fc" id="L235">		this.clauses= null;  </span>
+<span class="fc" id="L236">		addAllMainClauses(clauses, inlineHandler);</span>
+<span class="fc" id="L237">	}</span>
+
+	public String toPrettyString() {
+<span class="fc" id="L240">		return toPrettyString(&quot;&quot;, Integer.MIN_VALUE, null);</span>
+	}
+	protected String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="fc" id="L243">		StringBuilder str = new StringBuilder(newLineStarter); // No weights on theories - instead they are on sentences.</span>
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(clauses) &lt; 1) {</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">			if (Utils.getSizeSafely(supportClauses) &gt; 0) { Utils.error(&quot;There are SUPPORTING clauses, but no regular clauses!  Supporters: &quot; + supportClauses); }</span>
+<span class="nc" id="L246">			return &quot;% There are no clauses in this theory.&quot;;</span>
+		}
+<span class="fc" id="L248">		boolean firstTime = true;</span>
+<span class="fc" id="L249">		int counter = 1;</span>
+<span class="fc bfc" id="L250" title="All 2 branches covered.">		for (Clause clause : clauses) {	</span>
+<span class="fc bfc" id="L251" title="All 2 branches covered.">			if (firstTime) { firstTime = false; str.append(&quot;\n% &quot;).append(newLineStarter).append(&quot;Clauses:\n\n&quot;); }</span>
+<span class="fc" id="L252">			str.append(newLineStarter).append(printClause(clause, newLineStarter)).append(&quot; // Clause #&quot;).append(counter++).append(&quot;.\n\n&quot;);</span>
+<span class="fc" id="L253">		}</span>
+<span class="fc" id="L254">		firstTime = true;</span>
+<span class="fc" id="L255">		counter   = 1;</span>
+<span class="pc bpc" id="L256" title="3 of 4 branches missed.">		if (Utils.getSizeSafely(supportClauses) &gt; 0) for (Clause clause : supportClauses) {	</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">			if (firstTime) { firstTime = false; str.append(&quot;\n% &quot;).append(newLineStarter).append(&quot;Supporting Clauses:\n\n&quot;); }</span>
+<span class="nc" id="L258">			str.append(newLineStarter).append(printClause(clause, newLineStarter)).append(&quot; // Supporting Clause #&quot;).append(counter++).append(&quot;.\n\n&quot;);</span>
+<span class="nc" id="L259">		}</span>
+<span class="fc" id="L260">		firstTime = true;</span>
+<span class="fc" id="L261">		counter   = 1;</span>
+<span class="pc bpc" id="L262" title="3 of 4 branches missed.">		boolean haveSimplified = somethingSimplified &amp;&amp; (Utils.getSizeSafely(unsimplifiedClauses) +  Utils.getSizeSafely(unsimplifiedSupportClauses) &gt; 0);</span>
+<span class="pc bpc" id="L263" title="1 of 2 branches missed.">		if (haveSimplified) { str.append(&quot;\n/* Before Simplification:\n&quot;); }</span>
+<span class="fc" id="L264">		else { return str.toString(); }</span>
+<span class="nc bnc" id="L265" title="All 4 branches missed.">		if (Utils.getSizeSafely(unsimplifiedClauses) &gt; 0) for (Clause clause : unsimplifiedClauses) {</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">			if (firstTime) { firstTime = false; str.append(&quot;\n% &quot;).append(newLineStarter).append(&quot;Unsimplified Clauses:\n\n&quot;); }</span>
+<span class="nc" id="L267">			str.append(newLineStarter).append(printClause(clause, newLineStarter)).append(&quot; // Clause #&quot;).append(counter++).append(&quot;.\n\n&quot;);</span>
+<span class="nc" id="L268">		}	</span>
+<span class="nc" id="L269">		firstTime = true;</span>
+<span class="nc" id="L270">		counter   = 1;	</span>
+<span class="nc bnc" id="L271" title="All 4 branches missed.">		if (Utils.getSizeSafely(unsimplifiedSupportClauses) &gt; 0) for (Clause clause : unsimplifiedSupportClauses) {	</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">			if (firstTime) { firstTime = false; str.append(&quot;\n% &quot;).append(newLineStarter).append(&quot;Unsimplified Supporting Clauses:\n\n&quot;); }</span>
+<span class="nc" id="L273">			str.append(newLineStarter).append(printClause(clause, newLineStarter)).append(&quot; // Supporting Clause #&quot;).append(counter++).append(&quot;.\n\n&quot;);</span>
+<span class="nc" id="L274">		}</span>
+<span class="nc" id="L275">		str.append(&quot;\n*/&quot;);</span>
+<span class="nc" id="L276">		return str.toString();</span>
+	}
+	public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L279">		return toPrettyString(&quot;&quot;, precedenceOfCaller, bindingList);</span>
+	}
+
+
+    private String printClause(Clause clause, String newLineStarter) {
+<span class="fc" id="L284">        return PrettyPrinter.print(clause, &quot;&quot;, newLineStarter, getPrettyPrinterOptions(), null);</span>
+
+    }
+
+    private PrettyPrinterOptions getPrettyPrinterOptions() {
+<span class="fc bfc" id="L289" title="All 2 branches covered.">        if ( prettyPrinterOptions == null ) {</span>
+<span class="fc" id="L290">            prettyPrinterOptions = new PrettyPrinterOptions();</span>
+<span class="fc" id="L291">            prettyPrinterOptions.setMaximumLiteralsPerLine(1);</span>
+<span class="fc" id="L292">            prettyPrinterOptions.setAlignParathesis();</span>
+<span class="fc" id="L293">            prettyPrinterOptions.setRenameVariables(true);</span>
+<span class="fc" id="L294">            prettyPrinterOptions.setNewLineAfterOpenParathesis();</span>
+<span class="fc" id="L295">            prettyPrinterOptions.setMaximumIndentationAfterImplication(5);</span>
+<span class="fc" id="L296">            prettyPrinterOptions.setNewLineAfterImplication(true);</span>
+        }
+
+<span class="fc" id="L299">        return prettyPrinterOptions;</span>
+    }
+
+	@Override
+    public Theory applyTheta(Map&lt;Variable, Term&gt; bindings) {
+    	// TODO Auto-generated method stub
+		// TODO(@hayesall): `applyTheta` in `FOPC.Theory` raises an error.
+<span class="nc" id="L306">    	Utils.error(&quot;Theory applyTheta&quot;);</span>
+<span class="nc" id="L307">    	return this;</span>
+    }
+
+    @Override
+    public Iterator&lt;Sentence&gt; iterator() {
+<span class="fc" id="L312">        return sentences.iterator();</span>
+    }
+
+
+    @Override
+    public String toString() {
+<span class="nc" id="L318">		return toPrettyString(&quot;&quot;, 0, null);</span>
+    }
+
+	@Override
+    public int countVarOccurrencesInFOPC(Variable v) {
+<span class="nc" id="L323">    	return 2; // TODO - might want to do a real count, but for now we don't want to make any of these variable anonymous anyway.</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

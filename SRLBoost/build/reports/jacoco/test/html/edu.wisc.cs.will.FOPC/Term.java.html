@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Term.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">Term.java</span></div><h1>Term.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC.visitors.TermVisitor;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Map;
+
+/*
+ * @author shavlik
+ */
+public abstract class Term extends AllOfFOPC implements Serializable, Comparable&lt;Term&gt; {
+	TypeSpec          typeSpec;
+	transient HandleFOPCstrings stringHandler; // Add another field to everything so it can access this, and hence access things like lowercaseMeansVariable.
+
+<span class="fc" id="L18">	Term() {} // DON'T CALL THESE DIRECTLY.  GO VIA HandleFOPCstrings.</span>
+
+	public TypeSpec getTypeSpec() {
+<span class="fc" id="L21">		return typeSpec;</span>
+	}
+
+	// Only allow ONE type per term?  Note: numbers should not have spec's.
+
+	public void setTypeSpec(TypeSpec typeSpec) {
+<span class="fc bfc" id="L27" title="All 2 branches covered.">		if (     typeSpec == null) { return; }</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">		if (this.typeSpec == null) { this.typeSpec = typeSpec; return; }</span>
+
+<span class="fc" id="L30">		int newMode =      typeSpec.mode;</span>
+<span class="fc" id="L31">		int oldMode = this.typeSpec.mode;</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">		if (newMode != oldMode) { this.typeSpec.mode = newMode; }</span>
+<span class="fc" id="L33">		Type newType = typeSpec.isaType;</span>
+<span class="fc" id="L34">		Type oldType = this.typeSpec.isaType;</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">		if (newType == oldType) { return; }</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">		if ( stringHandler.isaHandler.isa(oldType, newType)) { return; } // Keep the more specific type.</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">		if (!stringHandler.isaHandler.isa(newType, oldType)) { Utils.error(&quot;Cannot set the type of '&quot; + this + &quot;' to '&quot; + typeSpec + &quot;' since it already is of type '&quot; + this.typeSpec + &quot;'\nand neither is an subclass of the other&quot;); }</span>
+<span class="nc" id="L38">		this.typeSpec.isaType = newType;</span>
+<span class="nc" id="L39">	}</span>
+
+	Term applyTheta(BindingList bindings) {
+<span class="nc bnc" id="L42" title="All 4 branches missed.">        if ( bindings == null || bindings.theta == null ) {</span>
+<span class="nc" id="L43">            return this;</span>
+        }
+<span class="nc" id="L45">		return applyTheta(bindings.theta);</span>
+    }
+	public abstract Term           applyTheta(Map&lt;Variable,Term&gt; bindings) ;
+	public abstract Term           copy(boolean recursiveCopy);
+    public abstract Term           copy2(boolean recursiveCopy, BindingList bindingList);
+	public abstract BindingList    variants(Term term, BindingList bindings);
+	public abstract boolean        containsVariables();
+	public abstract boolean        freeVariablesAfterSubstitution(BindingList theta);
+	public abstract Collection&lt;Variable&gt; collectFreeVariables(Collection&lt;Variable&gt; boundVariables);
+	
+<span class="fc bfc" id="L55" title="All 2 branches covered.">	public boolean isGrounded() { return !containsVariables(); }</span>
+
+
+	@Override
+	public int compareTo(Term otherTerm) { // Could be made more efficient for subclasses if this ends up taking too much time.
+<span class="nc" id="L60">		return toString().compareTo(otherTerm.toString());</span>
+	}
+
+	/* Returns the Term as a clause.
+     * @return Clause represented by the term, or null if one does not exist.
+     */
+<span class="nc" id="L66">    public Clause         asClause() { return null; }</span>
+
+	public Literal asLiteral() {
+<span class="nc" id="L69">        Utils.error(&quot;Term '&quot; + this + &quot;' can not be converted to a Literal.&quot;);</span>
+<span class="nc" id="L70">        return null;</span>
+    }
+
+    public &lt;Return,Data&gt; Return accept(TermVisitor&lt;Return,Data&gt; visitor, Data data) {
+<span class="nc" id="L74">        return visitor.visitOtherTerm(this);</span>
+    }
+
+
+	public abstract BindingList          isEquivalentUptoVariableRenaming(Term that, BindingList bindings);
+
+	
+   /* Methods for reading a Object cached to disk.
+    */
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (!(in instanceof FOPCInputStream)) {</span>
+<span class="nc" id="L85">            throw new IllegalArgumentException(getClass().getCanonicalName() + &quot;.readObject() input stream must support FOPCObjectInputStream interface&quot;);</span>
+        }
+
+<span class="nc" id="L88">        in.defaultReadObject();</span>
+
+<span class="nc" id="L90">        FOPCInputStream fOPCInputStream = (FOPCInputStream) in;</span>
+
+<span class="nc" id="L92">        this.stringHandler = fOPCInputStream.getStringHandler();</span>
+<span class="nc" id="L93">    }</span>
+
+    public HandleFOPCstrings getStringHandler() {
+<span class="fc" id="L96">        return stringHandler;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

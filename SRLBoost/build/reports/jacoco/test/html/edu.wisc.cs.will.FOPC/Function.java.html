@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Function.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">Function.java</span></div><h1>Function.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC.visitors.TermVisitor;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.*;
+
+/*
+ * @author shavlik
+ *
+ */
+<span class="pc bpc" id="L12" title="1 of 2 branches missed.">public class Function extends Term implements LiteralOrFunction {</span>
+	public final FunctionName functionName;
+	final List&lt;Term&gt;   arguments;    // Note: should not directly manipulate.  Instead use addArgument(), removeArgument(), and setArguments().
+	private List&lt;String&gt; argumentNames; // (Optional) names of the arguments.
+<span class="fc" id="L16">	private int        cached_arity      = -1;</span>
+<span class="fc" id="L17">	int        cachedVariableCount = -1; // Only set to false if CHECKED.  (Key: -1 = unknown, 0 = false, 1 = true.)</span>
+
+<span class="fc" id="L19">	Function(HandleFOPCstrings stringHandler, FunctionName functionName, List&lt;Term&gt; arguments, TypeSpec typeSpec) {</span>
+<span class="fc" id="L20">		this.stringHandler = stringHandler;</span>
+<span class="fc" id="L21">		this.functionName  = functionName;</span>
+<span class="fc" id="L22">		this.arguments     = arguments;</span>
+<span class="fc" id="L23">		this.setTypeSpec(typeSpec);</span>
+<span class="pc bpc" id="L24" title="2 of 4 branches missed.">		assert functionName != null;</span>
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">		if (functionName.name.equals(&quot;&quot;)) { Utils.error(&quot;You have not provided a function name that is the empty string!&quot;); }</span>
+<span class="fc" id="L26">	}</span>
+
+	Function(HandleFOPCstrings stringHandler, FunctionName functionName, List&lt;Term&gt; arguments, List&lt;String&gt; argumentNames, TypeSpec typeSpec) {
+<span class="fc" id="L29">		this(stringHandler, functionName, arguments, typeSpec);</span>
+<span class="fc" id="L30">		this.argumentNames = argumentNames;</span>
+<span class="fc" id="L31">		sortArgumentsByName();</span>
+		// Allow either to be null (e.g., a 'bare copy' might be being made).
+<span class="pc bpc" id="L33" title="4 of 6 branches missed.">		if (arguments != null &amp;&amp; argumentNames != null &amp;&amp; Utils.getSizeSafely(arguments) !=  Utils.getSizeSafely(argumentNames)) {</span>
+<span class="nc" id="L34">			Utils.error(&quot;Have &quot; + arguments + &quot; and &quot; + argumentNames + &quot; - number of arguments and number of names must match.&quot;);</span>
+		}
+<span class="fc" id="L36">	}</span>
+
+	public int numberArgs() {
+<span class="fc bfc" id="L39" title="All 2 branches covered.">		if (cached_arity &lt; 0) { setNumberArgs(); }</span>
+<span class="fc" id="L40">		return cached_arity;</span>
+	}
+	private void setNumberArgs() {
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">		if (arguments == null) { cached_arity = 0; }</span>
+<span class="fc" id="L44">		else                   { cached_arity =  arguments.size(); }</span>
+<span class="fc" id="L45">	}</span>
+
+	// Cache this calculation to save time.
+	public boolean containsVariables() {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">		if (cachedVariableCount &lt; 0) {</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">			if (arguments == null) { cachedVariableCount = 0; return false; }</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">			for (Term term : arguments) { </span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">				if ( term instanceof Variable)                                           { cachedVariableCount = 1; return true; }</span>
+<span class="pc bpc" id="L53" title="3 of 4 branches missed.">				if ((term instanceof Function) &amp;&amp; term.containsVariables()) { cachedVariableCount = 1; return true; }</span>
+<span class="fc" id="L54">			}</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">			if (cachedVariableCount &lt; 0) { cachedVariableCount = 0; }</span>
+		}
+<span class="fc bfc" id="L57" title="All 2 branches covered.">		return (cachedVariableCount &gt; 0);</span>
+	}
+
+    @Override
+    public BindingList isEquivalentUptoVariableRenaming(Term that, BindingList bindings) {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (!(that instanceof Function)) return null;</span>
+
+<span class="nc" id="L64">        Function function = (Function) that;</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (!this.functionName.equals(function.functionName)) return null;</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if ( this.numberArgs() != function.numberArgs() ) return null;</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        for (int i = 0; i &lt; numberArgs(); i++) {</span>
+<span class="nc" id="L70">            bindings = this.getArgument(i).isEquivalentUptoVariableRenaming(function.getArgument(i), bindings);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if ( bindings == null ) return null;</span>
+        }
+
+<span class="nc" id="L74">        return bindings;</span>
+    }
+
+	/* Would any variables in this function remain UNBOUND if this binding list were to be applied?
+	 */
+    @Override
+	public boolean freeVariablesAfterSubstitution(BindingList theta) {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">		if (!containsVariables()) { return false; }</span>
+<span class="nc bnc" id="L82" title="All 4 branches missed.">		if (theta == null || arguments == null) { return false; }</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">		for (Term term : arguments) if (term.freeVariablesAfterSubstitution(theta)) { return true; }</span>
+<span class="nc" id="L84">		return false;</span>
+	}
+
+	@Override
+	public Function applyTheta(Map&lt;Variable,Term&gt; theta) {
+		// This should be essentially the same code as in Literal.applyTheta
+<span class="fc" id="L90">        boolean needNewFunction = false; // See if there is a chance this might need to change (only do a one-level deep evaluation).</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (arguments != null) {</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            for (Term term : arguments) {</span>
+<span class="fc bfc" id="L93" title="All 6 branches covered.">                if (!((term instanceof Variable &amp;&amp; theta.get(term) == null) || term instanceof Constant)) {</span>
+<span class="fc" id="L94">                    needNewFunction = true;</span>
+<span class="fc" id="L95">                    break;</span>
+                }
+<span class="fc" id="L97">            }</span>
+        }
+
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (!needNewFunction) {</span>
+<span class="fc" id="L101">			return this;</span>
+        }
+
+<span class="fc" id="L104">        int numbArgs = numberArgs();</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        List&lt;Term&gt; newArguments = (numbArgs == 0 ? null : new ArrayList&lt;&gt;(numberArgs()));</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (numbArgs &gt; 0) {</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            for (int i = 0; i &lt; numbArgs; i++) {</span>
+<span class="fc" id="L108">                Term arg = arguments.get(i);</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">                if (arg == null) {</span>
+<span class="nc" id="L110">                    Utils.error(&quot;Has an arg=null: &quot; + this);</span>
+                }
+<span class="fc" id="L112">                newArguments.add(arg.applyTheta(theta));</span>
+            }
+        }
+<span class="fc" id="L115">		return getBareCopy(newArguments);</span>
+	}
+
+    public Function applyTheta(BindingList bindings) {
+<span class="nc" id="L119">        return (Function) super.applyTheta(bindings);</span>
+    }
+
+	Function getBareCopy(List&lt;Term&gt; newArguments) {
+<span class="fc" id="L123">		return stringHandler.getFunction(functionName, newArguments, argumentNames, typeSpec);</span>
+	}
+	private Function getBareCopy(List&lt;Term&gt; newArguments, List&lt;String&gt; newArgumentNames) {
+<span class="nc" id="L126">		return stringHandler.getFunction(functionName, newArguments, newArgumentNames, typeSpec);</span>
+	}
+
+	@Override
+	public Function copy(boolean recursiveCopy) { // recursiveCopy=true means that the copying recurs down to the leaves.
+<span class="nc bnc" id="L131" title="All 2 branches missed.">		List&lt;Term&gt;   newArguments = (arguments     != null ? new ArrayList&lt;&gt;(  numberArgs()) : null);</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">		List&lt;String&gt; newArgNames  = (argumentNames != null ? new ArrayList&lt;&gt;(numberArgs()) : null);</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">		if (argumentNames != null) { newArgNames.addAll(argumentNames); }</span>
+<span class="nc bnc" id="L134" title="All 4 branches missed.">		assert newArguments != null;</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">		if (recursiveCopy) {</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">			for (Term term : arguments) {</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">				newArguments.add(term == null ? null : term.copy(true));</span>
+<span class="nc" id="L138">			}</span>
+<span class="nc" id="L139">			return getBareCopy(newArguments, newArgNames);</span>
+		}
+<span class="nc" id="L141">		newArguments.addAll(arguments);</span>
+<span class="nc" id="L142">		return getBareCopy(newArguments, newArgNames);</span>
+	}
+
+    @Override
+	public Function copy2(boolean recursiveCopy, BindingList bindingList) { // recursiveCopy=true means that the copying recurs down to the leaves.
+<span class="nc bnc" id="L147" title="All 2 branches missed.">		List&lt;Term&gt;   newArguments = (arguments     != null ? new ArrayList&lt;&gt;(  numberArgs()) : null);</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">		List&lt;String&gt; newArgNames  = (argumentNames != null ? new ArrayList&lt;&gt;(numberArgs()) : null);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">		if (argumentNames != null) { newArgNames.addAll(argumentNames); }</span>
+<span class="nc bnc" id="L150" title="All 4 branches missed.">		assert newArguments != null;</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">		if (recursiveCopy) {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">			for (Term term : arguments) {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">				newArguments.add(term == null ? null : term.copy2(true, bindingList));</span>
+<span class="nc" id="L154">			}</span>
+<span class="nc" id="L155">			return getBareCopy(newArguments, newArgNames);</span>
+		}
+<span class="nc" id="L157">		newArguments.addAll(arguments);</span>
+<span class="nc" id="L158">		return getBareCopy(newArguments, newArgNames);</span>
+	}
+
+	public Clause asClause() {
+<span class="nc" id="L162">        return stringHandler.getClause( stringHandler.getLiteral(stringHandler.getPredicateName(functionName.name), arguments), true);</span>
+    }
+
+    public Literal asLiteral() {
+<span class="nc" id="L166">        return stringHandler.getLiteral(stringHandler.getPredicateName(functionName.name), arguments, argumentNames);</span>
+    }
+	
+    @Override
+	public Collection&lt;Variable&gt; collectFreeVariables(Collection&lt;Variable&gt; boundVariables) {
+<span class="fc" id="L171">		List&lt;Variable&gt; result = new ArrayList&lt;&gt;(numberArgs());</span>
+		
+<span class="pc bpc" id="L173" title="2 of 6 branches missed.">		if (arguments != null) for (Term term : arguments) if (term != null) {	</span>
+<span class="fc" id="L174">			Collection&lt;Variable&gt; tempVarList = term.collectFreeVariables(boundVariables);</span>
+			
+<span class="pc bpc" id="L176" title="5 of 6 branches missed.">			if (tempVarList != null) { for (Variable var : tempVarList) if (!result.contains(var)) { result.add(var); }}</span>
+		}
+<span class="fc" id="L178">		return result;</span>
+	}
+	
+	@Override
+	public int hashCode() { // Need to have equal objects produce the same hash code.
+<span class="fc" id="L183">		final int prime = 31;</span>
+<span class="fc" id="L184">		int result = 1;</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">		result = prime * result + ((functionName == null) ? 0 : functionName.hashCode());</span>
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">		result = prime * result + ((arguments    == null) ? 0 : arguments.hashCode());</span>
+<span class="fc" id="L187">		return result;</span>
+	}
+
+	// Are these two literals identical even if not the same instance?  Can be overridden by stringHandler.useStrictEqualsForLiterals
+	@Override
+	public boolean equals(Object other) {
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">		if (this == other) { return true; }</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">		if (!(other instanceof Function)) { return false; }</span>
+		
+<span class="fc" id="L196">		Function otherAsFunction = (Function) other;</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">		if (functionName != otherAsFunction.functionName) { return false; }</span>
+<span class="fc" id="L198">		int thisNumberOfArgs  =                 numberArgs();</span>
+<span class="fc" id="L199">		int otherNumberOfArgs = otherAsFunction.numberArgs();</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">		if (thisNumberOfArgs != otherNumberOfArgs)       { return false; }</span>
+
+		// Should do a double walk of the two lists, but I don't recall the syntax
+<span class="fc bfc" id="L203" title="All 2 branches covered.">		for (int i = 0; i &lt; thisNumberOfArgs; i++) {</span>
+<span class="fc bfc" id="L204" title="All 2 branches covered.">			if (!arguments.get(i).equals(otherAsFunction.arguments.get(i))) { return false; }</span>
+		}
+<span class="pc bpc" id="L206" title="2 of 4 branches missed.">		if (argumentNames == null &amp;&amp; otherAsFunction.argumentNames == null) { return true;  }</span>
+<span class="nc bnc" id="L207" title="All 4 branches missed.">		if (argumentNames == null || otherAsFunction.argumentNames == null) { return false; }</span>
+		// Should do a double walk of the two lists, but I don't recall the syntax
+<span class="nc bnc" id="L209" title="All 2 branches missed.">		for (int i = 0; i &lt; thisNumberOfArgs; i++) {</span>
+<span class="nc bnc" id="L210" title="All 2 branches missed.">			if (!argumentNames.get(i).equalsIgnoreCase(otherAsFunction.argumentNames.get(i))) { return false; }</span>
+		}
+<span class="nc" id="L212">		return true;</span>
+	}
+
+   // Are these two equivalent POSSIBLY AFTER SOME VARIABLE RENAMING.
+    @Override
+    public BindingList variants(Term other, BindingList bindings) {
+        // Need to collect the matched variables (so they don't get matched to another variable elsewhere).
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        if (!(other instanceof Function)) {</span>
+<span class="nc" id="L220">            return null;</span>
+        }
+        
+<span class="nc" id="L223">        Function otherAsFunction = (Function) other;</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (functionName != otherAsFunction.functionName) {</span>
+<span class="nc" id="L225">            return null;</span>
+        }
+        
+<span class="nc" id="L228">        int thisNumberOfArgs = numberArgs();</span>
+<span class="nc" id="L229">        int otherNumberOfArgs = otherAsFunction.numberArgs();</span>
+        
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        if (thisNumberOfArgs != otherNumberOfArgs) {</span>
+<span class="nc" id="L232">            return null;</span>
+        }
+        
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        if (arguments != null) {</span>
+<span class="nc" id="L236">            int i = 0;</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">            for (Term arg : arguments) { // Should do a double walk of the two lists, but I don't recall the syntax (to do).</span>
+<span class="nc" id="L238">                bindings = arg.variants(otherAsFunction.arguments.get(i++), bindings);</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">                if (bindings == null) {</span>
+<span class="nc" id="L240">                    return null;</span>
+                }
+<span class="nc" id="L242">            }</span>
+        }
+        
+<span class="nc bnc" id="L245" title="All 4 branches missed.">        if (argumentNames == null &amp;&amp; otherAsFunction.argumentNames == null) {</span>
+<span class="nc" id="L246">            return bindings;</span>
+        }
+        
+<span class="nc bnc" id="L249" title="All 4 branches missed.">        if (argumentNames == null || otherAsFunction.argumentNames == null) {</span>
+<span class="nc" id="L250">            return null;</span>
+        }
+        
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        for (int j = 0; j &lt; thisNumberOfArgs; j++) {</span>
+        	// Should do a double walk of the two lists, but I don't recall the syntax
+<span class="nc bnc" id="L255" title="All 2 branches missed.">            if (!argumentNames.get(j).equalsIgnoreCase(otherAsFunction.argumentNames.get(j))) {</span>
+<span class="nc" id="L256">                return null;</span>
+            }
+        }
+<span class="nc" id="L259">        return bindings;</span>
+    }
+
+	public Literal convertToLiteral(HandleFOPCstrings stringHandler) {
+<span class="fc" id="L263">		PredicateName predicateName = stringHandler.getPredicateName(functionName.name);</span>
+<span class="fc" id="L264">		return stringHandler.getLiteral(predicateName, arguments, argumentNames);</span>
+	}
+	
+    @Override
+	public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc bnc" id="L269" title="All 2 branches missed.">		String  fNameStr = (typeSpec != null ? typeSpec.getModeString() + typeSpec.isaType.typeName + &quot;:&quot; : &quot;&quot;) + functionName;</span>
+<span class="nc" id="L270">		boolean firstOne = true;</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">		boolean hasArgNames = (argumentNames != null);</span>
+		
+<span class="nc" id="L273">		if (functionName.printUsingInFixNotation &amp;&amp; numberArgs() == 1) {</span>
+			int precedence = HandleFOPCstrings.getOperatorPrecedence_static(functionName.name);
+			if (precedenceOfCaller &lt; precedence) { return &quot;(&quot; + fNameStr + (hasArgNames ? argumentNames.get(0) + &quot;=&quot;: &quot;&quot;) + arguments.get(0).toPrettyString(newLineStarter, precedence, bindingList) + &quot;)&quot;; }
+			return fNameStr + (hasArgNames ? argumentNames.get(0) + &quot;=&quot;: &quot;&quot;) + arguments.get(0).toPrettyString(newLineStarter, precedence, bindingList);
+	    }
+<span class="nc" id="L278">		if (functionName.printUsingInFixNotation &amp;&amp; numberArgs() == 2) {</span>
+			int precedence =  HandleFOPCstrings.getOperatorPrecedence_static(functionName.name);
+			if (precedenceOfCaller &lt; precedence) { return &quot;(&quot; + (hasArgNames ? argumentNames.get(0) + &quot;=&quot;: &quot;&quot;) + arguments.get(0).toPrettyString(newLineStarter, precedence, bindingList) + &quot; &quot; + fNameStr + &quot; &quot; + (hasArgNames ? argumentNames.get(1) + &quot;=&quot;: &quot;&quot;) + arguments.get(1).toPrettyString(newLineStarter, precedence, bindingList) + &quot;)&quot;; }
+			return                                              (hasArgNames ? argumentNames.get(0) + &quot;=&quot;: &quot;&quot;) + arguments.get(0).toPrettyString(newLineStarter, precedence, bindingList) + &quot; &quot; + fNameStr + &quot; &quot; + (hasArgNames ? argumentNames.get(1) + &quot;=&quot;: &quot;&quot;) + arguments.get(1).toPrettyString(newLineStarter, precedence, bindingList);
+	    }
+<span class="nc" id="L283">		StringBuilder result = new StringBuilder(fNameStr + &quot;(&quot;);</span>
+<span class="nc bnc" id="L284" title="All 2 branches missed.">		for (int i = 0; i &lt; numberArgs(); i++) {</span>
+<span class="nc" id="L285">			Term arg = arguments.get(i);</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">			if (firstOne) { firstOne = false; } else {</span>
+<span class="nc" id="L287">				result.append(&quot;, &quot;); }</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">			result.append(hasArgNames ? argumentNames.get(i) + &quot;=&quot; : &quot;&quot;).append(arg.toPrettyString(newLineStarter, Integer.MAX_VALUE, bindingList)); // No need for extra parentheses in an argument list.</span>
+		}		
+<span class="nc" id="L290">		return result + &quot;)&quot;;</span>
+	}
+
+    @Override
+	public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L295">		String  fNameStr = &quot;&quot; + functionName;</span>
+<span class="nc" id="L296">		boolean firstOne = true;</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">		boolean hasArgNames = (argumentNames != null);</span>
+		
+<span class="nc" id="L299">		if (functionName.printUsingInFixNotation &amp;&amp; numberArgs() == 1) {</span>
+			int precedence = HandleFOPCstrings.getOperatorPrecedence_static(functionName.name);
+			if (precedenceOfCaller &lt;= precedence) { return &quot;(&quot; + fNameStr + (hasArgNames ? argumentNames.get(0) + &quot;=&quot; : &quot;&quot;) + arguments.get(0).toString(precedence, bindingList) + &quot;)&quot;; }
+			return                                               fNameStr + (hasArgNames ? argumentNames.get(0) + &quot;=&quot; : &quot;&quot;) + arguments.get(0).toString(precedence, bindingList);
+	    }
+<span class="nc" id="L304">		if (functionName.printUsingInFixNotation &amp;&amp; numberArgs() == 2) {</span>
+			int precedence = HandleFOPCstrings.getOperatorPrecedence_static(functionName.name);
+			if (precedenceOfCaller &lt;= precedence) { return &quot;(&quot; + (hasArgNames ? argumentNames.get(0) + &quot;=&quot; : &quot;&quot;) + arguments.get(0).toString(precedence, bindingList) + &quot; &quot; + fNameStr + &quot; &quot; + (hasArgNames ? argumentNames.get(1) + &quot;=&quot;: &quot;&quot;) + arguments.get(1).toString(precedence, bindingList) + &quot;)&quot;; }
+			return                                               (hasArgNames ? argumentNames.get(0) + &quot;=&quot; : &quot;&quot;) + arguments.get(0).toString(precedence, bindingList) + &quot; &quot; + fNameStr + &quot; &quot; + (hasArgNames ? argumentNames.get(1) + &quot;=&quot;: &quot;&quot;) + arguments.get(1).toString(precedence, bindingList);
+	    }
+
+<span class="nc" id="L310">		StringBuilder result = new StringBuilder(fNameStr + &quot;(&quot;);</span>
+<span class="nc bnc" id="L311" title="All 2 branches missed.">		for (int i = 0; i &lt; numberArgs(); i++) {</span>
+<span class="nc" id="L312">			Term arg = arguments.get(i);	</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">			if (firstOne) { firstOne = false; } else {</span>
+<span class="nc" id="L314">				result.append(&quot;, &quot;); }</span>
+<span class="nc bnc" id="L315" title="All 4 branches missed.">			result.append(hasArgNames &amp;&amp; i &lt; argumentNames.size() ? argumentNames.get(i) + &quot;=&quot; : &quot;&quot;).append(arg.toString(Integer.MAX_VALUE, bindingList)); // No need for extra parentheses in an argument list.</span>
+		}		
+<span class="nc" id="L317">		return result + &quot;)&quot;;</span>
+	}
+	
+	public int countLeaves() {
+<span class="nc bnc" id="L321" title="All 2 branches missed.">		if (numberArgs() &lt; 1) { return 0;}</span>
+<span class="nc" id="L322">		int total = 0;</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">		for (Term term : arguments) {</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">			if (term instanceof Function) { total +=  ((Function) term).countLeaves(); }</span>
+<span class="nc" id="L325">			else { total++; }</span>
+<span class="nc" id="L326">		}</span>
+<span class="nc" id="L327">		return total;</span>
+	}
+	
+	public List&lt;Term&gt; getArguments() {
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">		return arguments == null ? Collections.EMPTY_LIST : arguments;</span>
+	}	
+	public Term getArgument(int i) {
+<span class="nc" id="L334">		return arguments.get(i);</span>
+	}
+
+	public List&lt;String&gt; getArgumentNames() {
+<span class="fc" id="L338">		return argumentNames;</span>
+	}
+
+	private void sortArgumentsByName() {
+<span class="pc bpc" id="L342" title="1 of 2 branches missed.">		if (argumentNames == null) { return; }</span>
+<span class="nc" id="L343">		int numbArgs = numberArgs();</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">		if (Utils.getSizeSafely(argumentNames) != numbArgs) { </span>
+<span class="nc" id="L345">			Utils.error(&quot;# of arguments (&quot; + numbArgs                           + &quot;) does not equal number of argument names (&quot;</span>
+<span class="nc" id="L346">										   + Utils.getSizeSafely(argumentNames) + &quot;):\n   args = &quot; + arguments + &quot;\n  names = &quot; + argumentNames + &quot;\n    lit = &quot; + this);</span>
+		}
+<span class="nc bnc" id="L348" title="All 2 branches missed.">		if (numbArgs &lt; 2) { return; }</span>
+<span class="nc" id="L349">		List&lt;NamedTerm&gt; namedTerms = new ArrayList&lt;&gt;(numbArgs);</span>
+<span class="nc" id="L350">		Set&lt;String&gt; namesSeen = new HashSet&lt;&gt;(4);</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">		for (int i = 0; i &lt; numbArgs; i++) {</span>
+<span class="nc" id="L352">			String argName = argumentNames.get(i);</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">			if (namesSeen.contains(argName)) { Utils.error(&quot;Cannot have duplicate names (&quot; + argName + &quot;): &quot; + argumentNames); }</span>
+<span class="nc bnc" id="L354" title="All 2 branches missed.">			if ( argName != null ) namesSeen.add(argName);</span>
+<span class="nc" id="L355">            namedTerms.add(new NamedTerm(arguments.get(i), argName));</span>
+		}
+<span class="nc" id="L357">		namedTerms.sort(NamedTerm.comparator);</span>
+<span class="nc" id="L358">		arguments.clear();</span>
+<span class="nc" id="L359">		argumentNames.clear();</span>
+<span class="nc bnc" id="L360" title="All 2 branches missed.">		for (NamedTerm nt : namedTerms) { </span>
+<span class="nc" id="L361">			arguments.add(    nt.term);</span>
+<span class="nc" id="L362">			argumentNames.add(nt.name);</span>
+<span class="nc" id="L363">		}</span>
+<span class="nc" id="L364">	}</span>
+
+	@Override
+    public &lt;Return,Data&gt; Return accept(TermVisitor&lt;Return,Data&gt; visitor, Data data) {
+<span class="nc" id="L368">        return visitor.visitFunction(this, data);</span>
+    }
+	@Override
+	public int countVarOccurrencesInFOPC(Variable v) {
+<span class="nc" id="L372">		int total = 0;</span>
+<span class="nc bnc" id="L373" title="All 4 branches missed.">		if (arguments != null) { for (Term arg : arguments) { total += arg.countVarOccurrencesInFOPC(v); } }</span>
+<span class="nc" id="L374">		return total;</span>
+	}
+
+	public int getArity() {
+<span class="nc" id="L378">        return numberArgs();</span>
+    }
+
+	public PredicateName getPredicateName() {
+<span class="nc" id="L382">        return getStringHandler().getPredicateName( functionName.name );</span>
+    }
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

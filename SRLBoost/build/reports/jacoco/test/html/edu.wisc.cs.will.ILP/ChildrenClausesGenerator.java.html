@@ -1,0 +1,866 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChildrenClausesGenerator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">ChildrenClausesGenerator.java</span></div><h1>ChildrenClausesGenerator.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.ChildrenNodeGenerator;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+import edu.wisc.cs.will.stdAIsearch.SearchNode;
+
+import java.util.*;
+
+/*
+ * @author shavlik
+ * 
+ * TODO(@jws) - if last literal is a BRIDGER than REQUIRE (unless flag set?) that a VAR NEW TO THE BRIDGER IS USED (else it isn't bridging).
+ *
+ */
+public class ChildrenClausesGenerator extends ChildrenNodeGenerator {
+
+	// TODO(@hayesall): Where does the magic number `numberofConstantsTocreate` come from?
+	public static final int numberofConstantsToCreate = 100;
+
+	// TODO(@jws): I don't know how in Java one can change (and recover) a passed-in argument, so I'll make it a 'global' instance variable.
+	private Map&lt;Type,List&lt;Term&gt;&gt; newTypesPresentInChildMap;
+	private List&lt;Type&gt; newTypesPresentInChild;
+
+	// Used if any pruning is being considered.
+	BindingList cachedBindingListForPruning;
+
+	// Also used when pruning.
+	Clause numberedBodyForPruning;
+
+	// Used to check for variants in children (only newVars can vary).
+	private Map&lt;PredicateName,List&lt;Literal&gt;&gt; literalsTriedSoFar;
+
+	// These are used to replace variables when matching for pruning.
+<span class="fc" id="L36">	private StringConstant[] constantsToUse = null;</span>
+
+	// Use this to save some new'ing.
+	private BindingList dummyBindingList;
+<span class="fc" id="L40">	int countOfPruningDueToVariantChildren = 0;</span>
+
+<span class="fc" id="L42">	ChildrenClausesGenerator() {</span>
+<span class="fc" id="L43">	}</span>
+	
+	void initialize() {
+
+<span class="fc" id="L47">		literalsTriedSoFar = new HashMap&lt;&gt;(64);</span>
+<span class="fc" id="L48">		constantsToUse = new StringConstant[numberofConstantsToCreate];</span>
+<span class="fc" id="L49">		dummyBindingList = new BindingList();</span>
+
+		// We would like the following to NOT become the default setting for VariableIndicator (i.e., if it is currently null).
+<span class="fc" id="L52">		boolean wasVarIndicatorSet = ((LearnOneClause) task).stringHandler.isVariableIndicatorSet();</span>
+
+		// Task is not yet assigned when instance created, so need an extra call.  Plus good to all a resetting of all instance variables.
+<span class="fc bfc" id="L55" title="All 2 branches covered.">		for (int i = 0; i &lt; numberofConstantsToCreate; i++) {</span>
+			// Need something that is unlikely to also appear in a clause &quot;of its own right.&quot;  Also, recall that these count from ONE.
+<span class="fc" id="L57">			constantsToUse[i] = ((LearnOneClause) task).stringHandler.getStringConstant(&quot;WillConst&quot; + (i + 1));</span>
+		}
+
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">		if (!wasVarIndicatorSet) {</span>
+<span class="nc" id="L61">			((LearnOneClause) task).stringHandler.setVariableIndicator(null);</span>
+		}
+<span class="fc" id="L63">		countOfPruningDueToVariantChildren = 0;</span>
+<span class="fc" id="L64">	}</span>
+
+	// TODO(?): reuse this list which returns children. This is called a lot so don't want to make anew each time.
+<span class="fc" id="L67">	private final List&lt;SearchNode&gt; children = new ArrayList&lt;&gt;(8);</span>
+
+
+	// TODO(@hayesall): Too complex to analyze with data flow: major need of refactoring.
+	public List&lt;SearchNode&gt; collectChildren(SearchNode nodeBeingExplored) throws SearchInterrupted {
+
+<span class="fc" id="L73">		SingleClauseNode parent = (SingleClauseNode) nodeBeingExplored;</span>
+<span class="fc" id="L74">		children.clear();</span>
+
+<span class="fc" id="L76">		LearnOneClause thisTask = (LearnOneClause) task;</span>
+<span class="fc" id="L77">		Set&lt;PredicateNameAndArity&gt; bodyModes = thisTask.bodyModes;</span>
+<span class="fc" id="L78">		int parentBodyLen  = getParentBodyLength(parent, thisTask);</span>
+
+		// Note this uses the corrected body length for 'bridgers.'  (Not sure that this is being done consistently.)
+		// HOWEVER IF A LITERAL ENDS WITH A *BRIDGER* IT IS ADDED (since it is added 'for free').
+		// TODO(@jws) - handle maxFreeBridgersInBody (for now simply added if when sometimes it shouldnt be).
+		// If one step away from the max length, don't add children to open (but still score them) since they will be discarded when popped.
+<span class="fc bfc" id="L84" title="All 2 branches covered.">		boolean dontAddAnyChildToOpenButStillScoreThem = (parentBodyLen &gt;= thisTask.maxBodyLength - 1);</span>
+
+		// Cannot check this earlier, since could find a good clause using constraints on the head.
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(bodyModes) &lt; 1) {</span>
+<span class="nc" id="L88">			Utils.waitHere(&quot;There are no body modes for this task!&quot;);</span>
+<span class="nc" id="L89">			return null;</span>
+		}
+
+		// TODO(@jws) Some tests (eg, canImprove) for stopping we'll postpone until/if a node is popped from OPEN.  Also, some would require scoring early, though that is cached so no wasted cycles.
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        if (parentBodyLen &gt;= thisTask.maxBodyLength) {</span>
+			// At max length for clauses.
+<span class="nc" id="L95">            return null;</span>
+        }
+
+		// If true, save all the conjuncts created to the collectedConjuncts list.
+		// (@hayesall): Dropping the `boolean collectAllConjuncts = false` variable.
+<span class="fc bfc" id="L100" title="All 2 branches covered.">		if (!parent.canImprove(thisTask)) {</span>
+			// No need to continue if no negative examples are covered, for example (assuming the clause does not have other requirements, such as containing all the variables appearing in the head).
+<span class="fc" id="L102">			return null;</span>
+       }
+
+<span class="fc" id="L105">		putParentClauseInFormForPruning(parent);</span>
+
+<span class="fc" id="L107">		Set&lt;PredicateNameAndArity&gt; eligibleBodyModes = applyModeContraints(bodyModes, parent);</span>
+		
+<span class="fc" id="L109">		int maxPossibleNewVars = thisTask.maxNumberOfNewVars - parent.numberOfNewVars;</span>
+
+		// TODO(@hayesall): The contents of this loop should likely be abstracted out.
+		// Consider each known predicate.
+<span class="pc bpc" id="L113" title="1 of 4 branches missed.">		for (PredicateNameAndArity predicateNameAndArity : eligibleBodyModes) if (predicateNameAndArity.getPredicateName().getTypeList() != null) {</span>
+
+<span class="fc" id="L115">            PredicateName predName = predicateNameAndArity.getPredicateName();</span>
+
+			// Consider each known mode for this predicate that can be used during ILP.
+<span class="pc bpc" id="L118" title="2 of 6 branches missed.">			for (PredicateSpec specs : predName.getTypeList()) if (specs != null &amp;&amp; specs.isaILPmode()) {</span>
+
+				// For tree-structured tasks, at least always complete the root.
+				// TODO(@jws): maybe we allow a MULTIPLIER (eg, 10x) on the time limit when a ROOT of a tree-structured task?
+<span class="pc bpc" id="L122" title="1 of 6 branches missed.">				if ( (parentBodyLen &gt; 0 || !thisTask.isaTreeStructuredTask() || ((Gleaner) thisTask.searchMonitor).bestNode != null) &amp;&amp; // Need to have found something acceptable before stopping.</span>
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">						thisTask.isThereNotTimeLeft()) {</span>
+<span class="nc" id="L124">					Utils.printlnErr(&quot;% No time left, so abandoning ILP-node generation:\n  &quot; + thisTask.explainTimeLeft()); thisTask.open.clear(); return null; </span>
+				}
+
+<span class="fc" id="L127">				int arity = Utils.getSizeSafely(specs.getSignature());</span>
+<span class="fc" id="L128">				int countOfOccurrences = parent.countPredicateOccurrences(predName, arity);  // Note that this recorded also as a function of the arity (essentially p/1 and p/2, i.e., p(x) and p(x,y), are two different predicates).</span>
+<span class="fc" id="L129">				Integer predMax = predName.getMaxOccurrences(arity);</span>
+
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">				if (predMax == null) {</span>
+<span class="nc" id="L132">					Utils.error(&quot;No preMax for predName=&quot; + predName + &quot; arity=&quot; + arity + &quot; typeList=&quot; + predName.getTypeList());</span>
+				}
+
+				// If not set to a finite number for this predicate/arity, use the &quot;global&quot; default.
+<span class="fc" id="L136">				int maxToUse = predMax;</span>
+
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">				if (countOfOccurrences &gt;= maxToUse) {</span>
+					// Have already used this predicate/arity the maximum number of times.
+<span class="nc" id="L140">					continue;</span>
+				}
+
+<span class="fc" id="L143">				boolean allNeededPredsFound = true;</span>
+
+				// For each argument in this mode, need to collect ALL the terms that can fill it.
+<span class="fc" id="L146">				List&lt;List&lt;Term&gt;&gt; usableTerms = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L147">				Map&lt;Variable,Type&gt; newVariables = null;</span>
+
+				// Need to sometimes treat these specially.
+<span class="fc" id="L150">				Map&lt;Type,List&lt;Variable&gt;&gt; newVarsThisType = null;</span>
+<span class="fc" id="L151">				Map&lt;Term,Type&gt; typesOfNewTerms = null;</span>
+<span class="fc" id="L152">				Map&lt;Term,Integer&gt; depthsOfTerms = null;</span>
+
+				// We may need some variables that will need to be replaced by constants before this method is exited.
+<span class="fc" id="L155">				Map&lt;Variable,Type&gt; typesOfNewConstants = null;</span>
+
+<span class="pc bpc" id="L157" title="1 of 4 branches missed.">				if (specs.getTypeSpecList() != null) for (TypeSpec spec : specs.getTypeSpecList()) {</span>
+
+					// Consider each argument in this mode.
+<span class="fc" id="L160">					List&lt;Term&gt; validTermsOfThisType = new ArrayList&lt;&gt;(4);</span>
+
+					// Collect all the terms that can legally be used for this argument.
+					// If a predicate is acceptable, need to hook into the old variables.
+					//   If a +mode, then MUST hook into an old variable of same type, but what if several?  Do all possibilities.
+					//   If a -mode, then CAN hook into an old variable of same type, but that if several?  Again do all, as well as create a new variable.
+					//   If a #mode, then use one of the selected positive SEEDs and find a constant of that type.
+
+<span class="fc bfc" id="L168" title="All 2 branches covered.">					if (spec.mustBeConstant()) {  // Grab some number of constants from the positive SEEDs.</span>
+<span class="fc" id="L169">						Variable newVarOfThisType = getNewILPbodyVar(spec); // We'll stick a variable in for now, then later find to what it gets bound.</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">						if (typesOfNewConstants == null) { typesOfNewConstants = new HashMap&lt;&gt;(4); }</span>
+<span class="fc" id="L171">						typesOfNewConstants.put(newVarOfThisType, spec.isaType);</span>
+<span class="fc" id="L172">						validTermsOfThisType.add(newVarOfThisType); // Just stick in the required type - below possible constants will be picked using the pos seeds.</span>
+						// No need to add to depthsOfTerms since constants have depth of the max depth of the input variables.
+<span class="fc" id="L174">					} else {</span>
+
+						// Collect all of the variables and constants of this type in the current clause.
+<span class="fc" id="L177">						List&lt;Term&gt; existingTermsOfThisType = getExistingTermsOfThisType(spec.isaType, parent); // We want objects UNDER this type (or OF this type).  E.g., if we're looking for an DOG, collect POODLEs, but *not* ANIMALs.</span>
+<span class="fc bfc" id="L178" title="All 4 branches covered.">						if (existingTermsOfThisType != null) for (Term item : existingTermsOfThisType) {</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">							if (depthsOfTerms == null) { depthsOfTerms = new HashMap&lt;&gt;(4); }</span>
+<span class="fc" id="L180">							Integer oldDepth = depthsOfTerms.get(item);</span>
+<span class="fc bfc" id="L181" title="All 2 branches covered.">							if (oldDepth == null) {</span>
+<span class="fc" id="L182">								Integer depthOfItem = parent.getDepthOfArgument(item);</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">								if (depthOfItem == null) { Utils.error(&quot;Cannot find the depth of argument: '&quot; + item + &quot;',  parent = &quot; + parent); }</span>
+<span class="fc" id="L184">								depthsOfTerms.put(item, depthOfItem);</span>
+							}
+<span class="fc" id="L186">						}</span>
+
+<span class="fc" id="L188">						List&lt;Variable&gt; listOfNewVarsThisType = null;</span>
+<span class="fc bfc" id="L189" title="All 4 branches covered.">						if (!spec.mustBeBound() &amp;&amp; newVarsThisType != null) {</span>
+							// Look for new variables of this type already introduced for this mode.
+<span class="fc" id="L191">							listOfNewVarsThisType = newVarsThisType.get(spec.isaType);</span>
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">							if (listOfNewVarsThisType != null) { </span>
+<span class="nc bnc" id="L193" title="All 4 branches missed.">								for (Variable newVar : listOfNewVarsThisType) if (!validTermsOfThisType.contains(newVar)) { validTermsOfThisType.add(newVar); }</span>
+							}
+						}
+
+						// If this is an input variable, but nothing of that type is present, then this mode isn't eligible.
+						// (TODO should CONSTANTS of a specific type be allowed?  Seems so.)
+<span class="pc bpc" id="L199" title="1 of 6 branches missed.">						if (spec.mustBeBound() &amp;&amp; (existingTermsOfThisType == null || existingTermsOfThisType.size() &lt; 1)) { </span>
+<span class="fc" id="L200">							allNeededPredsFound = false;</span>
+<span class="fc" id="L201">							break;</span>
+						}
+
+						// Collect all these legal terms.
+<span class="fc bfc" id="L205" title="All 2 branches covered.">						if (existingTermsOfThisType != null) {</span>
+							// This must be a TOTALLY new variable (see about 10 lines above), i.e., cannot appear elsewhere in the predicate?  Seems so ... but need to DOC!
+<span class="pc bpc" id="L207" title="1 of 4 branches missed.">							for (Term existingTerm : existingTermsOfThisType) if (!validTermsOfThisType.contains(existingTerm)) {</span>
+<span class="fc" id="L208">								validTermsOfThisType.add(existingTerm);</span>
+							}
+						}
+
+						// If this argument can be filled by a NEW argument (i.e., it is an &quot;output&quot; argument), then generate and collect such a variable.
+						// Check if there is even room for ONE new variable.  Note: we also need to check again below because there might be room for one but not two new variables.
+<span class="pc bpc" id="L214" title="1 of 4 branches missed.">						if (parent.numberOfNewVars &lt; thisTask.maxNumberOfNewVars &amp;&amp; spec.canBeNewVariable()) {</span>
+							// Also create a new variable.
+<span class="fc" id="L216">							Variable newVarOfThisType = getNewILPbodyVar(spec);</span>
+							
+							// Store these newly created variables and their types.
+<span class="fc bfc" id="L219" title="All 2 branches covered.">							if (newVariables == null) {</span>
+<span class="fc" id="L220">								newVariables = new HashMap&lt;&gt;(4);</span>
+							}
+
+<span class="fc" id="L223">							newVariables.put(newVarOfThisType, spec.isaType);</span>
+
+<span class="fc bfc" id="L225" title="All 2 branches covered.">							if (newVarsThisType == null) {</span>
+<span class="fc" id="L226">								newVarsThisType = new HashMap&lt;&gt;(4);</span>
+							}
+
+							// Don't reuse this in the same literal (OK for later literals in the clause).
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">							if (listOfNewVarsThisType == null) {</span>
+<span class="fc" id="L231">								listOfNewVarsThisType = new ArrayList&lt;&gt;(1);</span>
+							}
+
+<span class="fc" id="L234">							listOfNewVarsThisType.add(newVarOfThisType);</span>
+<span class="fc" id="L235">							newVarsThisType.put(spec.isaType, listOfNewVarsThisType);</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">							if (typesOfNewTerms == null) {</span>
+								// These don't need to be very big since few new variables per literal.  Ie, allow 3 before rebuilding the hash map.
+<span class="fc" id="L238">								typesOfNewTerms = new HashMap&lt;&gt;(4);</span>
+							}
+<span class="fc" id="L240">							typesOfNewTerms.put(newVarOfThisType, spec.isaType);</span>
+<span class="fc" id="L241">							validTermsOfThisType.add(newVarOfThisType);</span>
+						}
+					}
+
+<span class="fc" id="L245">					usableTerms.add(validTermsOfThisType); // Remember what can be used to fill this argument.</span>
+<span class="fc" id="L246">				}</span>
+
+<span class="fc" id="L248">				int totalNumberOfCandidates = 1;</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">				for (List&lt;Term&gt; terms : usableTerms) {</span>
+<span class="fc" id="L250">					totalNumberOfCandidates *= Utils.getSizeSafely(terms);</span>
+<span class="fc" id="L251">				}</span>
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">				if (totalNumberOfCandidates &lt; 1) {</span>
+<span class="nc" id="L253">					continue;</span>
+				}
+
+
+				// TODO(@hayesall): This `if` Block smells like it could be pulled out into a method.
+				// See if some useful precomputing can be done.  Only applicable if in facts and not head of a rule, since that rule might require, say, that some arguments are non-variables (eg. number(X) might be in the body).
+<span class="pc bpc" id="L259" title="2 of 4 branches missed.">				if (((LearnOneClause) task).getProver().getClausebase().isOnlyInFacts(predName, arity) &amp;&amp; totalNumberOfCandidates &gt; 100) {</span>
+
+
+					// First see if this predicate is true enough times when all arguments are unique variables.
+<span class="nc" id="L263">					List&lt;Term&gt; mostGeneralArguments = new ArrayList&lt;&gt;(arity);</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">					for (List&lt;Term&gt; terms : usableTerms) {</span>
+<span class="nc" id="L265">						Term term0 = terms.get(0);</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">						if (terms.size() == 1) {</span>
+							// If only ONE possible filler, use it.
+<span class="nc" id="L268">							mostGeneralArguments.add(term0);</span>
+						}
+						else {
+<span class="nc" id="L271">							mostGeneralArguments.add(getNewILPbodyVar(term0.getTypeSpec()));</span>
+							// Otherwise create a new variable.
+						}
+<span class="nc" id="L274">					}</span>
+
+<span class="nc" id="L276">					Literal easyPred = thisTask.stringHandler.getLiteral(predName, mostGeneralArguments);</span>
+<span class="nc" id="L277">					SingleClauseNode newEasyNode = new SingleClauseNode(parent, easyPred);</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">					if (!newEasyNode.acceptableCoverageOnPosExamples()) {</span>
+<span class="nc" id="L279">						continue;</span>
+					}
+
+
+
+					// Next look at each term in each set, and see if just adding it to the 'easy node' still leads to acceptability.
+					// TODO(@jws) can pruning rules also help here?  seems they should
+<span class="nc" id="L286">					boolean continueHigherUp = false;</span>
+<span class="nc" id="L287">					boolean needToLoop = true;	// See if some singleton created on the CURRENT loop.</span>
+<span class="nc" id="L288">					boolean haveReducedCandidateToSingleton = false;</span>
+
+<span class="nc bnc" id="L290" title="All 4 branches missed.">					while (needToLoop &amp;&amp; !continueHigherUp) {</span>
+<span class="nc" id="L291">						needToLoop    = false;</span>
+
+						// Mark the argument we're at.  NOTE: need to check even the singleton arguments, since other arguments might have been changed.
+<span class="nc" id="L294">						int argNumber = 0;</span>
+<span class="nc bnc" id="L295" title="All 2 branches missed.">						for (List&lt;Term&gt; terms : usableTerms) {</span>
+<span class="nc" id="L296">							argNumber++;</span>
+<span class="nc bnc" id="L297" title="All 4 branches missed.">							if (!haveReducedCandidateToSingleton &amp;&amp; terms.size() &lt; 1) {</span>
+								// No need to check singletons until others reduced to singletons.
+<span class="nc" id="L299">								continue;</span>
+							}
+
+							// Deal with counting from 0 in code, but 1 in human-readable stuff.
+<span class="nc" id="L303">							int argNumberMinus1 = argNumber - 1;</span>
+
+							// Need to replace when done.
+<span class="nc" id="L306">							Term hold = mostGeneralArguments.get(argNumberMinus1);</span>
+<span class="nc" id="L307">							boolean itemRemoved = false;</span>
+
+<span class="nc bnc" id="L309" title="All 2 branches missed.">							for (ListIterator&lt;Term&gt; termIter = terms.listIterator(); termIter.hasNext(); ) {</span>
+<span class="nc" id="L310">							    Term term = termIter.next();</span>
+							     
+<span class="nc" id="L312">							    mostGeneralArguments.set(argNumberMinus1, term);</span>
+<span class="nc bnc" id="L313" title="All 2 branches missed.">								if (!newEasyNode.acceptableCoverageOnPosExamples()) {</span>
+									// Drop this candidate.
+<span class="nc" id="L315">									termIter.remove();</span>
+<span class="nc" id="L316">									itemRemoved = true;</span>
+								}
+<span class="nc" id="L318">							}</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">							if (terms.isEmpty()) {</span>
+<span class="nc" id="L320">								continueHigherUp = true;</span>
+<span class="nc" id="L321">								break;</span>
+<span class="nc bnc" id="L322" title="All 4 branches missed.">							} else if (itemRemoved &amp;&amp; terms.size() == 1) {</span>
+
+								// If the one argument is a NEW variable, will waste some cycles UNLESS that SAME new variable also appears elsewhere, so still keep around.
+<span class="nc" id="L325">								mostGeneralArguments.set(argNumberMinus1, terms.get(0));</span>
+								// Since only one possibility, use it from now on.  (This makes the process order dependent, but we can live with that.)
+
+								// As long as something became permanent in &quot;mostGeneralArguments,&quot; continue.
+<span class="nc" id="L329">								needToLoop = true;</span>
+
+<span class="nc" id="L331">								haveReducedCandidateToSingleton = true;</span>
+							}
+							else {
+<span class="nc" id="L334">								mostGeneralArguments.set(argNumberMinus1, hold);</span>
+							}
+<span class="nc" id="L336">						}</span>
+<span class="nc" id="L337">					}</span>
+				}
+
+
+				// Now need to create the cross product of allowed terms.  I.e., if arg1 of predicate p can be any of {x1, x2} and argument any of {y1, y2, y3} than can create p(x1,y1), p(x1,y2), p(x1,y3), p(x2,y1), p(x2,y2), and p(x2,y3).  				
+<span class="fc bfc" id="L342" title="All 2 branches covered.">				if (allNeededPredsFound) {</span>
+
+<span class="fc" id="L344">					List&lt;List&lt;Term&gt;&gt; allArgPossibilities = Utils.computeCrossProduct(usableTerms, 1000); // This is the set of cross products.</span>
+
+<span class="fc" id="L346">					List&lt;List&lt;Term&gt;&gt; allArgPossibilities2 = allArgPossibilities;</span>
+
+					// If some fillers really are supposed to be CONSTANTS, collect all (up to k?) ways the variables rep'ing the constants can be bound in some pos seed.
+					// Add the constant'ized version to allArgPossibilities.
+<span class="fc bfc" id="L350" title="All 2 branches covered.">					if (typesOfNewConstants != null) {</span>
+<span class="fc" id="L351">						allArgPossibilities2 = new ArrayList&lt;&gt;(4);</span>
+<span class="fc bfc" id="L352" title="All 2 branches covered.">						for (List&lt;Term&gt; args : allArgPossibilities) {</span>
+<span class="pc bpc" id="L353" title="1 of 2 branches missed.">							if (seeIfVarsPresent(args, typesOfNewConstants)) {</span>
+
+								// Create predicate(arguments) for the predicate being added.
+<span class="fc" id="L356">								Literal pred = thisTask.stringHandler.getLiteral(predName, args);</span>
+
+								// Create the new search node.  Don't worry about new types here.
+<span class="fc" id="L359">								SingleClauseNode newNode = new SingleClauseNode(parent, pred);</span>
+
+								// The results will appear here.
+<span class="fc" id="L362">								thisTask.collectedConstantBindings = null;</span>
+<span class="fc" id="L363">								List&lt;Variable&gt; listOfVars4constants = collectVarsPresent(args, typesOfNewConstants);</span>
+
+								// Provide the arguments that are to be bound to constants.
+<span class="fc" id="L366">								Literal testForConstants = thisTask.stringHandler.getLiteral(thisTask.procDefinedForConstants, new ArrayList&lt;&gt;(listOfVars4constants));</span>
+
+<span class="fc" id="L368">								SingleClauseNode newNodeForConstants = new SingleClauseNode(newNode, testForConstants);</span>
+
+								// This will fail, but that is OK.  We simply want to collectedConstantBindings.
+<span class="fc" id="L371">								newNodeForConstants.acceptableCoverageOnPosSeeds();</span>
+
+								// If no bindings, then no constants exist so this literal cannot be added.
+<span class="fc bfc" id="L374" title="All 2 branches covered.">								if (thisTask.collectedConstantBindings != null) {</span>
+									// Note: we may get MANY sets of constants here.  Elsewhere there is a limit of the first 1000, which hopefully is never reached.
+<span class="fc" id="L376">									List&lt;List&lt;Term&gt;&gt; allConstantsBindings = thisTask.collectedConstantBindings;</span>
+<span class="pc bpc" id="L377" title="1 of 2 branches missed.">									if (allConstantsBindings.size() &gt; 100) {</span>
+<span class="nc" id="L378">										allConstantsBindings = Utils.reduceToThisSizeByRandomlyDiscardingItemsInPlace(allConstantsBindings, 100);</span>
+									}
+<span class="fc bfc" id="L380" title="All 2 branches covered.">									for (List&lt;Term&gt; args2 : allConstantsBindings) {</span>
+										// Need to collect all those constants that involve the variables in typesOfNewConstants.
+<span class="fc" id="L382">										List&lt;Term&gt; args3 = new ArrayList&lt;&gt;(args.size());</span>
+
+										// Cannot do a dual-for-loop, since listOfVars4constants probably is shorter than arguments.  Note that counter is only incremented when a var-for-constant is encountered.
+<span class="fc" id="L385">										int counter2 = 0;</span>
+<span class="fc bfc" id="L386" title="All 2 branches covered.">										for (Term term : args) {</span>
+
+<span class="pc bpc" id="L388" title="1 of 2 branches missed.">											if (term == null) {</span>
+												// TODO(@hayesall): This is severe enough to trigger an exit. Is this unrecoverable?
+<span class="nc" id="L390">												Utils.error(&quot;Should not have term=null!  args=&quot; + args + &quot; args2=&quot; + args2);</span>
+											}
+
+<span class="fc bfc" id="L393" title="All 2 branches covered.">											if (typesOfNewConstants.containsKey(term)) {</span>
+
+												// If this is one of the variables-to-grab-constants variables, then get the constant.
+<span class="fc" id="L396">												Term newTerm = args2.get(counter2++);</span>
+<span class="fc" id="L397">												Type newType = typesOfNewConstants.get(term);</span>
+<span class="fc" id="L398">												args3.add(newTerm);</span>
+
+<span class="fc bfc" id="L400" title="All 2 branches covered.">												if (typesOfNewTerms == null) {</span>
+													// Make sure this is bound.
+<span class="fc" id="L402">													typesOfNewTerms = new HashMap&lt;&gt;(4);</span>
+												}
+
+												// Look up the type associated with this var-to-grab-constant.
+<span class="fc" id="L406">												typesOfNewTerms.put(newTerm, newType);</span>
+<span class="fc" id="L407">											}</span>
+											else {
+												// For other terms, we want to use the originals.
+<span class="fc" id="L410">												args3.add(term);</span>
+											}
+<span class="fc" id="L412">										}</span>
+<span class="fc" id="L413">										allArgPossibilities2.add(args3);</span>
+<span class="fc" id="L414">									}</span>
+<span class="fc" id="L415">									thisTask.collectedConstantBindings = null;  // Might as well return these memory cells now.</span>
+								}
+<span class="fc" id="L417">							} else {</span>
+<span class="nc" id="L418">								allArgPossibilities2.add(args);</span>
+							}
+<span class="fc" id="L420">						}</span>
+					}
+
+					// Now walk through all the possible ways this new literal can be added.
+<span class="pc bpc" id="L424" title="1 of 4 branches missed.">					if (allArgPossibilities2 != null) for (List&lt;Term&gt; args : allArgPossibilities2) {</span>
+
+<span class="fc" id="L426">						int numberOfNewVars = countNewUniqueVariables(args, newVariables);</span>
+<span class="fc" id="L427">						int maxDepthOfInputVars = 0;</span>
+
+						// Determine max depth of an input argument.  The depth of a new variable is that max plus 1.  The depth of a new constant is the max of an input variable.
+<span class="pc bpc" id="L430" title="1 of 4 branches missed.">						if (depthsOfTerms != null) for (Term arg : args) {</span>
+<span class="fc" id="L431">							Integer thisDepth = depthsOfTerms.get(arg);</span>
+<span class="fc bfc" id="L432" title="All 4 branches covered.">							if (thisDepth != null &amp;&amp; thisDepth &gt; maxDepthOfInputVars) {</span>
+<span class="fc" id="L433">								maxDepthOfInputVars = thisDepth;</span>
+							}
+<span class="fc" id="L435">						}</span>
+
+<span class="pc bpc" id="L437" title="1 of 2 branches missed.">						if (numberOfNewVars &gt; maxPossibleNewVars) { // Note: this case is also caught above - i.e., when ZERO new variables are possible.  This code catches that case when N are still allowed, but N+1 (or more) are needed in 'args.'</span>
+<span class="nc" id="L438">							continue;</span>
+						}
+<span class="pc bpc" id="L440" title="1 of 4 branches missed.">						if (numberOfNewVars &gt; 0 &amp;&amp; maxDepthOfInputVars &gt;= thisTask.maxDepthOfNewVars) {</span>
+<span class="nc" id="L441">							continue;</span>
+						}
+						
+						// See if this specific pattern of bound variables has occurred too often.
+						// Only update if this is a mode specification that said we need to monitor it.  SO BE AWARE THAT THIS IS COUNT IS NOT CORRECT IF THIS MODE SPEC DID NOT SAY TO MONITOR (i.e., no need to waste the cpu cycles).
+<span class="fc" id="L446">						int currentInUseGivenInputArgs = 0;</span>
+<span class="fc" id="L447">						boolean hasPossiblePredMaxPerInputVars = predName.haveMaxOccurrencesPerInputVarsForThisArity(arity);</span>
+
+<span class="fc bfc" id="L449" title="All 2 branches covered.">						if (hasPossiblePredMaxPerInputVars) {</span>
+
+							// New design requires always requires a lookup unless there are less than two arguments, since at least infinity is stored.  But keep this code here in case there are later changes, plus it also catches inconsistent information.
+<span class="fc" id="L452">							List&lt;Type&gt; inputArgumentTypes  = TypeSpec.getListOfInputArgumentTypes(specs);</span>
+<span class="fc" id="L453">							Integer    predMaxPerInputVars = predName.getMaxOccurrencesPerInputVars(arity, inputArgumentTypes);</span>
+<span class="pc bpc" id="L454" title="2 of 4 branches missed.">							if (predMaxPerInputVars != null &amp;&amp; predMaxPerInputVars &lt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L455">								int length = inputArgumentTypes.size();</span>
+<span class="nc" id="L456">								List&lt;Term&gt; valuesOfInputArgs = new ArrayList&lt;&gt;(length);</span>
+<span class="nc bnc" id="L457" title="All 2 branches missed.">								for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc bnc" id="L458" title="All 2 branches missed.">									if (inputArgumentTypes.get(i) != null) {</span>
+<span class="nc" id="L459">										valuesOfInputArgs.add(args.get(i));</span>
+									}
+									else {
+<span class="nc" id="L462">										valuesOfInputArgs.add(null);</span>
+									}
+								}
+<span class="nc" id="L465">								currentInUseGivenInputArgs = parent.countPredicateOccurrencesGivenInputArgs(predName, arity, valuesOfInputArgs);</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">								if (currentInUseGivenInputArgs &gt;= predMaxPerInputVars) {</span>
+<span class="nc" id="L467">									continue;</span>
+								}
+							}
+<span class="pc bpc" id="L470" title="1 of 2 branches missed.">						} else if (arity &gt; 1) {</span>
+<span class="nc" id="L471">							Utils.error(&quot;Should always find hasPossiblePredMaxPerInputVars!  predName = '&quot; + predName + &quot;'&quot;);</span>
+						}
+<span class="fc" id="L473">						boolean continueCheckingTheseArgs = true; // Could use catch-throw to skip over bad combo's, but for simplicity use this boolean.</span>
+<span class="fc" id="L474">						Literal pred = thisTask.stringHandler.getLiteral(predName, specs.applyArgsToSignature(thisTask.stringHandler, args));	// Create predicate(arguments) for each possible set of arguments.</span>
+
+						// TODO(@hayesall): `discardDuplicateLiterals` is set true and never altered from this point.
+
+<span class="fc bfc" id="L478" title="All 2 branches covered.">						if (!parent.dontConsiderThisLiteral(true, pred, typesOfNewTerms)) {</span>
+							// Discard EXACT duplicates (which is NOT the same as unifiable terms) and literals in the dontReconsider list.
+
+							// TODO(@hayesall): This is the only use of `isaVariantOfChildAlreadyGenerated`. Is there a simpler way to factor this out?
+							// Can't do this too early since this code doesn't understand that some variables are to be replaced by constants.
+<span class="fc bfc" id="L483" title="All 2 branches covered.">							if (isaVariantOfChildAlreadyGenerated(pred)) {</span>
+<span class="fc" id="L484">								continue;</span>
+							}
+
+							// Collect the new typed variables added, if any.
+<span class="fc" id="L488">							Map&lt;Type,List&lt;Term&gt;&gt; newTypesInChildMap = collectNewTypesPresentInChildMap(args, typesOfNewTerms);</span>
+
+							// Grab the other local variable.
+<span class="fc" id="L491">							List&lt;Type&gt; newTypesInChild = collectNewTypesPresentInChild();</span>
+							
+<span class="fc" id="L493">							Map&lt;Term,Integer&gt; argDepths = new HashMap&lt;&gt;(args.size());</span>
+<span class="pc bpc" id="L494" title="1 of 2 branches missed.">							if (depthsOfTerms == null) { depthsOfTerms = new HashMap&lt;&gt;(4); }</span>
+<span class="fc" id="L495">							setTermDepths(args, depthsOfTerms, newVariables, maxDepthOfInputVars, argDepths);</span>
+
+							// Create the new search node.
+<span class="fc" id="L498">							SingleClauseNode newNode = new SingleClauseNode(parent, pred, argDepths, newTypesInChild, newTypesInChildMap, typesOfNewTerms);</span>
+
+
+<span class="fc" id="L501">							if (newNode.pruneMe) {</span>
+								// TODO(?) - should we count these?  If this node marks itself (e.g., it might be an unnecessary constrainer), then do not add to OPEN.
+								continue;
+							}
+
+<span class="fc" id="L506">							SingleClauseNode newNodePrime = newNode; // This might get changed below.</span>
+
+							// TODO(@hayesall): Originally this was the line: `List&lt;Literal&gt;    matchables   = (discardDuplicateLiterals ? parent.collectAllVariants(pred) : null);`
+<span class="fc" id="L509">							List&lt;Literal&gt; matchables = (parent.collectAllVariants(pred));</span>
+							
+							// If there are already other versions of this predicate (i.e., same head and same # of arguments) in the clause being created, then
+							// make sure that on enough of the positive seeds that this new literal can be bound in a different way from the earlier ones.
+<span class="fc bfc" id="L513" title="All 2 branches covered.">							if (matchables != null) {</span>
+<span class="fc" id="L514">								matchables.add(0, pred);</span>
+<span class="fc" id="L515">								List&lt;Term&gt; matchablesAsTerms = reify(matchables);</span>
+<span class="fc" id="L516">								Literal  testForDiffBindings = thisTask.stringHandler.getLiteral(thisTask.procDefinedEnoughDiffMatches, matchablesAsTerms);</span>
+<span class="fc" id="L517">								newNodePrime = new SingleClauseNode(newNode, testForDiffBindings);</span>
+							}
+							
+							// If dontAddNewVarsUnlessDiffBindingsPossibleOnPosSeeds is set, this potential new clause involves a new variable, and some existing
+							// variables can fill the argument the new variable fills, make sure that this new variable
+							// can play a role on enough positive seeds (e.g., if for all seeds, this variable is not bound
+							// differently than the other candidate fillers, then don't include this new clause).
+
+<span class="fc bfc" id="L525" title="All 2 branches covered.">							if (typesOfNewTerms != null) {</span>
+<span class="fc" id="L526">								List&lt;Variable&gt; newVars  = collectNewVariables(args, typesOfNewTerms);</span>
+
+								// TODO(@hayesall): Based on the comments, this seems to be dealing with the `-` mode.
+								// Need to consider EACH new &quot;minus&quot; variable separately, and compare (in procDefinedNeedForNewVariables)
+								// to all other variables and constants of the given type ANYWHERE IN THE ENTIRE CLAUSE (including the head).
+								// Bug: if two (or more) NEW variables of the same type, this code wont check if one new variable can be used instead.
+<span class="fc" id="L532">								int countOfNewVarsNeeded = 0;</span>
+<span class="fc bfc" id="L533" title="All 2 branches covered.">								if (newVars != null) {</span>
+
+									// If no new variable, then nothing to check.
+
+<span class="fc bfc" id="L537" title="All 2 branches covered.">									for (Variable newVar : newVars) {</span>
+
+<span class="pc bpc" id="L539" title="1 of 2 branches missed.">										if (newVar == null) {</span>
+<span class="nc" id="L540">											Utils.error(&quot;Should not have var=null!  args=&quot; + args + &quot; types=&quot; + typesOfNewTerms);</span>
+										}
+
+<span class="fc" id="L543">										Type thisVarType = typesOfNewTerms.get(newVar);</span>
+
+<span class="pc bpc" id="L545" title="1 of 2 branches missed.">										if (thisVarType == null) {</span>
+<span class="nc" id="L546">											Utils.error(&quot;This should not happen inside dontAddNewVarsUnlessDiffBindingsPossibleOnPosSeeds.&quot;);</span>
+										}
+
+										// Need ALL the variables of this type, up to and including the head.  We also can accept LOWER items in the isaHier.  E.g., as above, if we're a DOG, collect POODLEs, but *not* ANIMALs.
+<span class="fc" id="L550">										List&lt;Term&gt; existingTermsOfThisType = getExistingTermsOfThisType(thisVarType, parent);</span>
+
+										// If no other variables of this type, then this variable is needed so no more checking necessary.
+<span class="fc bfc" id="L553" title="All 2 branches covered.">										if (existingTermsOfThisType != null) {</span>
+
+											// The FIRST variable is the new one whose need is being questioned.
+<span class="fc" id="L556">											existingTermsOfThisType.add(0, newVar);</span>
+
+											// The job of 'procDefinedNeedForNewVariables' is to see if we add newVar, there is some binding of the	clause where newVar gets a different grounding
+											// then the other variables of that same type (if not, no need to add newVar).  It is possible that some of the other variables will be unbound. yet the clause be satisfied  If that is the case,
+											// then also no need for newVar.
+<span class="fc" id="L561">											Literal testNeedForNewVariables = thisTask.stringHandler.getLiteral(thisTask.procDefinedNeedForNewVariables, existingTermsOfThisType);</span>
+
+<span class="fc" id="L563">											SingleClauseNode newNodeDoublePrime = new SingleClauseNode(newNode, testNeedForNewVariables);</span>
+<span class="fc bfc" id="L564" title="All 2 branches covered.">											if (newNodeDoublePrime.acceptableCoverageOnPosSeeds()) { countOfNewVarsNeeded++; }</span>
+
+<span class="fc" id="L566">											existingTermsOfThisType.remove(0); // Remove the extra variable added to the front - need to do this since existingTermsOfThisType is a cached result.</span>
+
+<span class="fc bfc" id="L568" title="All 2 branches covered.">											if (countOfNewVarsNeeded &gt; 0) {</span>
+<span class="fc" id="L569">												break;</span>
+											}
+<span class="fc" id="L571">										}</span>
+										else {
+											// Since only need to need ONE of the newVars, can break here (and also a few lines above).
+<span class="fc" id="L574">											countOfNewVarsNeeded++;</span>
+<span class="fc" id="L575">											break;</span>
+										}
+<span class="fc" id="L577">									}</span>
+
+									// Currently, if at least ONE new variable is needed, then use them all (too complicated to handle the case of partially needed sets of new variables).
+<span class="fc bfc" id="L580" title="All 2 branches covered.">									if (countOfNewVarsNeeded == 0) {</span>
+<span class="fc" id="L581">										continueCheckingTheseArgs = false;</span>
+									}
+								}
+							}
+
+<span class="fc bfc" id="L586" title="All 2 branches covered.">							if (!continueCheckingTheseArgs) { continue; } // Advance to the next set of arguments.</span>
+							//  Need to call the positive seeds and the negative seeds separately, since only on the POS do we care about the &quot;diff bindings&quot; and constants.
+<span class="fc bfc" id="L588" title="All 2 branches covered.">							if (newNodePrime.acceptableCoverageOnPosSeeds()) { // See if it covers enough of the POS seeds and not too many of the NEG seeds.</span>
+								// Need to do the NEG seeds separately, since the EXTENSION to some clause that covers too many negatives might not cover too many negs.  In other words, we might need to reconsider adding the current literal later, even if it is no good now.
+								// (NEG seeds might be a little confusing - notice that the FIRST literal added to a clause must &quot;knock out&quot; enough of the neg seeds, and maybe no such single literal exists.)
+<span class="pc bpc" id="L591" title="1 of 2 branches missed.">								if (newNode.acceptableCoverageOnNegSeeds()) {  // If so, it is an acceptable child that will be passed to the general search algo for scoring, etc.</span>
+
+<span class="fc" id="L593">									newNode.numberOfNewVars                  = numberOfNewVars + parent.numberOfNewVars;</span>
+<span class="fc" id="L594">									newNode.predicateOccurrences             = countOfOccurrences         + 1; // Need to add one, since we're adding this predicate.</span>
+<span class="fc" id="L595">									newNode.predicateOccurrencesPerFixedVars = currentInUseGivenInputArgs + 1; // Ditto.  But be sure to read comments above related to this counter.</span>
+<span class="fc" id="L596">									children.add(newNode);</span>
+
+<span class="pc bpc" id="L598" title="3 of 6 branches missed.">									if (dontAddAnyChildToOpenButStillScoreThem &amp;&amp; (thisTask.maxFreeBridgersInBody &lt; 1 || !newNode.endsWithBridgerLiteral())) { newNode.setDontAddMeToOPEN(true); }</span>
+									
+									// This &quot;side effect&quot; is used when collecting all possible k-long conjuncts (eg, compound features).
+								}
+							}
+							else {
+<span class="fc" id="L604">								parent.addToDontConsiderThisLiteral(thisTask, predName, args, typesOfNewTerms);</span>
+							}
+						}
+<span class="fc" id="L607">					}</span>
+				}
+			}
+		}
+
+<span class="fc" id="L612">		return children;</span>
+	}
+	
+	private Variable getNewILPbodyVar(TypeSpec typeSpec) {
+<span class="fc" id="L616">		Variable result = ((LearnOneClause) task).stringHandler.getNewUnamedVariable();</span>
+<span class="fc" id="L617">		result.setTypeSpec(typeSpec);</span>
+<span class="fc" id="L618">		return result;</span>
+	}
+
+	private int getParentBodyLength(SingleClauseNode parent, LearnOneClause thisTask) {
+		// See if bridgers count in length.  Don't count more than maxBridgersInBody.
+<span class="pc bpc" id="L623" title="1 of 2 branches missed.">		int numBridgers = (thisTask.maxFreeBridgersInBody &lt;= 0 ? 0 : parent.numberOfBridgersInBody(thisTask.currentStartingNode)); // Only want to count bridgers up to currentStartingNode.</span>
+<span class="pc bpc" id="L624" title="1 of 2 branches missed.">		return parent.bodyLength() - (thisTask.maxFreeBridgersInBody &gt; 0 ? Math.min(thisTask.maxFreeBridgersInBody, numBridgers) : 0);</span>
+	}
+
+	private void setTermDepths(List&lt;Term&gt; arguments, Map&lt;Term,Integer&gt; depthsOfTerms, Map&lt;Variable,Type&gt; newVariables, int maxDepthOfInputVars, Map&lt;Term,Integer&gt; argDepths) {
+<span class="pc bpc" id="L628" title="1 of 2 branches missed.">		if (arguments == null) {</span>
+<span class="nc" id="L629">			return;</span>
+		}
+<span class="fc bfc" id="L631" title="All 2 branches covered.">		for (Term arg : arguments) {</span>
+<span class="pc bpc" id="L632" title="1 of 2 branches missed.">			if (arg instanceof Function) {</span>
+<span class="nc" id="L633">				setTermDepths(((Function) arg).getArguments(), depthsOfTerms, newVariables, maxDepthOfInputVars, argDepths);</span>
+			} else {
+<span class="fc bfc" id="L635" title="All 2 branches covered.">				Integer thisDepth = (newVariables == null ? null : depthsOfTerms.get(arg));</span>
+<span class="fc bfc" id="L636" title="All 2 branches covered.">				if (thisDepth != null) {</span>
+					// This is an input variable.
+<span class="fc" id="L638">					argDepths.put(arg, thisDepth);</span>
+				}
+<span class="pc bpc" id="L640" title="1 of 4 branches missed.">				else if (newVariables != null &amp;&amp; newVariables.get(arg) != null) {</span>
+					// This is a new (i.e., output) variable.
+<span class="fc" id="L642">					argDepths.put(arg, maxDepthOfInputVars + 1); }</span>
+				else {
+					// This will become a constant.
+<span class="fc" id="L645">					argDepths.put(arg, maxDepthOfInputVars);</span>
+				}
+			}
+<span class="fc" id="L648">		}</span>
+<span class="fc" id="L649">	}</span>
+
+	private int countNewUniqueVariables(List&lt;Term&gt; items, Map&lt;Variable,Type&gt; newVars) {
+<span class="pc bpc" id="L652" title="1 of 4 branches missed.">		if (items == null || newVars == null) {</span>
+<span class="fc" id="L653">			return 0;</span>
+		}
+<span class="fc" id="L655">		int result = 0;</span>
+<span class="fc" id="L656">		Set&lt;Term&gt; seenVars = new HashSet&lt;&gt;(8);</span>
+<span class="pc bpc" id="L657" title="2 of 8 branches missed.">		for (Term term : items) if (!seenVars.contains(term) &amp;&amp; term instanceof Variable &amp;&amp; newVars.containsKey(term)) { </span>
+<span class="fc" id="L658">			result++;</span>
+<span class="fc" id="L659">			seenVars.add(term);</span>
+		}
+<span class="fc" id="L661">		return result;</span>
+	}
+
+	// Convert all these literals into terms. This allows the literals to be arguments in a literal.  (Recall the arguments to a literal are terms.)
+	private List&lt;Term&gt; reify(List&lt;Literal&gt; literals) {
+<span class="fc" id="L666">		HandleFOPCstrings handler = ((LearnOneClause) task).stringHandler;</span>
+<span class="fc" id="L667">		List&lt;Term&gt; result = new ArrayList&lt;&gt;(literals.size());</span>
+<span class="fc bfc" id="L668" title="All 2 branches covered.">		for (Literal lit : literals) {</span>
+<span class="fc" id="L669">			FunctionName fName = handler.getFunctionName(lit.predicateName.name); // This is probably a bit inefficient.  Cache somewhere/somehow?</span>
+<span class="fc" id="L670">			Function newTerm = (((LearnOneClause) task).stringHandler).getFunction(fName, lit.getArguments(), null); // The arguments of a literal are already terms.</span>
+<span class="fc" id="L671">			result.add(newTerm);</span>
+<span class="fc" id="L672">		}</span>
+<span class="fc" id="L673">		return result;</span>
+	}
+	
+	private Map&lt;Type,List&lt;Term&gt;&gt;  collectNewTypesPresentInChildMap(List&lt;Term&gt; args, Map&lt;Term, Type&gt; typesOfNewTerms) {
+<span class="fc bfc" id="L677" title="All 2 branches covered.">		if (typesOfNewTerms == null) { return null; }</span>
+<span class="fc" id="L678">		newTypesPresentInChildMap = null;</span>
+<span class="fc" id="L679">		newTypesPresentInChild    = null;</span>
+<span class="fc" id="L680">		help_collectNewTypesPresentInChildMap(args, typesOfNewTerms);</span>
+<span class="fc" id="L681">		return newTypesPresentInChildMap;</span>
+	}
+	
+	// A &quot;hack&quot; to return two results w/o doing an extra &quot;new.&quot;  Be careful when calling.
+	private List&lt;Type&gt; collectNewTypesPresentInChild() {
+<span class="fc" id="L686">		 List&lt;Type&gt;  temp = newTypesPresentInChild;</span>
+<span class="fc" id="L687">		 newTypesPresentInChild    = null;</span>
+<span class="fc" id="L688">		 newTypesPresentInChildMap = null; // Clean this up as well.</span>
+<span class="fc" id="L689">		 return temp;</span>
+	}
+	
+	private void help_collectNewTypesPresentInChildMap(List&lt;Term&gt; args, Map&lt;Term,Type&gt; typesOfNewTerms) {
+<span class="pc bpc" id="L693" title="1 of 4 branches missed.">		if (args != null) for (Term term : args) { collectNewTypesPresentInArg(term, typesOfNewTerms); }</span>
+<span class="fc" id="L694">	}</span>
+	
+	private void collectNewTypesPresentInArg(Term arg, Map&lt;Term,Type&gt; typesOfNewTerms) {
+<span class="fc bfc" id="L697" title="All 2 branches covered.">		if (arg instanceof Variable) {</span>
+<span class="fc" id="L698">			Variable argAsVar = (Variable) arg;</span>
+<span class="fc" id="L699">			Type argType = typesOfNewTerms.get(argAsVar);</span>
+			
+<span class="fc bfc" id="L701" title="All 2 branches covered.">			if (argType != null) {</span>
+				// This variable is a new one.  So need to add its type.
+<span class="fc bfc" id="L703" title="All 2 branches covered.">				if (newTypesPresentInChildMap == null) {</span>
+					// In no hash map, initialize.
+<span class="fc" id="L705">					newTypesPresentInChildMap = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L706">					newTypesPresentInChild    = new ArrayList&lt;&gt;(4);</span>
+				}
+<span class="fc" id="L708">				List&lt;Term&gt; termsOfThisType = newTypesPresentInChildMap.get(argType); // See if any variables of this type in the hash map.</span>
+<span class="pc bpc" id="L709" title="1 of 2 branches missed.">				if (termsOfThisType != null) {</span>
+					// Is there already a list for variables of this type in the hash map?
+<span class="nc" id="L711">					termsOfThisType.add(argAsVar);</span>
+				} else {
+					// Otherwise create one.
+<span class="fc" id="L714">					List&lt;Term&gt; termList = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L715">					termList.add(argAsVar);</span>
+<span class="fc" id="L716">					newTypesPresentInChildMap.put(argType, termList);</span>
+<span class="fc" id="L717">					newTypesPresentInChild.add(argType);  // Also record that a new type encountered.</span>
+				}
+			}
+<span class="pc bpc" id="L720" title="1 of 2 branches missed.">		} else if (arg instanceof Constant) {</span>
+
+<span class="fc" id="L722">			Constant argAsConst = (Constant) arg;</span>
+<span class="fc" id="L723">			Type argType = typesOfNewTerms.get(argAsConst);</span>
+
+			// TODO: clean up this code so vars and constants treated the same - ie, too much duplication.
+<span class="pc bpc" id="L726" title="1 of 2 branches missed.">			if (argType != null) { // This constant is a new one.  So need to add its type.</span>
+<span class="pc bpc" id="L727" title="1 of 2 branches missed.">				if (newTypesPresentInChildMap == null) {  // In no hash map, initialize.</span>
+<span class="fc" id="L728">					newTypesPresentInChildMap = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L729">					newTypesPresentInChild    = new ArrayList&lt;&gt;(4);</span>
+				}
+<span class="fc" id="L731">				List&lt;Term&gt; termsOfThisType = newTypesPresentInChildMap.get(argType); // See if any vars of this type in the hash map.</span>
+<span class="pc bpc" id="L732" title="1 of 2 branches missed.">				if (termsOfThisType != null) { // Is there already a list for terms of this type in the hash map?</span>
+
+					// TODO(hayesall): Doesn't appear to be possible.
+
+<span class="nc" id="L736">					termsOfThisType.add(argAsConst);</span>
+				} else {
+					// Otherwise create one.
+<span class="fc" id="L739">					List&lt;Term&gt; termList = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L740">					termList.add(argAsConst);</span>
+<span class="fc" id="L741">					newTypesPresentInChildMap.put(argType, termList);</span>
+<span class="fc" id="L742">					newTypesPresentInChild.add(argType);  // Also record that a new type encountered.</span>
+				}
+			}
+<span class="pc bnc" id="L745" title="All 2 branches missed.">		} else if (arg instanceof Function) {</span>
+<span class="nc" id="L746">			throw new RuntimeException(&quot;Deprecated + Should not be possible anymore.&quot;);</span>
+		} else {
+<span class="nc" id="L748">			throw new RuntimeException(&quot;Deprecated + Should not be possible anymore.&quot;);</span>
+		}
+<span class="fc" id="L750">	}</span>
+	
+	// From these arguments, collect those that are variables and are in this HashMap.
+	private List&lt;Variable&gt; collectVarsPresent(List&lt;Term&gt; args, Map&lt;Variable,Type&gt; typesOfNewConstants) {
+<span class="pc bpc" id="L754" title="2 of 4 branches missed.">		if (args == null || typesOfNewConstants == null) { return null; }</span>
+<span class="fc" id="L755">		List&lt;Variable&gt; result = new ArrayList&lt;&gt;(args.size());</span>
+<span class="fc bfc" id="L756" title="All 2 branches covered.">		for (Term arg : args) {</span>
+<span class="pc bpc" id="L757" title="1 of 2 branches missed.">			if (!(arg instanceof Variable)) { continue; }</span>
+<span class="fc bfc" id="L758" title="All 2 branches covered.">			if (typesOfNewConstants.containsKey(arg)) { result.add((Variable) arg); }</span>
+<span class="fc" id="L759">		}</span>
+<span class="fc" id="L760">		return result;</span>
+	}
+	
+	private List&lt;Variable&gt; collectNewVariables(List&lt;Term&gt; args, Map&lt;Term,Type&gt; typesOfNewTerms) {
+<span class="pc bpc" id="L764" title="2 of 4 branches missed.">		if (args == null || typesOfNewTerms == null) { return null; }</span>
+		
+<span class="fc" id="L766">		List&lt;Variable&gt; result = null;</span>
+<span class="fc bfc" id="L767" title="All 6 branches covered.">		for (Term term : args) if (term instanceof Variable &amp;&amp; typesOfNewTerms.containsKey(term)) {</span>
+<span class="fc bfc" id="L768" title="All 2 branches covered.">			if (result == null) { result = new ArrayList&lt;&gt;(args.size()); }</span>
+<span class="fc" id="L769">			result.add((Variable) term);</span>
+		}
+<span class="fc" id="L771">		return result;</span>
+	}
+	
+	// From these arguments, see if any variables are in this Map.
+	private boolean seeIfVarsPresent(List&lt;Term&gt; args, Map&lt;Variable,Type&gt; typesOfNewConstants) {
+<span class="pc bpc" id="L776" title="2 of 4 branches missed.">		if (args == null || typesOfNewConstants == null) { return false; }</span>
+<span class="pc bpc" id="L777" title="1 of 2 branches missed.">		for (Term arg : args) {</span>
+<span class="pc bpc" id="L778" title="1 of 2 branches missed.">			if (!(arg instanceof Variable)) { continue; }</span>
+<span class="fc bfc" id="L779" title="All 2 branches covered.">			if (typesOfNewConstants.containsKey(arg)) { return true; }</span>
+<span class="fc" id="L780">		}</span>
+<span class="nc" id="L781">		return false;</span>
+	}
+	
+	private List&lt;Term&gt; getExistingTermsOfThisType(Type type, SingleClauseNode parent) {
+<span class="fc" id="L785">		return parent.termsOfThisTypePresentInChild(type);</span>
+	}
+	
+	private void putParentClauseInFormForPruning(SingleClauseNode parent) {
+<span class="fc" id="L789">		Clause      parentClause = parent.getClause();</span>
+<span class="fc" id="L790">		BindingList bl           = parentClause.copyAndReplaceVariablesWithNumbers(constantsToUse);</span>
+<span class="fc" id="L791">		cachedBindingListForPruning = bl;</span>
+<span class="pc bpc" id="L792" title="1 of 2 branches missed.">		numberedBodyForPruning = (bl == null ? parentClause : parentClause.applyTheta(bl.theta));</span>
+<span class="fc" id="L793">		literalsTriedSoFar.clear();</span>
+<span class="fc" id="L794">	}</span>
+
+	// TODO(@hayesall): Why is there a `[nothing]` and `_version1` and `_version2` of this function?
+	private boolean isaVariantOfChildAlreadyGenerated(Literal lit) {
+<span class="fc" id="L798">		boolean result = false;</span>
+
+<span class="fc" id="L800">		List&lt;Literal&gt; literalsWithThisPnameTriedSoFar = literalsTriedSoFar.get(lit.predicateName); // Could also hash on arity, but don't bother unless this method becomes a bottleneck.</span>
+<span class="pc bpc" id="L801" title="1 of 2 branches missed.">		Literal       initNumberedLit = (cachedBindingListForPruning == null ? lit : lit.applyTheta(cachedBindingListForPruning.theta));</span>
+		
+<span class="fc bfc" id="L803" title="All 2 branches covered.">		if (literalsWithThisPnameTriedSoFar == null) {</span>
+<span class="fc" id="L804">			literalsWithThisPnameTriedSoFar = new ArrayList&lt;&gt;(16);</span>
+<span class="fc" id="L805">			literalsTriedSoFar.put(lit.predicateName, literalsWithThisPnameTriedSoFar);</span>
+		} else {
+<span class="fc" id="L807">			result = (isaVariantOfChildAlreadyGenerated_version2(initNumberedLit));</span>
+		}
+<span class="fc" id="L809">		literalsWithThisPnameTriedSoFar.add(initNumberedLit);	</span>
+<span class="fc" id="L810">		return result;</span>
+	}
+
+	private boolean isaVariantOfChildAlreadyGenerated_version2(Literal initNumberedLit) {
+<span class="fc" id="L814">		PredicateName pName = initNumberedLit.predicateName;</span>
+
+		// Could also hash on arity, but don't bother unless this method becomes a bottleneck.
+<span class="fc" id="L817">		List&lt;Literal&gt; literalsWithThisPnameTriedSoFar = literalsTriedSoFar.get(pName);</span>
+<span class="pc bpc" id="L818" title="1 of 2 branches missed.">		if (literalsWithThisPnameTriedSoFar != null) {</span>
+<span class="fc bfc" id="L819" title="All 2 branches covered.">			for (Literal oldLit : literalsWithThisPnameTriedSoFar) {</span>
+<span class="fc" id="L820">				dummyBindingList.theta.clear();</span>
+<span class="fc bfc" id="L821" title="All 2 branches covered.">				if (oldLit.variants(initNumberedLit, dummyBindingList) != null) {</span>
+<span class="fc" id="L822">					countOfPruningDueToVariantChildren++;</span>
+<span class="fc" id="L823">					return true;</span>
+				}
+<span class="fc" id="L825">			}</span>
+		}
+<span class="fc" id="L827">		return false;</span>
+	}
+
+	public void clearAnySavedInformation() {
+<span class="pc bpc" id="L831" title="1 of 2 branches missed.">		if (newTypesPresentInChild    != null) { newTypesPresentInChild.clear();    }</span>
+<span class="pc bpc" id="L832" title="1 of 2 branches missed.">		if (newTypesPresentInChildMap != null) { newTypesPresentInChildMap.clear(); }</span>
+<span class="pc bpc" id="L833" title="1 of 2 branches missed.">		if (literalsTriedSoFar        != null) { literalsTriedSoFar.clear();        }</span>
+<span class="pc bpc" id="L834" title="2 of 4 branches missed.">		if (dummyBindingList != null &amp;&amp; dummyBindingList.theta != null) { dummyBindingList.theta.clear(); }</span>
+<span class="fc" id="L835">		countOfPruningDueToVariantChildren = 0;</span>
+<span class="fc" id="L836">	}</span>
+
+    private LearnOneClause getTask() {
+<span class="fc" id="L839">        return (LearnOneClause) task;</span>
+    }
+
+	private Set&lt;PredicateNameAndArity&gt; applyModeContraints(Set&lt;PredicateNameAndArity&gt; bodyModes, SingleClauseNode parent) {
+
+		// TODO(hayesall): Doesn't appear to do anything.
+
+<span class="fc" id="L846">        List&lt;ModeConstraint&gt; constraints = getTask().getModeConstraints();</span>
+
+<span class="fc" id="L848">        Set&lt;PredicateNameAndArity&gt; modes = bodyModes;</span>
+<span class="fc" id="L849">        boolean mutable = false;</span>
+
+<span class="pc bpc" id="L851" title="1 of 2 branches missed.">        if (!constraints.isEmpty()) {</span>
+<span class="nc bnc" id="L852" title="All 2 branches missed.">            for (ModeConstraint modeConstraint : constraints) {</span>
+<span class="nc bnc" id="L853" title="All 2 branches missed.">                if (modes.isEmpty()) {</span>
+<span class="nc" id="L854">                    break;</span>
+                }
+<span class="nc" id="L856">                Set&lt;PredicateNameAndArity&gt; constrainedModes = modeConstraint.applyConstraint(parent, modes, mutable);</span>
+<span class="nc bnc" id="L857" title="All 2 branches missed.">                if (constrainedModes != null) {</span>
+<span class="nc" id="L858">                    modes = constrainedModes;</span>
+<span class="nc" id="L859">                    mutable = true;</span>
+                }
+<span class="nc" id="L861">            }</span>
+        }
+<span class="fc" id="L863">        return modes;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

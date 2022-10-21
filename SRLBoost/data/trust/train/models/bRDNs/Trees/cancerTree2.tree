@@ -1,0 +1,7 @@
+setParam: stringsAreCaseSensitive = true.
+
+usePrologVariables: true.
+
+
+(cancer(A, 0.5553664367462845) :-  /* #pos=3 */ smokes(A)).
+cancer(_, 0.1420942428155648) /* #neg=2 #pos=1 */ .

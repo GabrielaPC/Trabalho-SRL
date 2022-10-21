@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NumberGroundingsCalculator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Utils</a> &gt; <span class="el_source">NumberGroundingsCalculator.java</span></div><h1>NumberGroundingsCalculator.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Utils;
+
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.ResThmProver.HornClauseContext;
+import edu.wisc.cs.will.ResThmProver.HornClauseProver;
+import edu.wisc.cs.will.ResThmProver.InitHornProofSpace;
+import edu.wisc.cs.will.ResThmProver.ProofDone;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+import edu.wisc.cs.will.stdAIsearch.SearchResult;
+
+import java.util.*;
+
+/*
+ * @author tkhot
+ */
+public class NumberGroundingsCalculator {
+
+	private final Unifier unifier;
+	private final HornClauseProver groundings_prover;
+	private final HornClauseContext context;
+<span class="fc" id="L22">	private final boolean disableTrivialGndgs = false;</span>
+
+<span class="fc" id="L24">	public NumberGroundingsCalculator(HornClauseContext context) {</span>
+<span class="fc" id="L25">		this.context = context;</span>
+<span class="fc" id="L26">		unifier = context.getUnifier();</span>
+<span class="fc" id="L27">		groundings_prover = new HornClauseProver(context, true);</span>
+		
+<span class="fc" id="L29">	}</span>
+	
+	public long countNumberOfNonTrivialGroundings(Clause cl, Literal eg) {
+		
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">		if (isOnlyInHead(cl, eg)) {</span>
+<span class="fc" id="L34">			BindingList theta = unifier.unify(cl.getDefiniteClauseHead(), eg.extractLiteral());</span>
+<span class="fc" id="L35">			Clause unifiedClause = cl.applyTheta(theta);</span>
+<span class="fc" id="L36">			List&lt;Literal&gt; posLits = new ArrayList&lt;&gt;();</span>
+			if (disableTrivialGndgs) {
+				posLits.add(unifiedClause.getDefiniteClauseHead());
+				context.getClausebase().assertFact(eg.extractLiteral());
+				long n1 = countGroundingsForConjunction(unifiedClause.negLiterals, posLits);
+				
+				context.getClausebase().retractAllClausesWithUnifyingBody(eg.extractLiteral());
+				long n2 = countGroundingsForConjunction(unifiedClause.negLiterals, posLits);
+				if (n2 &lt; n1 || n1 != 0) {
+					Utils.waitHere(&quot;Wrong num of groundings: &quot; + n2 +&quot;:&quot; + n1);
+				}
+				return n2 - n1;
+			} else {
+<span class="fc" id="L49">				return countGroundingsForConjunction(unifiedClause.negLiterals, posLits);</span>
+			}
+		}
+<span class="nc" id="L52">		return countNonTrivialGroundingsFromBody(cl,eg);</span>
+	}
+	
+	private long countNonTrivialGroundingsFromBody(Clause clause, Literal ex) {		
+<span class="nc" id="L56">		int numberOfLiteralsUnifyingWithEx = 0;</span>
+<span class="nc" id="L57">		int numberOfLiteralsDependingOnEx  = 0;</span>
+		
+<span class="nc bnc" id="L59" title="All 2 branches missed.">		for (Literal negLit : clause.getNegativeLiterals()) {</span>
+<span class="nc" id="L60">			BindingList negtheta = context.getUnifier().unify(negLit, ex);</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">			if (negtheta != null) {</span>
+<span class="nc" id="L62">				numberOfLiteralsUnifyingWithEx++;</span>
+			}
+<span class="nc bnc" id="L64" title="All 2 branches missed.">			if (isLiteralDependentOnEg(negLit, ex)) {</span>
+<span class="nc" id="L65">				numberOfLiteralsDependingOnEx++;</span>
+			}
+<span class="nc" id="L67">		}</span>
+<span class="nc bnc" id="L68" title="All 4 branches missed.">		if (numberOfLiteralsUnifyingWithEx == 0 &amp;&amp; numberOfLiteralsDependingOnEx == 0) {</span>
+<span class="nc" id="L69">			return 0;</span>
+		}
+
+<span class="nc bnc" id="L72" title="All 2 branches missed.">		if (numberOfLiteralsDependingOnEx == 1) {</span>
+			// check if the clause can be simplified
+<span class="nc" id="L74">			Clause newClause = new Clause(context.getStringHandler(), new ArrayList&lt;&gt;(), new ArrayList&lt;&gt;());</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">			if (replaceNegationByFailureByNots(clause, newClause, ex)) {</span>
+<span class="nc" id="L76">				return countSingleLiteralInBody(newClause, ex);</span>
+			}
+		}
+<span class="nc bnc" id="L79" title="All 4 branches missed.">		if (numberOfLiteralsUnifyingWithEx &gt; 1 || numberOfLiteralsDependingOnEx &gt; 0) {</span>
+<span class="nc" id="L80">			Utils.error(&quot;Can't find groundings for clause:&quot; + clause + &quot; and &quot; + ex);</span>
+		}
+<span class="nc" id="L82">		System.currentTimeMillis();</span>
+<span class="nc" id="L83">		long val = countSingleLiteralInBody(clause, ex);</span>
+<span class="nc" id="L84">		System.currentTimeMillis();</span>
+<span class="nc" id="L85">		return val;</span>
+		
+	}
+	
+	private boolean replaceNegationByFailureByNots(Clause clause,
+												   Clause newClause,
+												   Literal ex) {
+		
+<span class="nc" id="L93">		List&lt;Literal&gt; posLits = new ArrayList&lt;&gt;(clause.posLiterals);</span>
+<span class="nc" id="L94">		List&lt;Literal&gt; negLits = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L95">		boolean foundUnifyingLiteral = false;</span>
+<span class="nc" id="L96">		Collection&lt;Variable&gt; seenVariables = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">		for (Literal posLit: clause.posLiterals) {</span>
+<span class="nc" id="L98">			seenVariables.addAll(posLit.collectFreeVariables(seenVariables));</span>
+<span class="nc" id="L99">		}</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">		for (Literal negLit : clause.negLiterals) {</span>
+			
+			// Check if this is \+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">			if (negLit.predicateName.equals(context.getStringHandler().standardPredicateNames.negationByFailure)) {</span>
+<span class="nc" id="L104">				Clause nbfContents = context.getStringHandler().getNegationByFailureContents(negLit);</span>
+<span class="nc" id="L105">				boolean thisNegFailContainsEx = false;</span>
+<span class="nc" id="L106">			    boolean foundExtraVars 		  = false;</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">				for (Literal newLit : nbfContents.posLiterals) {</span>
+<span class="nc" id="L108">					Collection&lt;Variable&gt; newVars = newLit.collectFreeVariables(seenVariables);</span>
+					
+<span class="nc bnc" id="L110" title="All 2 branches missed.">					if (newVars.size() &gt; 0) {</span>
+<span class="nc" id="L111">						foundExtraVars = true;</span>
+					}
+<span class="nc bnc" id="L113" title="All 2 branches missed.">					if (newLit.getPredicateNameAndArity().equals(ex.getPredicateNameAndArity())) {</span>
+<span class="nc" id="L114">						thisNegFailContainsEx = true;</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">						if (foundExtraVars) {</span>
+<span class="nc" id="L116">							return false;</span>
+						}
+					}
+<span class="nc" id="L119">				}</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">				if (thisNegFailContainsEx) {</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">					if (foundUnifyingLiteral) {</span>
+<span class="nc" id="L122">						Utils.waitHere(&quot;found multiple literals matching example:&quot; + ex + &quot; in &quot; + clause);</span>
+					} else {
+<span class="nc" id="L124">						foundUnifyingLiteral = true;</span>
+					}
+<span class="nc bnc" id="L126" title="All 2 branches missed.">					if (foundExtraVars) {</span>
+<span class="nc" id="L127">						return false;</span>
+					} else {
+<span class="nc" id="L129">						posLits.addAll(nbfContents.posLiterals);</span>
+					}
+				}
+				
+<span class="nc" id="L133">			} else {</span>
+<span class="nc" id="L134">				negLits.add(negLit);</span>
+			}
+<span class="nc" id="L136">		}</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">		if (!foundUnifyingLiteral) {</span>
+<span class="nc" id="L138">			Utils.println(&quot;Dependent literal not one level deep.&quot;);</span>
+<span class="nc" id="L139">			return false;</span>
+		}
+<span class="nc" id="L141">		newClause.posLiterals = posLits;</span>
+<span class="nc" id="L142">		newClause.negLiterals = negLits;</span>
+<span class="nc" id="L143">		return true;</span>
+	}
+
+	private boolean isLiteralDependentOnEg(Literal negLit, Literal ex) {
+		// Check if literal has some bk rule
+<span class="nc" id="L148">		Iterable&lt;Clause&gt; bk = context.getClausebase().getPossibleMatchingBackgroundKnowledge(negLit, null);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">		if (bk != null) {</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">			for (Clause cl : bk) {</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">				if (cl.negLiterals != null) {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">					for (Literal lit : cl.negLiterals) {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">						if (context.getUnifier().unify(lit, ex) != null) {</span>
+<span class="nc" id="L154">							return true;</span>
+						}
+<span class="nc" id="L156">						Iterable&lt;Clause&gt; newBK = context.getClausebase().getPossibleMatchingBackgroundKnowledge(lit, null);</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">						if (newBK != null) {</span>
+							// There are multiple level of recursion. Assume there is some dependence
+<span class="nc" id="L159">							Utils.println(&quot;Too many bk rules with: &quot; + negLit);</span>
+<span class="nc" id="L160">							return true;</span>
+						}
+<span class="nc" id="L162">					}</span>
+				}
+<span class="nc" id="L164">			}</span>
+		}
+		
+		// Check if this is \+
+<span class="nc bnc" id="L168" title="All 2 branches missed.">		if (negLit.predicateName.equals(context.getStringHandler().standardPredicateNames.negationByFailure)) {</span>
+<span class="nc" id="L169">			Clause cl = context.getStringHandler().getNegationByFailureContents(negLit);</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">			if (cl.posLiterals != null) {</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">			for (Literal newLit : cl.posLiterals) {</span>
+<span class="nc bnc" id="L172" title="All 2 branches missed.">				if (newLit.getPredicateNameAndArity().equals(ex.getPredicateNameAndArity())) {</span>
+<span class="nc" id="L173">					return true;</span>
+				}
+<span class="nc bnc" id="L175" title="All 2 branches missed.">				if (isLiteralDependentOnEg(newLit, ex)) {</span>
+<span class="nc" id="L176">					return true;</span>
+				}
+<span class="nc" id="L178">			}</span>
+			}
+		}
+<span class="nc" id="L181">		return false;</span>
+	}
+
+	private long countSingleLiteralInBody(Clause clause, Literal ex) {
+<span class="nc" id="L185">		int index=-1;</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">		for (Literal negLit : clause.getNegativeLiterals()) {</span>
+<span class="nc" id="L187">			index++;</span>
+<span class="nc" id="L188">			BindingList negtheta = context.getUnifier().unify(negLit, ex);</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">			if (negtheta != null) {</span>
+<span class="nc" id="L190">				List&lt;Literal&gt; newPos = negtheta.applyTheta(clause.getPositiveLiterals());</span>
+<span class="nc" id="L191">				List&lt;Literal&gt; newNeg = negtheta.applyTheta(clause.getNegativeLiterals());</span>
+				// Ignore the unified literal
+<span class="nc" id="L193">				newNeg.remove(index);</span>
+<span class="nc" id="L194">				return -countGroundingsForConjunction(newNeg, newPos);</span>
+			}
+<span class="nc" id="L196">		}</span>
+<span class="nc" id="L197">		index=-1;</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">		for (Literal posLit : clause.getPositiveLiterals()) {</span>
+<span class="nc" id="L199">			index++;</span>
+<span class="nc" id="L200">			BindingList postheta = context.getUnifier().unify(posLit, ex);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">			if (postheta != null) {</span>
+<span class="nc" id="L202">				List&lt;Literal&gt; newPos = postheta.applyTheta(clause.getPositiveLiterals());</span>
+<span class="nc" id="L203">				List&lt;Literal&gt; newNeg = postheta.applyTheta(clause.getNegativeLiterals());</span>
+				// Ignore the unified literal
+<span class="nc" id="L205">				newPos.remove(index);</span>
+<span class="nc" id="L206">				return countGroundingsForConjunction(newNeg, newPos);</span>
+			}
+<span class="nc" id="L208">		}</span>
+<span class="nc" id="L209">		Utils.error(&quot;Didn't find any literal in Clause:&quot; + clause + &quot; to unify with &quot; + ex);</span>
+<span class="nc" id="L210">		return 0;</span>
+	}
+
+	private long countGroundingsForConjunction(List&lt;Literal&gt; posLiterals,
+											   List&lt;Literal&gt; negLiterals) {
+<span class="fc" id="L215">		return countGroundingsForConjunction(posLiterals, negLiterals, null);</span>
+	}
+
+	/*
+	 * Count the groundings of conjunction over posLiterals and ~negLiterals. 
+	 * e.g. posLiterals=p(x),q(x) and negLiterals=r(x),s(x)
+	 * returns count of groundings of p(x)^q(x)^~r(x)^~s(x)
+	 */
+	public long countGroundingsForConjunction(List&lt;Literal&gt; posLiterals,
+										      List&lt;Literal&gt; negLiterals,
+										      Set&lt;BindingList&gt; blSet) {
+<span class="fc" id="L226">		List&lt;Literal&gt; newPosLits = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L227">		List&lt;Literal&gt; newNegLits = new ArrayList&lt;&gt;();</span>
+		if (disableTrivialGndgs) {
+			newPosLits.addAll(posLiterals);
+			newNegLits.addAll(negLiterals);
+		} else {
+<span class="pc bpc" id="L232" title="1 of 2 branches missed.">			if (!filterLiteralsWithNoVariables(posLiterals, negLiterals, newPosLits, newNegLits)) {</span>
+<span class="nc" id="L233">				return 0;</span>
+			}
+		}
+<span class="pc bpc" id="L236" title="1 of 4 branches missed.">		if (newPosLits.isEmpty() &amp;&amp; newNegLits.isEmpty()) {</span>
+<span class="pc bpc" id="L237" title="1 of 2 branches missed.">			if (blSet != null) {</span>
+<span class="nc" id="L238">				blSet.add(new BindingList());</span>
+			}
+<span class="fc" id="L240">			return 1;</span>
+		}
+		
+<span class="fc" id="L243">		return countGroundingsForConjunctionUsingProver(newPosLits, newNegLits);</span>
+	}
+	
+	
+	/*
+	 * @return true if all filtered positive literals are in fact base and all negative literals are not.
+	 */
+	private boolean filterLiteralsWithNoVariables(List&lt;Literal&gt; posLiterals, List&lt;Literal&gt; negLiterals,
+												  List&lt;Literal&gt; newPosLits,  List&lt;Literal&gt; newNegLits) {
+		// Do a basic check for literals with no variables
+<span class="fc bfc" id="L253" title="All 2 branches covered.">		for (Literal lit : posLiterals) {</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">			if (canLookupLiteral(lit)) {</span>
+<span class="nc bnc" id="L255" title="All 2 branches missed.">				if (!isaFact(lit)) {</span>
+<span class="nc" id="L256">					return false;</span>
+				}
+			} else {
+<span class="fc" id="L259">				newPosLits.add(lit);</span>
+			}
+<span class="fc" id="L261">		}</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">		for (Literal lit : negLiterals) {</span>
+<span class="nc bnc" id="L263" title="All 2 branches missed.">			if (canLookupLiteral(lit)) {</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">				if (isaFact(lit)) {</span>
+<span class="nc" id="L265">					return false;</span>
+				}
+			} else {
+<span class="nc" id="L268">				newNegLits.add(lit);</span>
+			}
+<span class="nc" id="L270">		}</span>
+<span class="fc" id="L271">		return true;</span>
+	}
+	
+	/*
+	 * Returns true if lit can be found in the factbase(ie it has no variables and doesn't have to be proved)
+	 */
+	public boolean canLookupLiteral(Literal lit) {
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">		return context.getClausebase().getPossibleMatchingBackgroundKnowledge(lit, null) == null &amp;&amp;</span>
+<span class="pc bnc" id="L279" title="All 2 branches missed.">				!lit.containsVariables();</span>
+	}
+	
+	public boolean isaFact(Literal lit) {
+<span class="nc" id="L283">		Iterable&lt;Literal&gt; facts = context.getClausebase().getPossibleMatchingFacts(lit, null);</span>
+<span class="nc bnc" id="L284" title="All 4 branches missed.">		return (facts != null &amp;&amp; facts.iterator().hasNext());</span>
+	}
+
+	/*
+	 * Count the groundings of conjunction over posLiterals and ~negLiterals.
+	 * e.g. posLiterals=p(x),q(x) and negLiterals=r(x),s(x)
+	 * returns count of groundings of p(x)^q(x)^~r(x)^~s(x)
+	 */
+	private long countGroundingsForConjunctionUsingProver(List&lt;Literal&gt; posLiterals,
+														  List&lt;Literal&gt; negLiterals) {
+
+<span class="fc" id="L295">		List&lt;Literal&gt; sortedPos = posLiterals;</span>
+		if (!disableTrivialGndgs) {
+<span class="fc" id="L297">			sortedPos = sortByVariables(posLiterals);</span>
+		}
+<span class="fc" id="L299">		((InitHornProofSpace) groundings_prover.initializer).loadNegatedConjunctiveQuery(sortedPos,</span>
+					groundings_prover.open);
+		        
+<span class="fc" id="L302">		BindingList bl = getNextProof(groundings_prover);</span>
+<span class="fc" id="L303">		long counter = 0;</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">		while(bl != null) {</span>
+			
+			
+<span class="fc" id="L307">			 Collection&lt;BindingList&gt; negBLs = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L308">			 negBLs.add(bl);</span>
+				
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">			for (Literal lit : negLiterals) {</span>
+<span class="nc" id="L311">				negBLs = expandNegativeLiteralBindingList(lit, negBLs); </span>
+<span class="nc" id="L312">			}</span>
+<span class="fc" id="L313">			counter+= negBLs.size();</span>
+
+<span class="fc" id="L315">			bl = getNextProof(groundings_prover);</span>
+<span class="fc" id="L316">		}</span>
+
+<span class="fc" id="L318">		return counter;</span>
+
+	}
+	
+	private List&lt;Literal&gt; sortByVariables(List&lt;Literal&gt; posLits) {
+<span class="fc bfc" id="L323" title="All 2 branches covered.">		if (posLits.size() &lt;= 1) {</span>
+<span class="fc" id="L324">			return posLits;</span>
+		}
+<span class="fc" id="L326">		List&lt;Literal&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L327">		List&lt;Literal&gt; copy = new ArrayList&lt;&gt;(posLits);</span>
+		
+<span class="fc" id="L329">		Collection&lt;Variable&gt; seenVars = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L330" title="All 2 branches covered.">		for (int i = 0; i &lt; posLits.size(); i++) {</span>
+<span class="fc" id="L331">			int minVars = Integer.MAX_VALUE;</span>
+<span class="fc" id="L332">			Literal bestLit = null;</span>
+<span class="fc bfc" id="L333" title="All 2 branches covered.">			for (Literal lit : copy) {</span>
+<span class="fc" id="L334">				int var = lit.collectFreeVariables(seenVars).size();</span>
+<span class="fc bfc" id="L335" title="All 2 branches covered.">				if (var &lt; minVars) {</span>
+<span class="fc" id="L336">					minVars = var;</span>
+<span class="fc" id="L337">					bestLit = lit;</span>
+				}
+<span class="fc" id="L339">			}</span>
+<span class="pc bpc" id="L340" title="1 of 2 branches missed.">			if (bestLit == null) {</span>
+<span class="nc" id="L341">				Utils.error(&quot;Not possible&quot;);</span>
+			}
+<span class="fc" id="L343">			result.add(bestLit);</span>
+<span class="fc" id="L344">			seenVars.addAll(bestLit.collectFreeVariables(seenVars));</span>
+<span class="fc" id="L345">			copy.remove(bestLit);</span>
+		}
+<span class="pc bpc" id="L347" title="2 of 4 branches missed.">		if (!copy.isEmpty() || result.size() != posLits.size()) {</span>
+<span class="nc" id="L348">			Utils.error(&quot;Lengths are wrong:&quot; + copy.size() + &quot;:&quot; + result.size() +&quot;:&quot;+ posLits.size());</span>
+		}
+<span class="fc" id="L350">		return result;</span>
+	}
+
+	private Collection&lt;BindingList&gt; expandNegativeLiteralBindingList(
+			Literal lit, Collection&lt;BindingList&gt; negBLs) {
+<span class="nc" id="L355">		Collection&lt;BindingList&gt; outBLs = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L356" title="All 2 branches missed.">		for (BindingList bl : negBLs) {</span>
+<span class="nc" id="L357">			Literal newLit = lit.applyTheta(bl);</span>
+<span class="nc" id="L358">			Collection&lt;BindingList&gt; thisLitBL = getAllPossibleGroundingsOf(newLit);</span>
+<span class="nc bnc" id="L359" title="All 2 branches missed.">			for (BindingList newBL : thisLitBL) {</span>
+<span class="nc" id="L360">				Literal groundedLit = newLit.applyTheta(newBL);</span>
+				// If not in fact base, consider this BL
+<span class="nc bnc" id="L362" title="All 2 branches missed.">				if (context.getClausebase().getPossibleMatchingFacts(groundedLit, null) == null ||</span>
+<span class="nc bnc" id="L363" title="All 2 branches missed.">					!context.getClausebase().getPossibleMatchingFacts(groundedLit, null).iterator().hasNext()) {</span>
+<span class="nc" id="L364">					BindingList addBL = new BindingList(newBL.collectBindingsInList());</span>
+<span class="nc" id="L365">					addBL.addBindings(bl);</span>
+<span class="nc" id="L366">					outBLs.add(addBL);</span>
+				}
+<span class="nc" id="L368">			}</span>
+<span class="nc" id="L369">		}</span>
+<span class="nc" id="L370">		return outBLs;</span>
+		
+	}
+	
+	private List&lt;BindingList&gt; getAllPossibleGroundingsOf(Literal lit) {
+<span class="nc" id="L375">		PredicateName pName = lit.predicateName;</span>
+<span class="nc" id="L376">		int index=-1;</span>
+<span class="nc" id="L377">		List&lt;Collection&lt;Term&gt;&gt; rangeForArguments = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L378">		List&lt;Term&gt; variableArguments = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L379">		List&lt;BindingList&gt; bindings = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L380" title="All 2 branches missed.">		for (Term arg : lit.getArguments()) {</span>
+<span class="nc" id="L381">			index++;</span>
+<span class="nc bnc" id="L382" title="All 2 branches missed.">			if (!arg.isGrounded()) {</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">				if (!(arg instanceof Variable)) {</span>
+<span class="nc" id="L384">					Utils.error(&quot;expected variable here: &quot; + arg + &quot; in &quot; + lit);</span>
+							
+				}
+<span class="nc" id="L387">				variableArguments.add(arg);</span>
+<span class="nc" id="L388">				rangeForArguments.add(new HashSet&lt;&gt;());</span>
+<span class="nc" id="L389">				int varIndex = rangeForArguments.size() - 1;</span>
+				// Look for all possible types that this arg can have
+<span class="nc bnc" id="L391" title="All 2 branches missed.">				for (PredicateSpec spec : pName.getTypeOnlyList()) {</span>
+					// Only if arity matches
+<span class="nc bnc" id="L393" title="All 2 branches missed.">					if (spec.getArity() == lit.getArity()) {</span>
+<span class="nc" id="L394">						Set&lt;Term&gt; consts = context.getStringHandler().isaHandler.getAllInstances(spec.getTypeSpec(index).isaType);</span>
+<span class="nc" id="L395">						rangeForArguments.get(varIndex).addAll(consts);</span>
+					}
+<span class="nc" id="L397">				} </span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">				if (rangeForArguments.get(varIndex).size() == 0 ) {</span>
+<span class="nc" id="L399">					Utils.error(&quot;No constants for argument: &quot; + arg + &quot; in &quot; + lit);</span>
+				}
+			}
+<span class="nc" id="L402">		}</span>
+<span class="nc bnc" id="L403" title="All 2 branches missed.">		if (variableArguments.isEmpty()) {</span>
+<span class="nc" id="L404">			bindings.add(new BindingList());</span>
+<span class="nc" id="L405">			return bindings;</span>
+		}
+		
+<span class="nc" id="L408">		List&lt;List&lt;Term&gt;&gt; crossProd = Utils.computeCrossProduct(rangeForArguments);</span>
+		
+<span class="nc bnc" id="L410" title="All 2 branches missed.">		for (List&lt;Term&gt; oneGrounding : crossProd) {</span>
+<span class="nc" id="L411">			BindingList bl = new BindingList();</span>
+<span class="nc bnc" id="L412" title="All 2 branches missed.">			for (int i = 0; i &lt; oneGrounding.size(); i++) {</span>
+<span class="nc" id="L413">				bl.addBinding((Variable)variableArguments.get(i), oneGrounding.get(i));</span>
+			}
+<span class="nc" id="L415">			bindings.add(bl);</span>
+<span class="nc" id="L416">		}</span>
+<span class="nc" id="L417">		return bindings;</span>
+	}
+
+	private BindingList getNextProof(HornClauseProver prover2) {
+<span class="fc" id="L421">		SearchResult result = null;</span>
+		try {
+<span class="fc" id="L423">			result = prover2.performSearch();</span>
+<span class="nc" id="L424">		} catch (SearchInterrupted e) {</span>
+<span class="nc" id="L425">			e.printStackTrace();</span>
+<span class="fc" id="L426">		}</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">        if (result.goalFound()) {</span>
+<span class="fc" id="L428">        	return new BindingList(((ProofDone) prover2.terminator).collectQueryBindings());</span>
+        }
+<span class="fc" id="L430">        return null;</span>
+	}
+
+	public boolean isOnlyInHead(Clause cl, Literal eg) {
+<span class="fc" id="L434">		Literal head = cl.getDefiniteClauseHead();</span>
+<span class="fc" id="L435">		boolean isInHead = head.getPredicateNameAndArity().equals(eg.getPredicateNameAndArity());</span>
+
+<span class="fc bfc" id="L437" title="All 2 branches covered.">		for (Literal body : cl.negLiterals) {</span>
+<span class="pc bpc" id="L438" title="1 of 2 branches missed.">			if (body.getPredicateNameAndArity().equals(eg.getPredicateNameAndArity())) {</span>
+<span class="nc" id="L439">				isInHead = false;</span>
+<span class="nc" id="L440">				break;</span>
+			}
+<span class="fc" id="L442">		}</span>
+		
+<span class="fc" id="L444">		return isInHead;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

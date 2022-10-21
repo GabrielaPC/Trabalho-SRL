@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClauseOptimiser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">ClauseOptimiser.java</span></div><h1>ClauseOptimiser.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.FOPC.Literal;
+import edu.wisc.cs.will.FOPC.Variable;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+/*
+ * @author vsc
+ * This is a clause optimiser in the style of  [VSC,AS,HB et al, JMLR03].
+ */
+public class ClauseOptimiser {
+
+<span class="fc" id="L18">    public ClauseOptimiser() {</span>
+<span class="fc" id="L19">    }</span>
+
+    List&lt;List&lt;Literal&gt;&gt; bodyToBodies(Literal head, List&lt;Literal&gt; body) {
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        if (body.size() == 0) {</span>
+<span class="nc" id="L23">            return (List&lt;List&lt;Literal&gt;&gt;) Collections.EMPTY_LIST;</span>
+        }
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        else if (body.size() == 1) {</span>
+<span class="fc" id="L26">            return Collections.singletonList(body);</span>
+        }
+        else {
+<span class="fc" id="L29">            return separateComponents(head, body);</span>
+        }
+    }
+
+    /**
+     * Constructs a new optimised clause.
+     */
+    private int[] clauseToComponents(Literal head, List&lt;Literal&gt; body) {
+<span class="fc" id="L37">        Collection&lt;Variable&gt; headvars = head.collectAllVariables();</span>
+        int[] components;
+
+<span class="fc" id="L40">        components = new int[body.size()];</span>
+<span class="fc" id="L41">        ArrayList&lt;Collection&lt;Variable&gt;&gt; lvarsets = new ArrayList&lt;&gt;(components.length);</span>
+
+<span class="fc" id="L43">        int i = 0;</span>
+        // check independence
+        // by dividing into independent components.
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        for (Literal lit : body) {</span>
+<span class="fc" id="L47">            int component = i;</span>
+
+<span class="fc" id="L49">            Collection&lt;Variable&gt; litvars = lit.collectAllVariables();</span>
+            // mark as being in its own component
+<span class="fc" id="L51">            components[i] = i;</span>
+            // literals have no variable
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">            if (litvars == null) {</span>
+                // component has these variables
+<span class="nc" id="L55">                lvarsets.add(i, null);</span>
+<span class="nc" id="L56">                continue;</span>
+            }
+            // head vars are assume to be ground
+<span class="fc" id="L59">            litvars.removeAll(headvars);</span>
+            // component has these variables
+<span class="fc" id="L61">            lvarsets.add(i, litvars);</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">            for (int j = 0; j &lt; i; j++) {</span>
+                // get the variables again
+<span class="fc" id="L64">                Collection&lt;Variable&gt; next = lvarsets.get(j);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">                for (Variable v : litvars) {</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                    if (next.contains(v)) {</span>
+<span class="fc" id="L67">                        component = component_merge(j, component, components);</span>
+                    }
+<span class="fc" id="L69">                }</span>
+            }
+<span class="fc" id="L71">            components[i] = component;</span>
+<span class="fc" id="L72">            i++;</span>
+<span class="fc" id="L73">        }</span>
+<span class="fc" id="L74">        return components;</span>
+    }
+
+    // TODO(@hayesall): This function can likely be removed.
+    private List&lt;List&lt;Literal&gt;&gt; separateComponents(Literal head, List&lt;Literal&gt; body) {
+
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (body == null) {</span>
+<span class="nc" id="L81">            return null;</span>
+        }
+
+        try {
+<span class="fc" id="L85">            int[] components = clauseToComponents(head, body);</span>
+<span class="fc" id="L86">            int total_components = normalise_components(components);</span>
+
+<span class="fc" id="L88">            int[] map = new int[body.size()];</span>
+<span class="fc" id="L89">            int[] size = new int[total_components];</span>
+
+<span class="fc" id="L91">            int next_component = 0;</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            for (int i = 0; i &lt; body.size(); i++) {</span>
+                int component;
+<span class="fc bfc" id="L94" title="All 2 branches covered.">                if (i == components[i]) {</span>
+<span class="fc" id="L95">                    size[next_component] = 0;</span>
+<span class="fc" id="L96">                    map[i] = next_component++;</span>
+                }
+<span class="fc" id="L98">                component = map[components[i]];</span>
+<span class="fc" id="L99">                size[component]++;</span>
+            }
+
+<span class="fc" id="L102">            List&lt;List&lt;Literal&gt;&gt; listOfLits = new ArrayList&lt;&gt;(total_components);</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">            for (int i = 0; i &lt; total_components; i++) {</span>
+<span class="fc" id="L104">                listOfLits.add(new ArrayList&lt;&gt;(size[i]));</span>
+            }
+
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            for (int i = 0; i &lt; body.size(); i++) {</span>
+<span class="fc" id="L108">                listOfLits.get(map[components[i]]).add(body.get(i));</span>
+            }
+<span class="fc" id="L110">            return listOfLits;</span>
+<span class="nc" id="L111">        } catch (Exception e) {</span>
+<span class="nc" id="L112">            Utils.reportStackTrace(e);</span>
+<span class="nc" id="L113">            Utils.error(&quot;Problem running emulator.&quot;);</span>
+<span class="nc" id="L114">            return null;</span>
+        }
+    }
+
+    // make sure we are pointing to the representative
+    private int deref_component(int j, int[] components) {
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        while (components[j] != j) {</span>
+<span class="fc" id="L121">            j = components[j];</span>
+        }
+<span class="fc" id="L123">        return j;</span>
+    }
+
+    // if two components share variables
+    // make sure one points to the other
+    private int component_merge(int j, int component, int[] components) {
+<span class="fc" id="L129">        int k = deref_component(j, components);</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        if (k &gt; component) {</span>
+<span class="fc" id="L131">            components[k] = component;</span>
+
+<span class="fc" id="L133">            return component;</span>
+        }
+        else {
+<span class="fc" id="L136">            components[component] = k;</span>
+<span class="fc" id="L137">            return k;</span>
+        }
+    }
+
+    private int normalise_components(int[] components) {
+<span class="fc" id="L142">        int total_components = 0;</span>
+
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        for (int i = 0; i &lt; components.length; i++) {</span>
+<span class="fc" id="L145">            components[i] = deref_component(i, components);</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            if (components[i] == i) {</span>
+<span class="fc" id="L147">                total_components++;</span>
+            }
+        }
+<span class="fc" id="L150">        return total_components;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

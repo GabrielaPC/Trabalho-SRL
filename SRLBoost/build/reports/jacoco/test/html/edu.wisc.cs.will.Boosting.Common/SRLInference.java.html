@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SRLInference.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Common</a> &gt; <span class="el_source">SRLInference.java</span></div><h1>SRLInference.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Common;
+
+import edu.wisc.cs.will.Boosting.MLN.MLNInference;
+import edu.wisc.cs.will.Boosting.RDN.JointRDNModel;
+import edu.wisc.cs.will.Boosting.RDN.Models.RelationalDependencyNetwork;
+import edu.wisc.cs.will.Boosting.RDN.RegressionRDNExample;
+import edu.wisc.cs.will.Boosting.RDN.WILLSetup;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.Utils.ProbDistribution;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Generic inference interfact for RFGB
+ * @author tkhot
+ */
+public abstract class SRLInference {
+	
+	protected WILLSetup setup;
+	protected RelationalDependencyNetwork rdn;
+	protected JointRDNModel jointModel;
+	
+<span class="fc" id="L24">	protected SRLInference(WILLSetup setup) {</span>
+<span class="fc" id="L25">		this.setup = setup;</span>
+<span class="fc" id="L26">	}</span>
+
+	protected abstract ProbDistribution getExampleProbability(Example eg);
+
+	public abstract void setMaxTrees(int max);
+
+	/**
+	 * 
+	 * @param rex - Set the probability for this example
+	 */
+	private void setExampleProbability(RegressionRDNExample rex) {
+<span class="fc" id="L37">		rex.setProbOfExample(getExampleProbability(rex));</span>
+<span class="fc" id="L38">	}</span>
+	
+	public void getProbabilities(List&lt;RegressionRDNExample&gt; allExs) {
+<span class="fc" id="L41">		System.currentTimeMillis();</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">		for (RegressionRDNExample ex : allExs) {</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">			if (this instanceof MLNInference) {</span>
+<span class="fc" id="L44">				((MLNInference)this).resetCache();</span>
+			}
+<span class="fc" id="L46">			setExampleProbability(ex);</span>
+<span class="fc" id="L47">		}</span>
+<span class="fc" id="L48">	}</span>
+
+	public void getMarginalProbabilities(Map&lt;String, List&lt;RegressionRDNExample&gt;&gt; jointExamples) {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">		for (List&lt;RegressionRDNExample&gt; examples : jointExamples.values()) {</span>
+<span class="fc" id="L52">			getProbabilities(examples);</span>
+<span class="fc" id="L53">		}</span>
+<span class="fc" id="L54">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

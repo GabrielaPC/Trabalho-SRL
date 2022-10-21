@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NamedTerm.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">NamedTerm.java</span></div><h1>NamedTerm.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import java.util.Comparator;
+
+/*
+ * Create a pair of a term and its name.
+ * 
+ * @author shavlik
+ *
+ */
+class NamedTerm {
+	public final Term   term;
+	public final String name;
+	
+<span class="nc" id="L15">	public static final Comparator&lt;NamedTerm&gt; comparator = new NamedTermComparator();</span>
+	
+	NamedTerm(Term term, String name) {
+<span class="nc" id="L18">		super();</span>
+<span class="nc" id="L19">		this.term = term;</span>
+<span class="nc" id="L20">		this.name = name;</span>
+<span class="nc" id="L21">	}	</span>
+	
+	public String toString() {
+<span class="nc" id="L24">		return term + &quot;=&quot; + name;</span>
+	}
+	
+	private static final String nameField          = &quot;name&quot;;
+	static final String worldNameField     = &quot;wiWorld&quot;; // These are used for situation calculus.
+	static final String stateNameField     = &quot;wiState&quot;;
+	static final String returnedValueField = &quot;value&quot;; // Do NOT use 'returnValue' here since that is treated specially in IL.
+
+<span class="nc bnc" id="L32" title="All 2 branches missed.">    static class NamedTermComparator implements Comparator&lt;NamedTerm&gt; {</span>
+
+<span class="nc" id="L34">		NamedTermComparator() {}</span>
+
+		public int compare(NamedTerm o1, NamedTerm o2) {
+			// TODO(@hayesall): Suspicious to return `(o1 == o2)` before the null check.
+
+<span class="nc bnc" id="L39" title="All 2 branches missed.">			if (o1 == o2) { return 0;}</span>
+
+<span class="nc bnc" id="L41" title="All 4 branches missed.">			assert o2 != null;</span>
+<span class="nc bnc" id="L42" title="All 4 branches missed.">			assert o1 != null;</span>
+
+<span class="nc bnc" id="L44" title="All 4 branches missed.">			if (o1.name == null &amp;&amp; o2.name == null ) { return 0; }</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">			if (o1.name == null) { return 1; }</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">			if (o2.name == null) { return -1; }</span>
+
+<span class="nc bnc" id="L48" title="All 2 branches missed.">			if (o1.name.equalsIgnoreCase(NamedTerm.nameField))      { return -1; } // Always keep NAME in the first field.</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">			if (o2.name.equalsIgnoreCase(NamedTerm.nameField))      { return  1; }</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">			if (o1.name.equalsIgnoreCase(NamedTerm.worldNameField)) { return -1; } // The WORLD goes second.</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">			if (o2.name.equalsIgnoreCase(NamedTerm.worldNameField)) { return  1; }</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">			if (o1.name.equalsIgnoreCase(NamedTerm.stateNameField)) { return  1; } // The STATE goes at the END.</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">			if (o2.name.equalsIgnoreCase(NamedTerm.stateNameField)) { return -1; }</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">			if (o1.name.equalsIgnoreCase(NamedTerm.returnedValueField))  { return  1; }  // The returnValue goes second from last.</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">			if (o2.name.equalsIgnoreCase(NamedTerm.returnedValueField))  { return -1; }</span>
+<span class="nc" id="L56">			return o1.name.compareToIgnoreCase(o2.name);</span>
+		}
+
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

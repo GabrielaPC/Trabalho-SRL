@@ -1,0 +1,1115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SingleClauseNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">SingleClauseNode.java</span></div><h1>SingleClauseNode.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.Boosting.RDN.RegressionRDNExample;
+import edu.wisc.cs.will.Boosting.Utils.NumberGroundingsCalculator;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.DataSetUtils.RegressionExample;
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.ILP.Regression.BranchStats;
+import edu.wisc.cs.will.ILP.Regression.RegressionInfoHolder;
+import edu.wisc.cs.will.ResThmProver.HornClauseProver;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+import edu.wisc.cs.will.stdAIsearch.SearchNode;
+import edu.wisc.cs.will.stdAIsearch.StateBasedSearchTask;
+
+import java.io.Serializable;
+import java.util.*;
+
+/*
+ * @author shavlik
+ */
+
+public class SingleClauseNode extends SearchNode implements Serializable{
+	private final static boolean renameAllVariablesWheneverPrinting = true;
+	
+<span class="fc" id="L26">	Literal literalAdded    = null;</span>
+<span class="fc" id="L27">	double  score           = Double.NaN; // Cache these to save recomputing (recomputing fast except for regression?).</span>
+<span class="fc" id="L28">	private double  posCoverage     = -1.0;     //   Also, each child node only stores the extensions to the clause body.</span>
+<span class="fc" id="L29">	double  negCoverage     = -1.0; // Everything is done with WEIGHTED examples (including the seeds).</span>
+<span class="fc" id="L30">	int     numberOfNewVars = 0;    // There is a max number of new (i.e., output) variables in a clause.  This is the total all the way to the root.</span>
+<span class="fc" id="L31">	List&lt;Type&gt;                 typesPresent = null; // Keep track of the different types of terms added by this node.  If there is a need to reduce the size of nodes, could compute this when needed from the map below.</span>
+<span class="fc" id="L32">	private List&lt;AnnotatedLiteral&gt;   dontReconsider = null; // If something is discarded at some point, don't reconsider it further down the search tree.  DON'T COPY (in buildNewAncestor) THIS WHEN REMOVING AN INTERMEDIATE LITERAL SINCE THAT INTERMEDIATE LITERAL MIGHT BE THE REASON FOR AN ENTRY (SO NEED TO RECREATE THE ONES THAT SHOULD HAVE BEEN KEPT).</span>
+<span class="fc" id="L33">	int                predicateOccurrences = 0;    // Count of how often this literal's predicate has occurred (this is a CUMULATIVE count from this node, assuming this predicate was added here, to the root).</span>
+<span class="fc" id="L34">	int    predicateOccurrencesPerFixedVars = 0;    // Count of how often this literal's predicate has occurred FOR THESE + and # variables (also a CUMULATIVE count).  This is how Aleph limits counts.</span>
+<span class="fc" id="L35">	List&lt;Literal&gt;            canonicalForm  = null; // Once put into a canonical form, cache it.</span>
+<span class="fc" id="L36">	private Set&lt;Example&gt;  posExamplesThatFailedHere = null; // Record where each example fails to be satisfied.</span>
+<span class="fc" id="L37">	private Set&lt;Example&gt;  negExamplesThatFailedHere = null; // Save space by not creating these until some examples fail at a node.</span>
+<span class="fc" id="L38">	Map&lt;Type,List&lt;Term&gt;&gt;           typesMap = null; // AlsogetConstrainsArgumentTypes store this piece-by-piece at nodes (i.e., need to climb to root to collect/check all of them).</span>
+<span class="fc" id="L39">	private   Map&lt;Term,Type&gt;          typesOfNewTerms = null; // Record the types of new terms, if any, added here.  Used in at least the case where when evaluated on the full dataset a node has insufficient positive coverage to be kept.  This prevents it from being considered again.</span>
+<span class="fc" id="L40">	Map&lt;Term,Integer&gt;           depthOfArgs = null; // For each 'leaf term' (i.e., recur into functions) in this clause's literal, record its distance from the head.  An input var's depth is the depth of its parent.  An output var's depth is 1 + the max depth of all the input args in the literal.</span>
+<span class="fc" id="L41">	final boolean                         pruneMe = false;// Can do some pruning here that the normal pruners don't handle.</span>
+<span class="fc" id="L42">	boolean                        timedOut = false;</span>
+<span class="fc" id="L43">	private   String                      extraString = null; // Used to augment the comment in the toString() with info about the examples that reach this node.</span>
+	
+<span class="fc" id="L45">	private SingleClauseNode 	 startingNodeForReset = null; // Everytime we select new examples, we reset the scores but we lose the starting node information.(this is not a parent node when number of literals per node &gt;1)</span>
+
+	SingleClauseNode(StateBasedSearchTask task) {
+<span class="fc" id="L48">		super(task);</span>
+<span class="fc" id="L49">	}</span>
+	public SingleClauseNode(SearchNode parentNode, Literal literalAdded) {
+<span class="fc" id="L51">		this(parentNode, literalAdded, null, null, null, null);</span>
+<span class="fc" id="L52">	}</span>
+	public SingleClauseNode(SearchNode parentNode, Literal literalAdded, Map&lt;Term, Integer&gt; argDepths, List&lt;Type&gt; typesPresent, Map&lt;Type, List&lt;Term&gt;&gt; typesMap, Map&lt;Term, Type&gt; typesOfNewTerms) {
+<span class="fc" id="L54">		super(parentNode);</span>
+<span class="fc" id="L55">		depthOfArgs          = argDepths;</span>
+<span class="fc" id="L56">		this.literalAdded    = literalAdded;</span>
+<span class="fc" id="L57">		this.typesPresent    = typesPresent;</span>
+<span class="fc" id="L58">		this.typesMap        = typesMap;</span>
+<span class="fc" id="L59">		this.typesOfNewTerms = typesOfNewTerms;</span>
+<span class="fc" id="L60">	}</span>
+
+	boolean matchesThisExample(Example ex, boolean isaPosExample) throws SearchInterrupted {
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">		if (getPosCoverage() &lt; 0.0) { computeCoverage(); }</span>
+<span class="pc bpc" id="L64" title="1 of 4 branches missed.">		if (isaPosExample) { return !posExampleAlreadyExcluded(ex); }</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">		return                      !negExampleAlreadyExcluded(ex);</span>
+	}
+
+	void addTypeOfNewTerm(Term term, Type type) {
+<span class="fc bfc" id="L69" title="All 2 branches covered.">		if (typesOfNewTerms == null) { typesOfNewTerms = new HashMap&lt;&gt;(4); }</span>
+<span class="fc" id="L70">		typesOfNewTerms.put(term, type);</span>
+<span class="fc" id="L71">	}</span>
+
+	void markDepthOfLeafTerms(List&lt;Term&gt; arguments, int thisDepth) {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">		if (arguments == null) { return; }</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">		for (Term arg : arguments) {</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">			if (arg instanceof Function) {</span>
+<span class="nc" id="L77">				markDepthOfLeafTerms( ((Function) arg).getArguments(), thisDepth);</span>
+<span class="fc" id="L78">			} else { depthOfArgs.put(arg, thisDepth); }</span>
+<span class="fc" id="L79">		}</span>
+<span class="fc" id="L80">	}</span>
+	
+    private boolean proveExampleBodies(LearnOneClause theILPtask, Literal target, List&lt;List&lt;Literal&gt;&gt; clauseBodies, Literal ex, BindingList bindings) throws SearchInterrupted {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">    	if (Utils.getSizeSafely(clauseBodies) &lt; 1) { </span>
+<span class="pc bpc" id="L84" title="1 of 4 branches missed.">    		if (bindings != null &amp;&amp; bindings.theta.size() &gt; 0) { bindings.theta.clear(); } // Revert to the empty binding list. </span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">    		return theILPtask.unifier.unify(target, ex, bindings) != null;</span>
+    	}
+<span class="fc bfc" id="L87" title="All 2 branches covered.">    	for (List&lt;Literal&gt; aBody : clauseBodies) {</span>
+<span class="fc" id="L88">            boolean result = proveExample(theILPtask, target, aBody, ex, bindings);</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            if (!result) return false;</span>
+<span class="fc" id="L90">        }</span>
+<span class="fc" id="L91">        return true;</span>
+    }
+
+	// NOTE: bindings is passed in here to save memory-cell creation, not to constrain the unification.
+	boolean proveExample(LearnOneClause theILPtask, Literal target, List&lt;Literal&gt; clauseBody, Literal ex, BindingList bindings) throws SearchInterrupted {
+<span class="pc bpc" id="L96" title="2 of 4 branches missed.">		if (bindings != null &amp;&amp; bindings.theta.size() &gt; 0) { bindings.theta.clear(); } // Revert to the empty binding list.</span>
+<span class="fc" id="L97">		bindings = ((LearnOneClause) task).unifier.unify(target, ex, bindings);		</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">		if (bindings == null) { return false; }</span>
+<span class="fc" id="L99">		List&lt;Literal&gt; query = bindings.applyTheta(clauseBody);</span>
+<span class="fc" id="L100">		return theILPtask.prove(query);</span>
+	}
+	
+	// Recursively climb to the root collecting all the literals.  Remember that the root holds the HEAD literal, and hence shouldn't be collected here.
+	List&lt;Literal&gt; getClauseBody() {
+<span class="fc" id="L105">		return getClauseBody(false);</span>
+	}
+	private List&lt;Literal&gt; getClauseBody(boolean stopAtCurrentStartingNode) {
+		List&lt;Literal&gt; result;
+<span class="fc" id="L109">		SingleClauseNode parent = getParentNode();</span>
+<span class="fc bfc" id="L110" title="All 4 branches covered.">		boolean        stopHere = (stopAtCurrentStartingNode &amp;&amp; this == ((LearnOneClause) task).currentStartingNode);</span>
+<span class="fc bfc" id="L111" title="All 4 branches covered.">		if (!stopHere &amp;&amp; parent != null) { </span>
+<span class="fc" id="L112">			result = parent.getClauseBody(stopAtCurrentStartingNode);</span>
+<span class="fc" id="L113">			result.add(literalAdded); // Want to add to the END so the clause's literals are in the proper order.</span>
+		} else { 
+<span class="fc" id="L115">			result = new ArrayList&lt;&gt;(8);  // This makes sure a new list is being created.</span>
+		}
+<span class="fc" id="L117">		return result;</span>
+	}
+	List&lt;Literal&gt; getClauseBodyReversed() {
+		List&lt;Literal&gt; result;
+<span class="fc" id="L121">		SingleClauseNode parent = getParentNode();</span>
+		
+<span class="fc bfc" id="L123" title="All 2 branches covered.">		if (parent != null) { result = parent.getClauseBodyReversed();</span>
+<span class="fc" id="L124">							  result.add(0, literalAdded); }    // Want to add to the FRONT so the clause's literals are in reversed order.</span>
+<span class="fc" id="L125">		else                { result = new ArrayList&lt;&gt;(8); } // This makes sure a new list is being created.</span>
+<span class="fc" id="L126">		return result;</span>
+	}
+
+	Literal getClauseHead() {
+<span class="fc" id="L130">		SingleClauseNode parent = getParentNode();</span>
+		
+<span class="fc bfc" id="L132" title="All 2 branches covered.">		if (parent != null) { return parent.getClauseHead(); }</span>
+<span class="fc" id="L133">		return literalAdded;</span>
+	}
+	
+	public Clause getClause() { // There are two climbs of the search tree, but that isn't a big deal since they are shallow.
+<span class="fc" id="L137">		return getClause(false);</span>
+	}
+	private Clause getClause(boolean onlyGetLocalAddition) { // If onlyGetLocalAddition, stop at gettingClauseBody at current starting node.
+<span class="fc" id="L140">		List&lt;Literal&gt; headAsPosLiteralList = new ArrayList&lt;&gt;(8);</span>
+<span class="fc" id="L141">		headAsPosLiteralList.add(getClauseHead());</span>
+<span class="fc" id="L142">		return ((LearnOneClause)task).stringHandler.getClause(headAsPosLiteralList, getClauseBody(onlyGetLocalAddition), extraString);</span>
+	}
+	
+	public Clause getLocallyAddedClause() {
+<span class="fc" id="L146">		return getClause(true);</span>
+	}
+	
+	int bodyLength() {
+<span class="fc bfc" id="L150" title="All 2 branches covered.">		if (getParentNode() != null) { return 1 + getParentNode().bodyLength(); }</span>
+<span class="fc" id="L151">		return 0; // The root is 'true' and we don't count that literal.</span>
+	}
+	
+	double getCost() { // If predicates have costs, sum the costs. Otherwise all predicates 'cost' 1, so we can return length.
+<span class="fc" id="L155">		return bodyLength();</span>
+	}
+
+	// When the last literal is &quot;determinate,&quot; it might be useful as a 'bridging' predicate.  This is used to give some &quot;bonus points&quot; in scoring this node.
+	boolean endsWithBridgerLiteral() {
+<span class="pc bpc" id="L160" title="1 of 4 branches missed.">		return (literalAdded != null &amp;&amp; literalAdded.isaBridgerLiteral());</span>
+	}
+
+	// For the given literal, collect all other instances of this predicate in the current clause.
+	// Don't worry about matching (for now), other than confirming the number of args is the same.
+	List&lt;Literal&gt; collectAllVariants(Literal newPredicate) {
+<span class="fc" id="L166">		List&lt;Literal&gt; result = null;</span>
+		
+<span class="fc" id="L168">		SingleClauseNode parent = getParentNode();</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">		if (parent != null) { result = parent.collectAllVariants(newPredicate); }</span>
+		
+<span class="fc bfc" id="L171" title="All 2 branches covered.">		if (newPredicate.predicateName == literalAdded.predicateName  &amp;&amp;</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">		    newPredicate.numberArgs()  == literalAdded.numberArgs()) {</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">			if (result == null) { result = new ArrayList&lt;&gt;(1); } // Create when needed.</span>
+<span class="fc" id="L174">			result.add(literalAdded);</span>
+		}
+<span class="fc" id="L176">		return result;</span>
+	}
+
+	List&lt;Term&gt; termsOfThisTypePresentInChild(Type type) {
+<span class="fc" id="L180">		List&lt;Term&gt; result = null;</span>
+<span class="fc" id="L181">		SingleClauseNode parent = getParentNode();</span>
+		
+<span class="fc bfc" id="L183" title="All 2 branches covered.">		if (parent != null) { result = parent.termsOfThisTypePresentInChild(type); }</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">		if (typesPresent != null) {</span>
+<span class="fc" id="L185">			List&lt;Term&gt; terms = getAllTypesPresent(type);</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">			if (terms != null) { </span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">				if (result == null) { result = new ArrayList&lt;&gt;(4); }</span>
+<span class="fc" id="L188">				result.addAll(terms);</span>
+			} 
+		}
+<span class="fc" id="L191">		return result;</span>
+	}
+	
+	// Find all terms added by this node that are of this type.
+	// Handles hierarchical types.  If collectBelowType=true, then ok if the item is BELOW 'type' in the ISA hierarchy.
+	// Eg, if type=animal and some term of type=dog is present, then return that term. (However, do NOT go the other way in the ISA hier.)
+	// Otherwise, it is ok of the item is ABOVE 'type' in the ISA hierarchy.
+	private List&lt;Term&gt; getAllTypesPresent(Type type) {
+<span class="fc" id="L199">		List&lt;Term&gt; allTerms = null;</span>
+		
+<span class="fc" id="L201">		LearnOneClause theTask = (LearnOneClause) task;</span>
+<span class="fc bfc" id="L202" title="All 4 branches covered.">		for (Type tp : typesPresent) if (theTask.stringHandler.isaHandler.isa(tp, type)) {</span>
+<span class="fc" id="L203">			List&lt;Term&gt; terms = typesMap.get(tp);</span>
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">			if (terms != null) {</span>
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">				if (allTerms == null) { allTerms = new ArrayList&lt;&gt;(4); }</span>
+<span class="fc" id="L206">				allTerms.addAll(terms);</span>
+			}
+		}
+<span class="fc" id="L209">		return allTerms;</span>
+	}
+
+	// Count how many times this predicate has occurred in this clause.
+	int countPredicateOccurrences(PredicateName pName, int arity) {
+<span class="pc bpc" id="L214" title="1 of 4 branches missed.">		if (literalAdded.predicateName == pName &amp;&amp; literalAdded.numberArgs() == arity) { return predicateOccurrences; } // Store CUMMULATIVE counts at nodes (or could always count upwards and save an 'int' in the SingleClauseNode's).</span>
+<span class="fc" id="L215">		SingleClauseNode parent = getParentNode();</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">		if (parent != null) { return parent.countPredicateOccurrences(pName, arity); }</span>
+<span class="fc" id="L217">		return 0;</span>
+	}
+	
+	int countPredicateOccurrencesGivenInputArgs(PredicateName pName, int arity, List&lt;Term&gt; constantArgs) {
+<span class="nc bnc" id="L221" title="All 6 branches missed."> 		if (literalAdded.predicateName == pName &amp;&amp; literalAdded.numberArgs() == arity &amp;&amp; sameConstantArguments(arity, constantArgs)) { return predicateOccurrencesPerFixedVars; } // Store CUMMULATIVE counts at nodes (or could always count upwards and save an 'int' in the SingleClauseNode's).</span>
+<span class="nc" id="L222">		SingleClauseNode parent = getParentNode();</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">		if (parent != null) { return parent.countPredicateOccurrencesGivenInputArgs(pName, arity, constantArgs); }</span>
+<span class="nc" id="L224">		return 0;</span>
+	}
+	
+	// See if this node has these constant arguments.  When this is called, we know that predicateName/arity have been matched. 
+	private boolean sameConstantArguments(int arity, List&lt;Term&gt; constantArgs) {
+		// Utils.println(&quot;sameConstantArguments: &quot; + literalAdded + &quot; vs.  constantArgs=&quot; + constantArgs);
+<span class="nc" id="L230">		List&lt;Term&gt; arguments = literalAdded.getArguments();</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">		for (int i =0; i &lt; arity; i++) { // See if we get exact matches wherever the constantArgs do not equal null.</span>
+<span class="nc bnc" id="L232" title="All 4 branches missed.">			if (constantArgs.get(i) != null &amp;&amp; constantArgs.get(i) != arguments.get(i)) { return false; }</span>
+		}
+<span class="nc" id="L234"> 		return true;</span>
+	}
+	
+	Literal getTarget() {
+<span class="fc bfc" id="L238" title="All 2 branches covered.">		if (getParentNode() != null) { return getParentNode().getTarget(); }</span>
+		//if (!(this instanceof SingleClauseRootNode)) { Utils.error(); }
+<span class="fc" id="L240">		return ((SingleClauseRootNode) this).target;</span>
+	}
+	
+	private double wgtedCountOfPosExamplesCovered(List&lt;Example&gt; posExamples) throws SearchInterrupted {
+<span class="fc" id="L244">		LearnOneClause   theILPtask = (LearnOneClause) task;</span>
+<span class="fc" id="L245">		SingleClauseNode parent     = getParentNode();</span>
+<span class="fc" id="L246">		Literal          target     = getTarget();</span>
+<span class="fc" id="L247">		List&lt;Literal&gt;    clauseBody = getClauseBody();  // To save space in OPEN, compute this when needed.</span>
+<span class="fc" id="L248">		double           total      = 0.0;</span>
+
+<span class="pc bpc" id="L250" title="1 of 6 branches missed.">		for (Example posEx : posExamples) if (parent == null || !parent.posExampleAlreadyExcluded(posEx)) { </span>
+<span class="fc bfc" id="L251" title="All 2 branches covered.">			if (proveExample(theILPtask, target, clauseBody, posEx, theILPtask.bindings)) { total += posEx.getWeightOnExample(); }</span>
+		}
+<span class="fc" id="L253">		return total;</span>
+	}
+	
+	private double wgtedCountOfNegExamplesCovered(List&lt;Example&gt; negExamples) throws SearchInterrupted {
+<span class="nc" id="L257">		LearnOneClause   theILPtask = (LearnOneClause) task;</span>
+<span class="nc" id="L258">		SingleClauseNode parent     = getParentNode();</span>
+<span class="nc" id="L259">		Literal          target     = getTarget();</span>
+<span class="nc" id="L260">		List&lt;Literal&gt;    clauseBody = getClauseBody();  // To save space in OPEN, compute this when needed.</span>
+<span class="nc" id="L261">		double           total      = 0.0;</span>
+		
+<span class="nc bnc" id="L263" title="All 6 branches missed.">		for (Example negEx : negExamples) if (parent == null || !parent.negExampleAlreadyExcluded(negEx)) { </span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">			if (proveExample(theILPtask, target, clauseBody, negEx, theILPtask.bindings)) { total += negEx.getWeightOnExample(); }</span>
+		}
+<span class="nc" id="L266">		return total;</span>
+	}
+
+	int countOfSingletonVars(List&lt;Variable&gt; allVars) {
+<span class="fc" id="L270">		List&lt;Variable&gt; singletons =  collectSingletonVars(allVars); // Wasted some space, but better than maintaining two minor variants of the same code. </span>
+		
+<span class="fc bfc" id="L272" title="All 2 branches covered.">		if (singletons == null) { return 0; }</span>
+<span class="fc" id="L273">		return singletons.size();</span>
+	}
+
+	// This should be a non-negative number (e.g., it will be subtracted elsewhere).
+	// Give a discount on reusing a literal.  Currently the discount is hard-wired to reduce the cost
+	// of the 2nd and subsequent uses by 10%,
+	double discountForRepeatedLiterals(Set&lt;PredicateName&gt; pNames) {
+<span class="fc" id="L280">		double localDiscount = 0.0;</span>
+<span class="pc bpc" id="L281" title="1 of 2 branches missed.">		if (literalAdded != null) {</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">			if (pNames.contains(literalAdded.predicateName)) { localDiscount += 0.1; }</span>
+<span class="fc" id="L283">			else { pNames.add(literalAdded.predicateName); }</span>
+		}
+<span class="fc" id="L285">		SingleClauseNode parent = getParentNode();</span>
+<span class="fc bfc" id="L286" title="All 2 branches covered.">		if (parent != null) { return localDiscount + parent.discountForRepeatedLiterals(pNames); }</span>
+<span class="fc" id="L287">		return localDiscount;</span>
+	}		
+	
+	private List&lt;Variable&gt; collectSingletonVars(List&lt;Variable&gt; allVars) {
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">		if (allVars == null) { return null; }</span>
+<span class="fc" id="L292">		List&lt;Variable&gt; singletons = null;</span>
+				
+<span class="fc bfc" id="L294" title="All 2 branches covered.">		for (Variable var : allVars) {</span>
+<span class="fc" id="L295">			int copiesOfVar = 0;</span>
+<span class="fc bfc" id="L296" title="All 4 branches covered.">			for (Variable var2 : allVars) if (var == var2) {</span>
+<span class="fc" id="L297">				copiesOfVar++;</span>
+<span class="fc bfc" id="L298" title="All 2 branches covered.">				if (copiesOfVar &gt; 1) { break; }</span>
+			}
+<span class="fc bfc" id="L300" title="All 2 branches covered.">			if (copiesOfVar == 1) { </span>
+<span class="fc bfc" id="L301" title="All 2 branches covered.">				if (singletons == null) { singletons = new ArrayList&lt;&gt;(4); }</span>
+<span class="fc" id="L302">				singletons.add(var);</span>
+			}
+<span class="pc bpc" id="L304" title="1 of 2 branches missed.">			if (copiesOfVar &lt;  1) { Utils.error(&quot;Bug in countOfSingletonVars! &quot; + allVars + &quot;  &quot; + this); }</span>
+<span class="fc" id="L305">		}</span>
+<span class="fc" id="L306">		return singletons;</span>
+	}
+	
+	int countOfUniqueVars(List&lt;Variable&gt; allVars) {
+<span class="fc" id="L310">		List&lt;Variable&gt; uniques =  collectUniqueVars(allVars); // Wasted some space, but better than maintaining two minor variants of the same code.</span>
+<span class="pc bpc" id="L311" title="1 of 2 branches missed.">		if (uniques == null) { return 0; }</span>
+<span class="fc" id="L312">		return uniques.size();</span>
+		
+	}
+	private List&lt;Variable&gt; collectUniqueVars(List&lt;Variable&gt; allVars) { // TODO - could simply return a set ...
+<span class="pc bpc" id="L316" title="1 of 2 branches missed.">		if (allVars == null) { return null; }</span>
+<span class="fc" id="L317">		List&lt;Variable&gt; seenVars = new ArrayList&lt;&gt;(allVars.size());</span>
+		
+<span class="fc bfc" id="L319" title="All 2 branches covered.">		for (Variable var : allVars) {</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">			if (!seenVars.contains(var)) { seenVars.add(var); }</span>
+<span class="fc" id="L321">		}</span>
+<span class="fc" id="L322">		return seenVars;</span>
+	}
+	
+	int countOfUniqueConstants(List&lt;Constant&gt; allConstants) {
+<span class="fc" id="L326">		List&lt;Constant&gt; uniques =  collectUniqueConstants(allConstants); // Wasted some space, but better than maintaining two minor variants of the same code. </span>
+		
+<span class="fc bfc" id="L328" title="All 2 branches covered.">		if (uniques == null) { return 0; }</span>
+<span class="fc" id="L329">		return uniques.size();</span>
+		
+	}
+	private List&lt;Constant&gt; collectUniqueConstants(List&lt;Constant&gt; allConstants) {
+<span class="fc bfc" id="L333" title="All 2 branches covered.">		if (allConstants == null) { return null; }</span>
+<span class="fc" id="L334">		List&lt;Constant&gt; seenConstants = new ArrayList&lt;&gt;(allConstants.size());</span>
+		
+<span class="fc bfc" id="L336" title="All 2 branches covered.">		for (Constant var : allConstants) {</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">			if (!seenConstants.contains(var)) { seenConstants.add(var); }</span>
+<span class="fc" id="L338">		}</span>
+<span class="fc" id="L339">		return seenConstants;</span>
+	}
+	
+	public List&lt;Variable&gt; collectAllVariables() {
+<span class="fc" id="L343">		return collectAllVariables(null);</span>
+	}
+	private List&lt;Variable&gt; collectAllVariables(List&lt;Variable&gt; listOfVars) {
+<span class="fc" id="L346">		List&lt;Term&gt; args = literalAdded.getArguments();		</span>
+		
+<span class="pc bpc" id="L348" title="2 of 4 branches missed.">		if (args != null &amp;&amp; args.size() &gt; 0) {</span>
+<span class="fc bfc" id="L349" title="All 4 branches covered.">			for (Term term : args) if (term instanceof Variable) {</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">				if (listOfVars == null) { listOfVars = new ArrayList&lt;&gt;(1); }</span>
+<span class="fc" id="L351">				listOfVars.add((Variable) term);</span>
+			}
+		}
+<span class="fc" id="L354">		SingleClauseNode parent = getParentNode();</span>
+<span class="fc bfc" id="L355" title="All 2 branches covered.">		if (parent != null) { return parent.collectAllVariables(listOfVars); }</span>
+<span class="fc" id="L356">		return listOfVars;</span>
+	}
+	
+	List&lt;Constant&gt; collectAllConstants() {
+<span class="fc" id="L360">		return collectAllConstants(null);</span>
+	}
+	private List&lt;Constant&gt; collectAllConstants(List&lt;Constant&gt; listOfConstants) {
+<span class="fc" id="L363">		List&lt;Term&gt; args = literalAdded.getArguments();		</span>
+		
+<span class="pc bpc" id="L365" title="2 of 4 branches missed.">		if (args != null &amp;&amp; args.size() &gt; 0) {</span>
+<span class="fc bfc" id="L366" title="All 4 branches covered.">			for (Term term : args) if (term instanceof Constant) {</span>
+<span class="fc bfc" id="L367" title="All 2 branches covered.">				if (listOfConstants == null) { listOfConstants = new ArrayList&lt;&gt;(1); }</span>
+<span class="fc" id="L368">				listOfConstants.add((Constant) term);</span>
+			}
+		}
+<span class="fc" id="L371">		SingleClauseNode parent = getParentNode();</span>
+<span class="fc bfc" id="L372" title="All 2 branches covered.">		if (parent != null) { return parent.collectAllConstants(listOfConstants); }</span>
+<span class="fc" id="L373">		return listOfConstants;</span>
+	}
+	
+	boolean acceptableCoverageOnPosSeeds() throws SearchInterrupted {
+<span class="fc" id="L377">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+		double posSeedWgtedCount;
+	
+<span class="pc bpc" id="L380" title="2 of 4 branches missed.">		if (theILPtask.totalWeightOnPosSeeds &gt; 0.0 &amp;&amp; theILPtask.seedPosExamples != null) {</span>
+<span class="fc" id="L381">			posSeedWgtedCount = wgtedCountOfPosExamplesCovered(theILPtask.seedPosExamples);</span>
+<span class="fc bfc" id="L382" title="All 2 branches covered.">			return !(posSeedWgtedCount &lt; theILPtask.clausesMustCoverFractPosSeeds * theILPtask.totalWeightOnPosSeeds);</span>
+		} else { // Comment this out if we really want this case.
+<span class="nc" id="L384">			Utils.waitHere(&quot;Why totalWeightOnPosSeeds = &quot; + theILPtask.totalWeightOnPosSeeds + &quot; and |theILPtask.seedPosExamples| = &quot; + Utils.comma(theILPtask.seedPosExamples));</span>
+		}
+<span class="nc" id="L386">		return true;</span>
+	}
+	
+	boolean acceptableCoverageOnNegSeeds() throws SearchInterrupted {
+<span class="fc" id="L390">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+		double negSeedWgtedCount;
+
+<span class="pc bpc" id="L393" title="3 of 4 branches missed.">		if (theILPtask.totalWeightOnNegSeeds &gt; 0 &amp;&amp; theILPtask.seedNegExamples != null) {</span>
+<span class="nc" id="L394">			negSeedWgtedCount = wgtedCountOfNegExamplesCovered(theILPtask.seedNegExamples);</span>
+
+<span class="nc bnc" id="L396" title="All 2 branches missed.">			return !(negSeedWgtedCount &gt;= 0.501 * theILPtask.totalWeightOnNegSeeds);</span>
+		}
+<span class="fc" id="L398">		return true;</span>
+	}
+
+	// See if this clause matches at least the minimal required positive examples.
+	boolean acceptableCoverageOnPosExamples() throws SearchInterrupted {
+<span class="nc" id="L403">		LearnOneClause   theILPtask = (LearnOneClause) task;</span>
+<span class="nc" id="L404">		Literal          target     = getTarget();</span>
+<span class="nc" id="L405">		List&lt;Literal&gt;    clauseBody = getClauseBody();  // To save space in OPEN, compute this when needed.</span>
+<span class="nc" id="L406">		SingleClauseNode parent     = getParentNode();</span>
+
+<span class="nc" id="L408">		int    counter              = 0;</span>
+<span class="nc" id="L409">		double minCount             = theILPtask.getMinPosCoverage();</span>
+<span class="nc bnc" id="L410" title="All 6 branches missed.">		for (Example posEx : theILPtask.getPosExamples()) if (parent == null || !parent.posExampleAlreadyExcluded(posEx)) { // Don't check HERE (i.e., start at parent) since we don't want to call computCoverage).</span>
+<span class="nc bnc" id="L411" title="All 2 branches missed.">			if (proveExample(theILPtask, target, clauseBody, posEx, theILPtask.bindings)) { </span>
+<span class="nc" id="L412">				counter += posEx.getWeightOnExample();</span>
+			}
+<span class="nc bnc" id="L414" title="All 2 branches missed.">			if (counter &gt;= minCount) { return true; }</span>
+		}
+<span class="nc" id="L416">		return false;</span>
+	}
+	
+	// Note that here we get missed examples, INCLUDING THOSE THAT FAILED AT EARLIER NODES.
+	void getUptoKmissedPositiveExamples() throws SearchInterrupted {
+		// TODO(@hayesall): Can this method be dropped?
+<span class="fc" id="L422">		Set&lt;Example&gt;     results    = null;</span>
+<span class="fc" id="L423">		LearnOneClause   theILPtask = (LearnOneClause) task;</span>
+<span class="fc" id="L424">		Literal          target     = getTarget();</span>
+<span class="fc" id="L425">		List&lt;Literal&gt;    clauseBody = getClauseBody();  </span>
+		
+<span class="fc" id="L427">		int counter = 0;</span>
+<span class="fc" id="L428">		List&lt;List&lt;Literal&gt;&gt; optimizedClauseBodies = getOptimizedClauseBodies(theILPtask, target, clauseBody);</span>
+<span class="pc bpc" id="L429" title="1 of 4 branches missed.">		if (theILPtask.getPosExamples() != null) for (Example posEx : theILPtask.getPosExamples()) {</span>
+			// proveExample() clears the bindings, so no need to do so here.
+<span class="fc bfc" id="L431" title="All 2 branches covered.">			if (!proveExampleBodies(theILPtask, target, optimizedClauseBodies, posEx, theILPtask.bindings)) {</span>
+<span class="fc bfc" id="L432" title="All 2 branches covered.">				if (results == null) { results = new HashSet&lt;&gt;(4); }</span>
+<span class="fc" id="L433">				results.add(posEx);</span>
+<span class="fc" id="L434">				counter++;</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">				if (counter &gt;= 5) { return; }</span>
+			}
+<span class="fc" id="L437">		}</span>
+<span class="fc" id="L438">	}</span>
+	
+	void getUptoKcoveredNegativeExamples() throws SearchInterrupted {
+<span class="fc" id="L441">		Set&lt;Example&gt;     results    = null;</span>
+<span class="fc" id="L442">		LearnOneClause   theILPtask = (LearnOneClause) task;</span>
+<span class="fc" id="L443">		Literal          target     = getTarget();</span>
+<span class="fc" id="L444">		List&lt;Literal&gt;    clauseBody = getClauseBody();  </span>
+		
+<span class="fc" id="L446">		int counter = 0;</span>
+<span class="fc" id="L447">		List&lt;List&lt;Literal&gt;&gt; optimizedClauseBodies = getOptimizedClauseBodies(theILPtask, target, clauseBody);</span>
+<span class="pc bpc" id="L448" title="2 of 4 branches missed.">		if (theILPtask.getNegExamples() != null) for (Example negEx : theILPtask.getNegExamples()) {</span>
+			// proveExample() clears the bindings, so no need to do so here.
+<span class="nc bnc" id="L450" title="All 2 branches missed.">			if (proveExampleBodies(theILPtask, target, optimizedClauseBodies, negEx, theILPtask.bindings)) {</span>
+<span class="nc bnc" id="L451" title="All 2 branches missed.">				if (results == null) { results = new HashSet&lt;&gt;(4); }</span>
+<span class="nc" id="L452">				results.add(negEx);</span>
+<span class="nc" id="L453">				counter++;</span>
+<span class="nc bnc" id="L454" title="All 2 branches missed.">				if (counter &gt;= 5) { return; }</span>
+			}
+<span class="nc" id="L456">		}</span>
+<span class="fc" id="L457">	}</span>
+		
+	// TODO - should we store these results?
+	private List&lt;List&lt;Literal&gt;&gt; getOptimizedClauseBodies(LearnOneClause theILPtask, Literal target, List&lt;Literal&gt; clauseBody) {
+<span class="fc bfc" id="L461" title="All 2 branches covered.">		if (Utils.getSizeSafely(clauseBody) &lt; 1) { return null; }</span>
+		List&lt;List&lt;Literal&gt;&gt; optimizedClauseBodies;
+        try {
+<span class="fc" id="L464">			optimizedClauseBodies = theILPtask.getOptimizedClauseBodies(target, clauseBody);</span>
+<span class="nc" id="L465">		} catch (Throwable e) {</span>
+<span class="nc bnc" id="L466" title="All 2 branches missed.">			if (theILPtask.stringHandler.exceptionCount++ &lt; HandleFOPCstrings.exceptionCountMax) { Utils.warning(&quot;% Exception thrown: Problem optimizing target = &quot; + target + &quot;\n with body = &quot; + clauseBody); }</span>
+<span class="nc" id="L467">			optimizedClauseBodies = Collections.singletonList(clauseBody);</span>
+<span class="fc" id="L468">        }</span>
+<span class="fc" id="L469">        return optimizedClauseBodies;</span>
+	}
+	
+	// Only prove those examples covered by the parent node (but don't want to use too much space).
+	public void computeCoverage() throws SearchInterrupted {
+<span class="fc" id="L474">		LearnOneClause   theILPtask = (LearnOneClause) task;</span>
+<span class="fc" id="L475">		HornClauseProver prover     = theILPtask.getProver();</span>
+<span class="fc" id="L476">		Literal          target     = getTarget();</span>
+<span class="fc" id="L477">		List&lt;Literal&gt;    clauseBody = getClauseBody();  // To save space in OPEN, compute this when needed.</span>
+<span class="fc" id="L478">		SingleClauseNode parent     = getParentNode();</span>
+<span class="fc" id="L479">		boolean          firstTime            = false;</span>
+<span class="fc" id="L480">		boolean          tookTooLong          = false;</span>
+<span class="fc" id="L481">		long             totalResolutions     = 0;</span>
+<span class="fc" id="L482">		boolean          stopWhenUnacceptable = theILPtask.stopWhenUnacceptableCoverage; // Don't continue to prove examples when impossible to meet the minPosCoverage and minPrecision specifications.</span>
+
+<span class="fc" id="L484">		List&lt;List&lt;Literal&gt;&gt; optimizedClauseBodies = null;</span>
+
+		// To save time, if posCoverage is not going to reach theILPtask.minPosCoverage stop.
+<span class="pc bpc" id="L487" title="1 of 2 branches missed.">		if (getPosCoverage() &lt; 0.0) {</span>
+<span class="fc" id="L488">			extraString = null; // Reset this whenever the coverage changes.</span>
+<span class="fc" id="L489">			double maxPossiblePosCoverage = 0.0;</span>
+<span class="pc bpc" id="L490" title="7 of 8 branches missed.">			if (stopWhenUnacceptable) for (Example posEx : theILPtask.getPosExamples()) if (parent == null || !parent.posExampleAlreadyExcluded(posEx)) { // Don't look at THIS node or we'll have an infinite loop.</span>
+<span class="nc" id="L491">				maxPossiblePosCoverage += posEx.getWeightOnExample(); // See how much is possible</span>
+			}
+<span class="fc" id="L493">			setPosCoverage(0.0);</span>
+<span class="fc" id="L494">			firstTime = true;</span>
+
+<span class="pc bpc" id="L496" title="1 of 2 branches missed.">			if (theILPtask.getPosExamples() != null) {</span>
+<span class="fc bfc" id="L497" title="All 2 branches covered.">				for (Example posEx : theILPtask.getPosExamples()) {</span>
+<span class="fc bfc" id="L498" title="All 4 branches covered.">					if (parent == null || !parent.posExampleAlreadyExcluded(posEx)) { // Don't look at THIS node or we'll have an infinite loop.</span>
+<span class="fc bfc" id="L499" title="All 2 branches covered.">						if (optimizedClauseBodies == null) { optimizedClauseBodies = getOptimizedClauseBodies(theILPtask, target, clauseBody); }</span>
+<span class="fc" id="L500">						prover.setNodesCreated(0); // This counter gets reset when performSearch() is called, but that might not happen (eg, if the body is empty).</span>
+						// proveExample() clears the bindings, so no need to do so here.
+<span class="fc bfc" id="L502" title="All 2 branches covered.">						if (proveExampleBodies(theILPtask, target, optimizedClauseBodies, posEx, theILPtask.bindings)) {</span>
+<span class="fc" id="L503">							setPosCoverage(getPosCoverage() + posEx.getWeightOnExample());</span>
+						}
+						else {
+<span class="fc" id="L506">							maxPossiblePosCoverage -= posEx.getWeightOnExample(); // Lost out on this.</span>
+<span class="fc bfc" id="L507" title="All 2 branches covered.">						if (posExamplesThatFailedHere == null) { posExamplesThatFailedHere = new HashSet&lt;&gt;(); }</span>
+<span class="fc" id="L508">						posExamplesThatFailedHere.add(posEx);</span>
+<span class="pc bpc" id="L509" title="1 of 2 branches missed.">						if (theILPtask.regressionTask) {</span>
+<span class="fc bfc" id="L510" title="All 2 branches covered.">							if (cachedLocalRegressionInfoHolder == null) {  // Don't create until needed.</span>
+<span class="fc" id="L511">								cachedLocalRegressionInfoHolder = new LocalRegressionInfoHolder();</span>
+							}
+<span class="fc bfc" id="L513" title="All 2 branches covered.">							if (cachedLocalRegressionInfoHolder.cachedFalseStats == null) {</span>
+<span class="fc" id="L514">								cachedLocalRegressionInfoHolder.cachedFalseStats = theILPtask.getNewRegressionHolderForTask();</span>
+							}				   		
+
+<span class="fc bfc" id="L517" title="All 2 branches covered.">							if (!theILPtask.mlnRegressionTask) { // Example counting for MLN tasks later</span>
+<span class="fc" id="L518">								cachedLocalRegressionInfoHolder.getFalseStats().addFailureExample(posEx, 1, posEx.getWeightOnExample());</span>
+							}
+
+						}
+						} 
+<span class="fc" id="L523">						totalResolutions += prover.getNodesCreated();</span>
+<span class="pc bpc" id="L524" title="1 of 2 branches missed.">						if (totalResolutions &gt; theILPtask.maxResolutionsPerClauseEval) {</span>
+<span class="nc" id="L525">							tookTooLong = true;</span>
+<span class="nc" id="L526">							extraString = &quot;Coverage only partially computed- took too long to compute.&quot;;</span>
+<span class="nc" id="L527">							break; </span>
+						}
+<span class="pc bpc" id="L529" title="3 of 4 branches missed.">						if (stopWhenUnacceptable &amp;&amp; maxPossiblePosCoverage &lt; theILPtask.getMinPosCoverage()) { </span>
+<span class="nc bnc" id="L530" title="All 2 branches missed.">							if (parent != null) { parent.addToDontConsiderThisLiteral(theILPtask, literalAdded.predicateName, literalAdded.getArguments(), typesOfNewTerms); }</span>
+<span class="nc" id="L531">							setPosCoverage(0.0);</span>
+<span class="nc" id="L532">							negCoverage = 0.0; </span>
+<span class="nc" id="L533">							extraString = &quot;Coverage only partially computed. (maxPossiblePosCoverage = &quot; + Utils.truncate(maxPossiblePosCoverage, 3)</span>
+<span class="nc" id="L534">									+ &quot; and MinPosCoverage = &quot; + Utils.truncate(theILPtask.getMinPosCoverage(), 3) + &quot;)&quot;;</span>
+<span class="nc" id="L535">							return; // No need continuing.</span>
+						}				
+					}
+<span class="fc" id="L538">				}</span>
+<span class="pc bpc" id="L539" title="1 of 6 branches missed.">				if (theILPtask.regressionTask &amp;&amp;</span>
+						theILPtask.mlnRegressionTask &amp;&amp;
+						posExamplesThatFailedHere != null) {
+<span class="fc bfc" id="L542" title="All 2 branches covered.">					for (Example posEx : posExamplesThatFailedHere) {</span>
+<span class="fc" id="L543">						long num = 1;</span>
+<span class="pc bpc" id="L544" title="1 of 4 branches missed.">						if (parent != null &amp;&amp; parent != getRootNode()) {</span>
+<span class="fc" id="L545">							num = parent.getNumberOfGroundingsForRegressionEx(posEx);</span>
+						}
+<span class="pc bpc" id="L547" title="1 of 2 branches missed.">						if (num == 0) {</span>
+<span class="nc" id="L548">							Utils.waitHere(&quot;Number of groundings = 0 for &quot; + posEx + &quot; with &quot; + parent.getClause());</span>
+						}
+<span class="fc" id="L550">						((RegressionExample) posEx).getOutputValue();</span>
+<span class="fc" id="L551">						cachedLocalRegressionInfoHolder.getFalseStats().addFailureExample(posEx, num, 1 * posEx.getWeightOnExample());</span>
+<span class="fc" id="L552">					}</span>
+				}
+			}
+		}
+
+		// NOTE: Must not compare negCoverage to theILPtask.minPrecision since the task of ILP is to add literals until precision is acceptable.
+<span class="pc bpc" id="L558" title="2 of 4 branches missed.">		if (negCoverage &lt; 0.0 &amp;&amp; !tookTooLong) {</span>
+<span class="fc" id="L559">			extraString = null; // Reset this whenever the coverage changes.</span>
+<span class="fc" id="L560">			negCoverage = 0.0;</span>
+<span class="fc" id="L561">			firstTime = true;</span>
+<span class="fc" id="L562">			prover.setNodesCreated(0); // This counter gets reset when performSearch() is called, but that might not happen (e.g., if the body is empty).</span>
+<span class="pc bpc" id="L563" title="6 of 8 branches missed.">			if (theILPtask.getNegExamples() != null) for (Example negEx : theILPtask.getNegExamples()) if (parent == null || !parent.negExampleAlreadyExcluded(negEx))  {</span>
+<span class="nc bnc" id="L564" title="All 2 branches missed.">				if (optimizedClauseBodies == null) { optimizedClauseBodies = getOptimizedClauseBodies(theILPtask, target, clauseBody); }</span>
+				// proveExample() clears the bindings, so no need to do so here.
+<span class="nc bnc" id="L566" title="All 2 branches missed.">				if (proveExampleBodies(theILPtask, target, optimizedClauseBodies, negEx, theILPtask.bindings)) {</span>
+<span class="nc" id="L567">					negCoverage += negEx.getWeightOnExample();</span>
+				}
+				else { 
+<span class="nc bnc" id="L570" title="All 2 branches missed.">					if (negExamplesThatFailedHere == null) { negExamplesThatFailedHere = new HashSet&lt;&gt;(); }</span>
+<span class="nc" id="L571">					negExamplesThatFailedHere.add(negEx);</span>
+				}
+<span class="nc" id="L573">				totalResolutions += prover.getNodesCreated();</span>
+<span class="nc bnc" id="L574" title="All 2 branches missed.">				if (totalResolutions &gt; theILPtask.maxResolutionsPerClauseEval) {</span>
+<span class="nc" id="L575">					tookTooLong = true;</span>
+<span class="nc" id="L576">					extraString = &quot;Coverage only partially computed - took too long to compute.&quot;;</span>
+<span class="nc" id="L577">					break; </span>
+				}
+			}
+		}
+
+<span class="pc bpc" id="L582" title="1 of 2 branches missed.">		if (tookTooLong) { // Would be nice to report more info regarding when the time-out occurred, but don't bother with extra counters.</span>
+<span class="nc" id="L583">			setPosCoverage(0.0); // When we abandon, we simply assume a clause is never true and never keep in the Gleaner.</span>
+<span class="nc" id="L584">			negCoverage = 0.0;</span>
+<span class="nc" id="L585">			timedOut    = true;</span>
+<span class="nc" id="L586">			extraString = &quot;Coverage only partially computed- took too long to compute.&quot;;</span>
+		}
+		// else if (firstTime &amp;&amp; totalResolutions &gt; 5000) { Utils.println(&quot; total resolutions = &quot; + totalResolutions + &quot; for &quot; + this); }
+		// If this is the first time the coverage of this rule has been computed,
+		// see if there is any need to continue searching (ie, if a rule covers ALL pos and NO neg examples, then can stop).  Might want to override this, say if collecting a range of good rules ala' Gleaner.
+<span class="pc bpc" id="L591" title="2 of 4 branches missed.">		if (firstTime &amp;&amp; theILPtask.stopIfPerfectClauseFound &amp;&amp; </span>
+<span class="nc bnc" id="L592" title="All 4 branches missed.">				!Utils.diffDoubles(getPosCoverage(), theILPtask.totalPosWeight) &amp;&amp; negCoverage &lt;= 0.0</span>
+<span class="nc bnc" id="L593" title="All 2 branches missed.">				&amp;&amp; acceptableClauseExtraFilter()) {</span>
+			// Be careful that setting this doesn't mess up what is being kept as the best node.  TODO - make sure that if the score of a perfect clause is insufficient (eg, m-estimate of accuracy is too low), this is caught early on.
+<span class="nc" id="L595">			theILPtask.continueTheSearch = false;</span>
+		}
+<span class="fc" id="L597">	}</span>
+	public boolean posExampleAlreadyExcluded(Example example) throws SearchInterrupted {
+<span class="fc bfc" id="L599" title="All 2 branches covered.">		if (getPosCoverage() &lt; 0.0) { computeCoverage(); }</span>
+<span class="fc bfc" id="L600" title="All 4 branches covered.">		if (posExamplesThatFailedHere != null &amp;&amp; posExamplesThatFailedHere.contains(example)) { return true; }</span>
+<span class="fc" id="L601">		SingleClauseNode parent = getParentNode();</span>
+<span class="fc bfc" id="L602" title="All 2 branches covered.">		if (parent == null) { return false; }</span>
+<span class="fc" id="L603">		return parent.posExampleAlreadyExcluded(example);</span>
+	}
+
+	private boolean negExampleAlreadyExcluded(Literal example) throws SearchInterrupted {
+<span class="nc bnc" id="L607" title="All 2 branches missed.">		if (negCoverage &lt; 0.0) { computeCoverage(); }</span>
+<span class="nc bnc" id="L608" title="All 4 branches missed.">		if (negExamplesThatFailedHere != null &amp;&amp; negExamplesThatFailedHere.contains(example)) { return true; }</span>
+<span class="nc" id="L609">		SingleClauseNode parent = getParentNode();</span>
+<span class="nc bnc" id="L610" title="All 2 branches missed.">		if (parent == null) { return false; }</span>
+<span class="nc" id="L611">		return parent.negExampleAlreadyExcluded(example);</span>
+	}
+	
+	public double precision () throws SearchInterrupted {
+<span class="fc" id="L615">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+
+<span class="pc bpc" id="L617" title="1 of 2 branches missed.">		if (getPosCoverage() &lt; 0.0) { computeCoverage(); }</span>
+		// Assume this clause covers the m-estimated NEG examples but NOT the m-estimated POS examples.
+<span class="fc" id="L619">		return getPosCoverage() / (getPosCoverage() + negCoverage + theILPtask.getMEstimateNeg());</span>
+	}
+	
+	// Compute m-estimated precision if all negs could be removed. (Note maxRecall is recall.)
+	double maxPrecision() throws SearchInterrupted {
+<span class="nc" id="L624">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+
+<span class="nc bnc" id="L626" title="All 2 branches missed.">		if (getPosCoverage() &lt; 0.0) { computeCoverage(); }	</span>
+		// Assume this clause covers the m-estimated NEG examples but NOT the m-estimated POS examples.
+<span class="nc" id="L628">		return getPosCoverage() / (getPosCoverage() + theILPtask.getMEstimateNeg());</span>
+	}
+	
+	public double recall() throws SearchInterrupted {
+<span class="fc" id="L632">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+
+<span class="pc bpc" id="L634" title="1 of 2 branches missed.">		if (getPosCoverage() &lt; 0.0) { computeCoverage(); }</span>
+		// Assume this clause does NOT cover the m-estimated POS examples.
+<span class="fc" id="L636">		return getPosCoverage() / (theILPtask.totalPosWeight + theILPtask.getMEstimatePos());</span>
+	}
+
+	double F(double beta) throws SearchInterrupted { // See http://en.wikipedia.org/wiki/Information_retrieval#F-measure
+<span class="pc bpc" id="L640" title="1 of 2 branches missed.">		if (beta &lt; 0) { Utils.error(&quot;Beta in F(Beta) must be non-negative: &quot; + Utils.truncate(beta, 3) + &quot; was provided.&quot;); }</span>
+<span class="fc" id="L641">		double precision = precision();		</span>
+<span class="fc" id="L642">		double recall    = recall();		</span>
+		
+<span class="fc" id="L644">		double numer = (1 + beta) * precision * recall;</span>
+<span class="fc" id="L645">		double denom = beta * precision + recall;</span>
+<span class="pc bpc" id="L646" title="1 of 2 branches missed.">		if (denom &lt; Double.MIN_VALUE) { return 0; }</span>
+<span class="fc" id="L647">		return numer / denom;</span>
+	}
+	
+	boolean canImprove(LearnOneClause thisTask) throws SearchInterrupted {  // Is it possible to improve this clause by adding another literal.
+<span class="pc bpc" id="L651" title="1 of 2 branches missed.">		if (getPosCoverage() &lt; 0.0) { computeCoverage(); }</span>
+<span class="fc" id="L652">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+		
+		// Note that minPrecision is the minimum required to be the &quot;goal&quot; node (i.e., if the best node doesn't score at least this much, the search fails).
+		// So don't discard node just because they don't score that well.  Instead, look for the BEST possible score, and only
+		// if that is too low can a node be ignored, since it can't be improved enough.
+		// Also note that a node that took too long to evaluate will have posCoverage = negCoverage = 0 and this method will say it cannot be improved.
+<span class="fc bfc" id="L658" title="All 2 branches covered.">		if (getPosCoverage() &lt;  theILPtask.getMinPosCoverage()) {</span>
+<span class="fc" id="L659">			return false;  // to do: also check if if it is possible to get minAcc (due to minEstimate)</span>
+		}
+		
+<span class="pc bpc" id="L662" title="1 of 2 branches missed.">		if (thisTask.regressionTask) { return true; } // All tests BELOW here do no apply to categorization. </span>
+		
+<span class="nc" id="L664">		double bestPrecisionPossible = maxPrecision();</span>
+<span class="nc bnc" id="L665" title="All 2 branches missed.">		if (bestPrecisionPossible &lt;  theILPtask.minPrecision) {</span>
+<span class="nc" id="L666">			return false;</span>
+		}
+<span class="nc bnc" id="L668" title="All 2 branches missed.">		if (!acceptableClauseExtraFilter()) { return true; } // If a clause doesn't meet the 'acceptability' test, it can presumably be improved (e.g., might need to extend it, even if precision is 100%).</span>
+<span class="nc bnc" id="L669" title="All 2 branches missed.">		return !(negCoverage &lt;= 0.0);  // If no negs covered, adding literals wont help.</span>
+		// Still some neg's that could be eliminated.
+	}
+	
+	// This allows the user to say when a clause is acceptable for reasons other than recall, precision, or length.
+	// E.g., in some work involving plan recognition, a learned rule must be a complete plan (i.e., reaches a final state),
+	// rather than simply doing a good job of differentiating good from bad examples.
+	// Also, if requireThatAllRequiredHeadArgsAppearInBody=true, see if this requirement is met.
+	boolean acceptableClauseExtraFilter() {
+<span class="fc" id="L678">		return allTheseArgsAppearinBody(getRequiredVariablesInBody());</span>
+		// TODO need a better design here.
+	}
+	
+	private Collection&lt;Variable&gt; getRequiredVariablesInBody() {
+<span class="fc bfc" id="L683" title="All 2 branches covered.">		if (getParentNode() != null) { return getParentNode().getRequiredVariablesInBody(); }</span>
+<span class="fc" id="L684">		return ((SingleClauseRootNode) this).requiredBodyVariablesInTarget;</span>
+	}
+	
+	public SingleClauseRootNode getRootNode() {
+<span class="fc bfc" id="L688" title="All 2 branches covered.">		if (this instanceof SingleClauseRootNode) { return (SingleClauseRootNode) this; }</span>
+<span class="pc bpc" id="L689" title="1 of 2 branches missed.">		if (getParentNode() != null) { return getParentNode().getRootNode(); }</span>
+<span class="nc" id="L690">		Utils.error(&quot;Could not reach the root node from: &quot; + this);</span>
+<span class="nc" id="L691">		return null;</span>
+	}
+
+	private boolean allTheseArgsAppearinBody(Collection&lt;Variable&gt; requiredVars) {
+<span class="pc bpc" id="L695" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(requiredVars) &lt; 1) { return true; }</span>
+<span class="nc bnc" id="L696" title="All 2 branches missed.">		for (Variable var : requiredVars) {</span>
+<span class="nc bnc" id="L697" title="All 2 branches missed.">			if (!variableAppearsInThisClause(var)) {</span>
+<span class="nc" id="L698">				return false; </span>
+			}
+<span class="nc" id="L700">		}</span>
+<span class="nc" id="L701">		return true;</span>
+	}
+	
+	private boolean variableAppearsInThisClause(Variable var) {
+<span class="nc bnc" id="L705" title="All 2 branches missed.">		if (getParentNode() == null) { return false; } // We do not want to check the FIRST literal, since that is the head.</span>
+<span class="nc bnc" id="L706" title="All 2 branches missed.">		if (literalAdded.containsThisVariable(var)) { return true; }</span>
+		
+<span class="nc" id="L708">		return getParentNode().variableAppearsInThisClause(var);</span>
+	}
+
+	// If this literal is already in the clause or in the &quot;dontReconsider&quot; list, then it should be skipped over.
+	boolean dontConsiderThisLiteral(boolean discardDuplicateLiterals, Literal candidate, Map&lt;Term, Type&gt; newTermsInLiteral) {
+<span class="pc bpc" id="L713" title="2 of 6 branches missed.">		if (discardDuplicateLiterals &amp;&amp; literalAdded != null &amp;&amp; literalAdded.equals(candidate)) {</span>
+<span class="fc" id="L714">			return true; </span>
+		}
+<span class="fc bfc" id="L716" title="All 2 branches covered.">		if (dontReconsider != null) {</span>
+<span class="pc bpc" id="L717" title="1 of 4 branches missed.">			for (AnnotatedLiteral badLit : dontReconsider) if (badLit.equals(candidate, newTermsInLiteral)) {</span>
+<span class="nc" id="L718">				return true;</span>
+			}
+		}
+<span class="fc" id="L721">		SingleClauseNode parent = getParentNode();</span>
+<span class="fc bfc" id="L722" title="All 2 branches covered.">		if (parent == null) { return false; }</span>
+<span class="fc" id="L723">		return parent.dontConsiderThisLiteral(discardDuplicateLiterals, candidate, newTermsInLiteral);</span>
+	}
+	
+	void addToDontConsiderThisLiteral(LearnOneClause thisTask, PredicateName predName, List&lt;Term&gt; args, Map&lt;Term, Type&gt; thisTypesOfNewTerms) {
+<span class="fc bfc" id="L727" title="All 2 branches covered.">		if (dontReconsider == null) { dontReconsider = new ArrayList&lt;&gt;(1); }</span>
+<span class="fc" id="L728">		Map&lt;Term,Type&gt; typesOfNewTermsInTheseArgs = null;</span>
+<span class="fc bfc" id="L729" title="All 2 branches covered.">		if (thisTypesOfNewTerms != null) {</span>
+<span class="fc bfc" id="L730" title="All 2 branches covered.">			for (Term term : args) { // Only keep those new terms (if any) that are in this 'rejected' literal.  (Could see if ALL are there, and if so, no need to copy, but seems better to simply always copy.)</span>
+<span class="fc bfc" id="L731" title="All 2 branches covered.">				if (thisTypesOfNewTerms.containsKey(term)) {</span>
+<span class="fc bfc" id="L732" title="All 2 branches covered.">					if (typesOfNewTermsInTheseArgs == null) { typesOfNewTermsInTheseArgs = new HashMap&lt;&gt;(4); }</span>
+<span class="fc" id="L733">					typesOfNewTermsInTheseArgs.put(term, thisTypesOfNewTerms.get(term));</span>
+				}
+<span class="fc" id="L735">			}</span>
+		}
+<span class="fc" id="L737">		dontReconsider.add(new AnnotatedLiteral(thisTask.stringHandler, predName, args, typesOfNewTermsInTheseArgs));</span>
+<span class="fc" id="L738">	}</span>
+
+	// The depth of an argument measures its shortest path, in terms of the number of new variables, to the head.
+	Integer getDepthOfArgument(Term item) {
+<span class="pc bpc" id="L742" title="1 of 2 branches missed.">		if (depthOfArgs == null) { Utils.error(&quot;Should not have depthOfArgs=null!&quot;); }</span>
+<span class="fc" id="L743">		Integer integer = depthOfArgs.get(item);</span>
+		
+<span class="fc bfc" id="L745" title="All 2 branches covered.">		if (integer != null) { return integer; }</span>
+<span class="fc" id="L746">		SingleClauseNode parent = getParentNode();</span>
+<span class="pc bpc" id="L747" title="1 of 2 branches missed.">		if (parent == null)  { return null; }</span>
+<span class="fc" id="L748">		return parent.getDepthOfArgument(item);</span>
+	}
+
+	@Override
+	public String toString() {
+<span class="fc" id="L753">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+<span class="fc" id="L754">		StringBuilder result = new StringBuilder();</span>
+<span class="fc" id="L755">		boolean firstTime = true;</span>
+<span class="fc" id="L756">		List&lt;Literal&gt; clauseBody = getClauseBody();</span>
+<span class="fc" id="L757">		Literal       clauseHead = getClauseHead();</span>
+		
+		if (renameAllVariablesWheneverPrinting) {
+<span class="fc" id="L760">			List&lt;Literal&gt; posLits = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L761">			posLits.add(clauseHead);</span>
+<span class="fc" id="L762">			Clause c = theILPtask.stringHandler.getClause(posLits, clauseBody, extraString);</span>
+<span class="fc" id="L763">			c = (Clause) theILPtask.stringHandler.renameAllVariables(c);</span>
+<span class="fc" id="L764">			clauseBody = c.negLiterals;</span>
+<span class="fc" id="L765">			clauseHead = c.posLiterals.get(0);</span>
+		}
+
+<span class="fc bfc" id="L768" title="All 2 branches covered.">		if (Utils.getSizeSafely(clauseBody) &lt;= 0) { </span>
+<span class="fc" id="L769">			result.append(clauseHead);</span>
+		}
+<span class="pc bpc" id="L771" title="1 of 2 branches missed.">		else if (theILPtask.stringHandler.usingStdLogicNotation()) {</span>
+<span class="nc bnc" id="L772" title="All 2 branches missed.">			for (Literal literal : clauseBody) { </span>
+<span class="nc bnc" id="L773" title="All 2 branches missed.">				if (firstTime) { firstTime = false; } else { result.append(&quot; ^ &quot;); }</span>
+<span class="nc" id="L774">				result.append(literal);  // Note that in &quot;rule&quot; form, we want unnegated literals.</span>
+<span class="nc" id="L775">			}</span>
+<span class="nc" id="L776">			result.append(&quot; =&gt; &quot;).append(clauseHead);</span>
+		}
+		else {
+<span class="fc" id="L779">			result.append(clauseHead).append(&quot; :- &quot;);</span>
+<span class="fc bfc" id="L780" title="All 2 branches covered.">			for (Literal literal : clauseBody) { </span>
+<span class="fc bfc" id="L781" title="All 2 branches covered.">				if (firstTime) { firstTime = false; } else { result.append(&quot;, &quot;); }</span>
+<span class="fc" id="L782">				result.append(literal);  // Note that in &quot;rule&quot; form, we want unnegated literals.</span>
+<span class="fc" id="L783">			}</span>
+		}
+		
+<span class="pc bpc" id="L786" title="3 of 4 branches missed.">		if (getPosCoverage() &lt; 0 &amp;&amp; negCoverage &lt; 0) return result.toString(); // This node is only a candidate and has not yet been scored.</span>
+
+<span class="fc" id="L788">		return result + &quot;.  [covers &quot; </span>
+<span class="fc" id="L789">		                    + Utils.truncate(getPosCoverage()) + &quot;/&quot; + Utils.truncate(theILPtask.totalPosWeight) + &quot; pos, &quot; </span>
+<span class="pc bpc" id="L790" title="1 of 2 branches missed.">		                    + Utils.truncate(negCoverage) + &quot;/&quot; + Utils.truncate(theILPtask.totalNegWeight) + &quot; neg]&quot; + (extraString == null ? &quot;&quot; : extraString);</span>
+	}
+ 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    // Code for regression trees.  Assumes LEAVES HOLD CONSTANTS (i.e., the group's mean).
+    // and that we care to score examples not covered by the clause the same as those covered
+    // (this makes sense when learning a TREE; if just learning rules, can set theILPtask.multiplerOnFailedRegressionExamples = 0 or a small positive number).
+
+	double regressionFitForMLNs() {
+<span class="fc" id="L800">		LearnOneClause  theILPtask = (LearnOneClause) task;</span>
+
+<span class="pc bpc" id="L802" title="1 of 2 branches missed.">		if (this.timedOut) {</span>
+<span class="nc" id="L803">			Utils.println(&quot;Giving INF score for &quot; + this.getClause() +</span>
+					&quot; as it timed out. The examples on true and false branch are incorrect.&quot;);
+<span class="nc" id="L805">			return Double.POSITIVE_INFINITY;  </span>
+		}
+<span class="fc" id="L807">		RegressionInfoHolder holder = getRegressionInfoHolder();</span>
+<span class="fc bfc" id="L808" title="All 2 branches covered.">		if (holder.totalExampleWeightAtSuccess() &lt; theILPtask.getMinPosCoverage() ||</span>
+<span class="fc bfc" id="L809" title="All 2 branches covered.">			holder.totalExampleWeightAtFailure() &lt; theILPtask.getMinPosCoverage()) {</span>
+<span class="fc" id="L810">			return Double.POSITIVE_INFINITY;  // Bad clauses get posCoverage=0 and we don't want to keep such clauses.  Remember we NEGATE the score, so a high score here is bad.</span>
+		}
+<span class="fc" id="L812">		double result = 0;</span>
+<span class="pc bpc" id="L813" title="1 of 2 branches missed.">		if (holder.getTrueStats() != null) { result += getMLNCost(holder.getTrueStats()); } else { Utils.waitHere(&quot;Why is true stats null?&quot; + this.literalAdded); }</span>
+<span class="pc bpc" id="L814" title="1 of 2 branches missed.">		if (holder.getFalseStats() != null) { result += getMLNCost(holder.getFalseStats()); } else { Utils.waitHere(&quot;Why is false stats null?&quot;+ this.literalAdded); }</span>
+
+<span class="fc" id="L816">		return result;</span>
+	}
+	
+	
+	
+	private double getMLNCost(BranchStats stats) {
+<span class="fc" id="L822">		double result = 0;</span>
+<span class="pc bpc" id="L823" title="1 of 2 branches missed.">		if (stats.getSumOfNumGroundingSquared() &gt; 0) {</span>
+<span class="fc" id="L824">			result = stats.getWeightedVariance();</span>
+		}
+<span class="pc bpc" id="L826" title="1 of 2 branches missed.">		if (stats.getNumExamples() == 0) {</span>
+<span class="nc bnc" id="L827" title="All 2 branches missed.">			if (result != 0) {</span>
+<span class="nc" id="L828">				Utils.println(stats.toString());</span>
+<span class="nc" id="L829">				Utils.waitHere(&quot;Result is not zero but examples are!!&quot;);</span>
+			}
+<span class="nc" id="L831">			return 0;</span>
+		}
+		
+<span class="fc bfc" id="L834" title="All 2 branches covered.">		if (result &lt; 0) {</span>
+<span class="pc bpc" id="L835" title="1 of 2 branches missed.">			if (!(Math.abs(result) &lt; 1e-8)) {</span>
+<span class="nc" id="L836">				Utils.waitHere(result + &quot;:&quot; + stats);</span>
+			}
+<span class="fc" id="L838">			result = 0;</span>
+		}
+<span class="fc" id="L840">		return result;</span>
+	}
+
+	double regressionFit() {
+		// This is the expected variance after this node is evaluated (divided by the wgt'ed number of examples).
+<span class="fc" id="L845">		LearnOneClause  theILPtask = (LearnOneClause) task;</span>
+<span class="fc bfc" id="L846" title="All 2 branches covered.">		if (getRegressionInfoHolder().totalExampleWeightAtSuccess() &lt; theILPtask.getMinPosCoverage() ||</span>
+<span class="fc bfc" id="L847" title="All 2 branches covered.">			getRegressionInfoHolder().totalExampleWeightAtFailure() &lt; theILPtask.getMinPosCoverage()) {</span>
+			// Bad clauses get posCoverage=0 and we don't want to keep such clauses.  Remember we NEGATE the score, so a high score here is bad.
+<span class="fc" id="L849">			return Double.POSITIVE_INFINITY;</span>
+		}
+<span class="fc" id="L851">		return getRegressionInfoHolder().weightedVarianceAtSuccess() + getRegressionInfoHolder().weightedVarianceAtFailure();</span>
+	}
+
+	
+	public RegressionInfoHolder getTotalFalseBranchHolder() {
+<span class="fc bfc" id="L856" title="All 2 branches covered.">		if (this == ((LearnOneClause) task).currentStartingNode) {</span>
+<span class="fc" id="L857">			return null;</span>
+		} // For this calculation don't want to go past the current root (but for other cases we do - i.e., when looking for eligible variables to reuse).
+<span class="pc bpc" id="L859" title="1 of 2 branches missed.">		if (getPosCoverage() &lt; 0) { Utils.error(&quot;This should not happen.&quot;); } // Should only call via regressionFit (or at least after regressionFit is called). </span>
+<span class="fc" id="L860">		SingleClauseNode parent = getParentNode();</span>
+<span class="fc bfc" id="L861" title="All 2 branches covered.">		if (parent != null) { return cachedLocalRegressionInfoHolder.getFalseStats().addFailureStats(parent.getTotalFalseBranchHolder()); }</span>
+<span class="fc" id="L862">		return cachedLocalRegressionInfoHolder.getFalseStats();</span>
+	}
+
+	double meanIfTrue() {
+<span class="fc" id="L866">		return getRegressionInfoHolder().meanAtSuccess();</span>
+	}
+	
+	double meanIfFalse() {
+<span class="fc" id="L870">		return getRegressionInfoHolder().meanAtFailure();</span>
+	}
+	double mlnRegressionForTrue() {
+<span class="fc" id="L873">		RegressionInfoHolder holder = getRegressionInfoHolder();</span>
+<span class="fc" id="L874">		return holder.meanAtSuccess();</span>
+	}
+	double mlnRegressionForFalse() {
+<span class="fc" id="L877">		RegressionInfoHolder holder = getRegressionInfoHolder();</span>
+<span class="fc" id="L878">		return holder.meanAtFailure();</span>
+	}
+	
+	SingleClauseNode getStartingNodeForReset() {
+<span class="fc" id="L882">		return startingNodeForReset;</span>
+	}
+	void setStartingNodeForReset(SingleClauseNode startingNodeForReset) {
+<span class="fc" id="L885">		this.startingNodeForReset = startingNodeForReset;</span>
+<span class="fc" id="L886">	}</span>
+
+	// If TRUE, then this branch will become a LEAF.
+	boolean acceptableScoreFalseBranch(double minAcceptableScore) throws SearchInterrupted {
+<span class="fc" id="L890">		LearnOneClause theILPtask = (LearnOneClause) task;	</span>
+<span class="pc bpc" id="L891" title="1 of 2 branches missed.">		if (theILPtask.regressionTask) {</span>
+			double variance;
+<span class="fc" id="L893">			variance = getRegressionInfoHolder().varianceAtFailure() ;</span>
+<span class="fc" id="L894">			Utils.println(&quot;Comparing variance: &quot; + variance + &quot; to score=&quot; + minAcceptableScore + &quot; #egs=&quot; + getRegressionInfoHolder().totalExampleWeightAtFailure());</span>
+<span class="fc bfc" id="L895" title="All 2 branches covered.">			return variance &lt;= minAcceptableScore;</span>
+		}
+
+<span class="nc" id="L898">		double precision = precisionOnFailedExamples();</span>
+<span class="nc bnc" id="L899" title="All 2 branches missed.">		if (precision       &gt;= minAcceptableScore) { return true; } // Have a sufficiently pure POS set after splitting.</span>
+		// Have a sufficiently pure NEG set after splitting.
+<span class="nc bnc" id="L901" title="All 2 branches missed.">		return (1 - precision) &gt;= minAcceptableScore;</span>
+	}
+	// This is a bit cpu-intensive, but unless this is called multiple times, no need to cache it. 
+	private double precisionOnFailedExamples() throws SearchInterrupted {
+<span class="nc" id="L905">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+
+<span class="nc bnc" id="L907" title="All 2 branches missed.">		if (getPosCoverage() &lt; 0.0) { computeCoverage(); }</span>
+<span class="nc" id="L908">		double posCoverageFailed = 0.0;</span>
+<span class="nc" id="L909">		double negCoverageFailed = 0.0;</span>
+<span class="nc bnc" id="L910" title="All 4 branches missed.">		for (Example posEx : theILPtask.getPosExamples()) if (posExampleAlreadyExcluded(posEx)) { posCoverageFailed += posEx.getWeightOnExample(); }</span>
+<span class="nc bnc" id="L911" title="All 4 branches missed.">		for (Example negEx : theILPtask.getNegExamples()) if (negExampleAlreadyExcluded(negEx)) { negCoverageFailed += negEx.getWeightOnExample(); }</span>
+
+<span class="nc" id="L913">		return posCoverageFailed / (posCoverageFailed + negCoverageFailed + theILPtask.getMEstimateNeg());</span>
+	}
+	
+	double getVarianceTrueBranch() {
+<span class="fc" id="L917">		return getVarianceTrueBranch(false);</span>
+	}
+	double getVarianceTrueBranch(boolean computeMean) {
+<span class="fc" id="L920">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+<span class="pc bpc" id="L921" title="1 of 2 branches missed.">		if (theILPtask.regressionTask) {</span>
+<span class="fc" id="L922">			RegressionInfoHolder holder = getRegressionInfoHolder();</span>
+<span class="pc bpc" id="L923" title="1 of 4 branches missed.">			if (computeMean &amp;&amp; holder.totalExampleWeightAtSuccess() &gt; 0.0) { return  holder.varianceAtSuccess(); }</span>
+<span class="fc" id="L924">			return holder.weightedVarianceAtSuccess();</span>
+		}
+<span class="nc" id="L926">		return -1.0; // If discrete-valued return this to indicate &quot;not relevant.&quot;</span>
+	}
+
+	
+	double getVarianceFalseBranch() {
+<span class="fc" id="L931">		return getVarianceFalseBranch(false);</span>
+	}
+	double getVarianceFalseBranch(boolean computeMean) {
+<span class="fc" id="L934">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+
+<span class="pc bpc" id="L936" title="1 of 2 branches missed.">		if (theILPtask.regressionTask) {</span>
+<span class="fc" id="L937">			RegressionInfoHolder holder = getRegressionInfoHolder();</span>
+<span class="pc bpc" id="L938" title="1 of 4 branches missed.">			if (computeMean &amp;&amp; holder.totalExampleWeightAtFailure() &gt; 0.0) { return  holder.varianceAtFailure(); }</span>
+<span class="fc" id="L939">			return holder.weightedVarianceAtFailure();</span>
+		}
+<span class="nc" id="L941">		return -1.0; // If discrete-valued return this to indicate &quot;not relevant.&quot;</span>
+	}
+
+	boolean acceptableScoreTrueBranch(double acceptableScore) throws SearchInterrupted {
+<span class="fc" id="L945">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+<span class="pc bpc" id="L946" title="1 of 2 branches missed.">		if (theILPtask.regressionTask) {</span>
+				double variance;
+<span class="fc" id="L948">			variance = getRegressionInfoHolder().varianceAtSuccess() ;</span>
+<span class="fc" id="L949">			Utils.println(&quot;Comparing variance: &quot; + variance + &quot; to score=&quot; + acceptableScore+ &quot; #egs=&quot; + getRegressionInfoHolder().totalExampleWeightAtSuccess());</span>
+
+<span class="fc bfc" id="L951" title="All 2 branches covered.">			return variance &lt;= acceptableScore;</span>
+		}
+		
+<span class="nc" id="L954">		double precision = precision();</span>
+<span class="nc bnc" id="L955" title="All 2 branches missed.">		if (precision       &gt;= acceptableScore) { return true; } // Have a sufficiently pure POS set after splitting.</span>
+<span class="nc bnc" id="L956" title="All 2 branches missed.">		return (1 - precision) &gt;= acceptableScore;</span>
+	}
+	
+<span class="fc" id="L959">	private LocalRegressionInfoHolder cachedLocalRegressionInfoHolder  = null; // Waste a little space for non-regression problems, but only one pointer.</span>
+
+	private RegressionInfoHolder getRegressionInfoHolder() {
+<span class="fc bfc" id="L962" title="All 2 branches covered.">		if (cachedLocalRegressionInfoHolder == null) { </span>
+<span class="fc" id="L963">			cachedLocalRegressionInfoHolder = new LocalRegressionInfoHolder();</span>
+		}
+
+<span class="fc" id="L966">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+
+<span class="fc bfc" id="L968" title="All 2 branches covered.">		if (cachedLocalRegressionInfoHolder.resultsHolder == null) {</span>
+<span class="fc" id="L969">			cachedLocalRegressionInfoHolder.resultsHolder = theILPtask.getNewRegressionHolderForTask();</span>
+<span class="fc bfc" id="L970" title="All 2 branches covered.">			if (cachedLocalRegressionInfoHolder.cachedFalseStats == null) {</span>
+<span class="fc" id="L971">				cachedLocalRegressionInfoHolder.cachedFalseStats = theILPtask.getNewRegressionHolderForTask();</span>
+			}
+			try {
+<span class="fc" id="L974">				cachedLocalRegressionInfoHolder.resultsHolder.populateExamples((LearnOneClause)task, this);</span>
+<span class="nc" id="L975">			} catch (SearchInterrupted e) {</span>
+<span class="nc" id="L976">				e.printStackTrace();</span>
+<span class="fc" id="L977">			}</span>
+		}
+<span class="fc" id="L979">		return cachedLocalRegressionInfoHolder.resultsHolder;</span>
+	}
+
+	void resetAssumingAllExamplesCovered() {
+<span class="fc" id="L983">		LearnOneClause theILPtask = (LearnOneClause) task;</span>
+<span class="fc" id="L984">		setPosCoverage(Example.getWeightOfExamples(theILPtask.getPosExamples()));</span>
+<span class="fc" id="L985">		negCoverage = Example.getWeightOfExamples(theILPtask.getNegExamples());</span>
+<span class="fc" id="L986">		score = Double.NaN;</span>
+<span class="pc bpc" id="L987" title="1 of 2 branches missed.">		if (theILPtask.regressionTask) { resetRegressionNodeInfoHolder(); }</span>
+<span class="fc" id="L988">	}</span>
+	
+	private void resetRegressionNodeInfoHolder() {
+<span class="pc bpc" id="L991" title="1 of 2 branches missed.">		if (cachedLocalRegressionInfoHolder == null) {</span>
+<span class="nc" id="L992">			return; </span>
+		}
+<span class="fc" id="L994">		cachedLocalRegressionInfoHolder.reset();</span>
+<span class="fc" id="L995">	}</span>
+	
+	int numberOfBridgersInBody(SingleClauseNode nodeAtWhichThisSearchStarted) {
+<span class="nc bnc" id="L998" title="All 2 branches missed.">		if (this == nodeAtWhichThisSearchStarted) { return 0; } // Only count bridgers locally in tree-structured runs.</span>
+<span class="nc bnc" id="L999" title="All 2 branches missed.">		int total = (endsWithBridgerLiteral() ? 1 : 0);</span>
+<span class="nc bnc" id="L1000" title="All 2 branches missed.">		if (getParentNode() == null) { return total; }</span>
+<span class="nc" id="L1001">		return total + getParentNode().numberOfBridgersInBody(nodeAtWhichThisSearchStarted);</span>
+	}
+
+    public SingleClauseNode getParentNode() {
+<span class="fc" id="L1005">        return (SingleClauseNode) super.getParentNode();</span>
+    }
+
+
+	static class LocalRegressionInfoHolder {	// These are used for regression, so lower nodes can be scored quickly (at the cost of another instance variable,. but designed to only 'waste' one pointer when not doing regressiion.
+
+        RegressionInfoHolder resultsHolder;
+        // Keep it separate from the results holder that is used for computing mean/variance
+        // Maybe not needed but better to be safe.
+		RegressionInfoHolder cachedFalseStats;
+        
+<span class="fc" id="L1016">        LocalRegressionInfoHolder() {</span>
+<span class="fc" id="L1017">        }</span>
+
+        RegressionInfoHolder getFalseStats() {
+<span class="fc" id="L1020">        	return cachedFalseStats;</span>
+        }
+        void reset() {
+<span class="fc" id="L1023">        	cachedFalseStats = null;</span>
+            
+<span class="fc" id="L1025">        }</span>
+
+    }
+
+    // TODO(@hayesall): `cachedBindingLists = new HashMap&lt;&gt;();` is final?
+<span class="fc" id="L1030">    private final HashMap&lt;Example, Set&lt;BindingList&gt;&gt; cachedBindingLists = new HashMap&lt;&gt;();</span>
+
+	public long getNumberOfGroundingsForRegressionEx(Example eg) {
+<span class="fc" id="L1033">		initGroundingCalc();</span>
+<span class="fc" id="L1034">		LearnOneClause learnClause = ((LearnOneClause)task);</span>
+<span class="fc" id="L1035">		BindingList theta = learnClause.unifier.unify(this.getClauseHead(), eg.extractLiteral());</span>
+<span class="fc" id="L1036">		long cached_num = ((RegressionRDNExample)eg).lookupCachedGroundings(this);</span>
+<span class="fc bfc" id="L1037" title="All 2 branches covered.">		if (cached_num &gt;=0) {</span>
+<span class="fc" id="L1038">			return cached_num;</span>
+		}
+<span class="fc" id="L1040">		cachedBindingLists.remove(eg);</span>
+<span class="fc" id="L1041">		long num = 0;</span>
+<span class="fc bfc" id="L1042" title="All 2 branches covered.">		if (getParentNode() != getRootNode() &amp;&amp;</span>
+<span class="pc bpc" id="L1043" title="2 of 4 branches missed.">			getParentNode() != null &amp;&amp; getParentNode().cachedBindingLists.containsKey(eg)) {</span>
+<span class="nc bnc" id="L1044" title="All 2 branches missed.">			for (BindingList bl : getParentNode().cachedBindingLists.get(eg)) {</span>
+<span class="nc" id="L1045">				BindingList bl2 = new BindingList(theta.collectBindingsInList());</span>
+<span class="nc" id="L1046">				bl2.addBindings(bl);</span>
+<span class="nc" id="L1047">				num += getNumberOfGroundingsForRegressionEx(eg, bl2, true);</span>
+<span class="nc" id="L1048">			}</span>
+		} else {
+<span class="fc" id="L1050">			num = getNumberOfGroundingsForRegressionEx(eg, theta, false);</span>
+		}
+<span class="fc bfc" id="L1052" title="All 2 branches covered.">		if (num &lt; 10) {</span>
+			// Easy to recompute the bindings.
+<span class="fc" id="L1054">			cachedBindingLists.remove(eg);</span>
+		}
+<span class="pc bpc" id="L1056" title="1 of 2 branches missed.">		if (num == 0) {</span>
+<span class="nc" id="L1057">			Utils.waitHere(&quot;Number of groundings = 0 for &quot; + eg + &quot; with &quot; + getClause() + &quot; BL: &quot; + theta + &quot; Lit: &quot; + literalAdded);</span>
+		}
+		
+<span class="pc bpc" id="L1060" title="1 of 2 branches missed.">		if (cachedBindingLists.containsKey(eg)) {</span>
+<span class="nc" id="L1061">			Set&lt;BindingList&gt; cachedbl = cachedBindingLists.get(eg);</span>
+<span class="nc bnc" id="L1062" title="All 2 branches missed.">			if (cachedbl.size() != num) {</span>
+<span class="nc bnc" id="L1063" title="All 2 branches missed.">				for (BindingList bindingList : cachedbl) {</span>
+<span class="nc" id="L1064">					Utils.println(bindingList.toString());</span>
+<span class="nc" id="L1065">				}</span>
+<span class="nc" id="L1066">				Utils.waitHere(&quot;Incorrect groundings : &quot; + num + &quot; for the bl: &quot; + cachedbl );</span>
+				
+			}
+		}
+<span class="fc" id="L1070">		((RegressionExample)eg).cacheNumGroundings(this, num);</span>
+<span class="fc" id="L1071">		return num;</span>
+	}
+<span class="fc" id="L1073">	private NumberGroundingsCalculator groundingsCalc = null;</span>
+	private void initGroundingCalc() {
+<span class="fc bfc" id="L1075" title="All 2 branches covered.">		if (groundingsCalc == null) {</span>
+<span class="fc" id="L1076">			groundingsCalc = new NumberGroundingsCalculator(((LearnOneClause)this.task).context);</span>
+		}
+<span class="fc" id="L1078">	}</span>
+	
+	private long getNumberOfGroundingsForRegressionEx(Example eg, BindingList theta, boolean isPartial) {
+<span class="fc" id="L1081">		long num = 1;</span>
+		// Check if we can just re-use the groundings from before
+<span class="fc" id="L1083">		Literal localLit = this.literalAdded.applyTheta(theta);</span>
+<span class="pc bpc" id="L1084" title="1 of 2 branches missed.">		if (!isPartial) {</span>
+<span class="pc bpc" id="L1085" title="1 of 4 branches missed.">			if (getParentNode() != null &amp;&amp; getParentNode() != getRootNode()) {</span>
+<span class="fc" id="L1086">				num = ((RegressionExample)eg).lookupCachedGroundings(getParentNode());</span>
+			}
+			// No point in re-using if we haven't cached them
+<span class="pc bpc" id="L1089" title="1 of 2 branches missed.">			if (num &gt;= 0) {</span>
+<span class="pc bpc" id="L1090" title="1 of 2 branches missed.">				if (groundingsCalc.canLookupLiteral(localLit)) {</span>
+<span class="nc bnc" id="L1091" title="All 2 branches missed.">					if (groundingsCalc.isaFact(localLit)) {</span>
+<span class="nc" id="L1092">						((RegressionExample)eg).cacheNumGroundings(this, num);</span>
+<span class="nc" id="L1093">						return num;	</span>
+					}
+<span class="nc" id="L1095">					Utils.waitHere(&quot;num gndings shouldn't be 0 for &quot; + eg + &quot; Lit:&quot; + localLit + &quot; BL: &quot; + theta + &quot; Clause: &quot; + this.getClause());</span>
+<span class="nc" id="L1096">					return 0;</span>
+				}
+			}
+		}
+		
+<span class="fc" id="L1101">		List&lt;Literal&gt; new_body = theta.applyTheta(this.getClauseBody());</span>
+<span class="fc" id="L1102">		num = groundingsCalc.countGroundingsForConjunction(new_body, new ArrayList&lt;&gt;(), null);</span>
+<span class="fc" id="L1103">		return num;</span>
+	}
+
+	public double getPosCoverage() {
+<span class="fc" id="L1107">		return posCoverage;</span>
+	}
+
+	private void setPosCoverage(double posCoverage) {
+<span class="fc" id="L1111">		this.posCoverage = posCoverage;</span>
+<span class="fc" id="L1112">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

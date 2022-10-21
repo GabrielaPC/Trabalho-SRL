@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefiniteClauseToClauseIterable.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ResThmProver</a> &gt; <span class="el_source">DefiniteClauseToClauseIterable.java</span></div><h1>DefiniteClauseToClauseIterable.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ResThmProver;
+
+import edu.wisc.cs.will.FOPC.Clause;
+import edu.wisc.cs.will.FOPC.DefiniteClause;
+
+import java.util.Iterator;
+
+class DefiniteClauseToClauseIterable implements Iterable&lt;Clause&gt; {
+
+    private final Iterable&lt;DefiniteClause&gt; iterable;
+
+<span class="fc" id="L12">    DefiniteClauseToClauseIterable(Iterable&lt;DefiniteClause&gt; iterable) {</span>
+<span class="fc" id="L13">        this.iterable = iterable;</span>
+<span class="fc" id="L14">    }</span>
+
+    public Iterator&lt;Clause&gt; iterator() {
+<span class="fc" id="L17">        return new DefiniteClauseToClauseIterator(iterable.iterator());</span>
+    }
+
+    static class DefiniteClauseToClauseIterator implements Iterator&lt;Clause&gt; {
+
+    final Iterator&lt;DefiniteClause&gt; iterator;
+
+<span class="fc" id="L24">    DefiniteClauseToClauseIterator(Iterator&lt;DefiniteClause&gt; iterator) {</span>
+<span class="fc" id="L25">        this.iterator = iterator;</span>
+<span class="fc" id="L26">    }</span>
+
+    public boolean hasNext() {
+<span class="fc" id="L29">        return iterator.hasNext();</span>
+    }
+
+    public Clause next() {
+<span class="fc" id="L33">        return iterator.next().getDefiniteClauseAsClause();</span>
+    }
+
+    public void remove() {
+<span class="nc" id="L37">        throw new UnsupportedOperationException(&quot;Not supported yet.&quot;);</span>
+    }
+}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

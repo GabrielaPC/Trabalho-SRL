@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrettyPrinterOptions.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">PrettyPrinterOptions.java</span></div><h1>PrettyPrinterOptions.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+public class PrettyPrinterOptions {
+
+<span class="fc" id="L5">    private int maximumLiteralsPerLine = -1;</span>
+
+<span class="fc" id="L7">    private boolean renameVariables = true;</span>
+
+<span class="fc" id="L9">    private boolean alignParathesis = true;</span>
+
+<span class="fc" id="L11">    private boolean newLineAfterOpenParathesis = true;</span>
+
+<span class="fc" id="L13">    private int maximumIndentationAfterImplication = Integer.MAX_VALUE;</span>
+
+<span class="fc" id="L15">    private boolean newLineAfterImplication = false;</span>
+
+<span class="fc" id="L17">    public PrettyPrinterOptions() {</span>
+        // TODO(@hayesall): Empty constructor.
+<span class="fc" id="L19">    }</span>
+
+    int getMaximumLiteralsPerLine() {
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        if ( maximumLiteralsPerLine != -1 ) return maximumLiteralsPerLine;</span>
+<span class="nc" id="L23">        return -1;</span>
+    }
+
+    public void setMaximumLiteralsPerLine(int maximumLiteralsPerLine) {
+<span class="fc" id="L27">        this.maximumLiteralsPerLine = maximumLiteralsPerLine;</span>
+<span class="fc" id="L28">    }</span>
+
+    boolean isRenameVariables() {
+<span class="fc" id="L31">        return renameVariables;</span>
+    }
+
+    public void setRenameVariables(boolean renameVariables) {
+<span class="fc" id="L35">        this.renameVariables = renameVariables;</span>
+<span class="fc" id="L36">    }</span>
+
+    boolean isAlignParathesis() {
+<span class="nc" id="L39">        return alignParathesis;</span>
+    }
+
+    void setAlignParathesis() {
+<span class="fc" id="L43">        this.alignParathesis = false;</span>
+<span class="fc" id="L44">    }</span>
+
+    boolean isNewLineAfterOpenParathesis() {
+<span class="nc" id="L47">        return newLineAfterOpenParathesis;</span>
+    }
+
+    void setNewLineAfterOpenParathesis() {
+<span class="fc" id="L51">        this.newLineAfterOpenParathesis = true;</span>
+<span class="fc" id="L52">    }</span>
+
+    int getMaximumIndentationAfterImplication() {
+<span class="fc" id="L55">        return maximumIndentationAfterImplication;</span>
+    }
+
+    public void setMaximumIndentationAfterImplication(int maximumIndentationAfterImplication) {
+<span class="fc" id="L59">        this.maximumIndentationAfterImplication = maximumIndentationAfterImplication;</span>
+<span class="fc" id="L60">    }</span>
+
+    boolean isNewLineAfterImplication() {
+<span class="fc" id="L63">        return newLineAfterImplication;</span>
+    }
+
+    public void setNewLineAfterImplication(boolean newLineAfterImplication) {
+<span class="fc" id="L67">        this.newLineAfterImplication = newLineAfterImplication;</span>
+<span class="fc" id="L68">    }</span>
+
+    
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

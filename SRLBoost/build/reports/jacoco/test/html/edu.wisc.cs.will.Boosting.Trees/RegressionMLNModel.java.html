@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegressionMLNModel.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Trees</a> &gt; <span class="el_source">RegressionMLNModel.java</span></div><h1>RegressionMLNModel.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Trees;
+
+import edu.wisc.cs.will.Boosting.RDN.WILLSetup;
+import edu.wisc.cs.will.Boosting.Utils.BoostingUtils;
+import edu.wisc.cs.will.Boosting.Utils.NumberGroundingsCalculator;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.FOPC.Clause;
+import edu.wisc.cs.will.FOPC.Literal;
+import edu.wisc.cs.will.FOPC.Term;
+import edu.wisc.cs.will.Utils.RegressionValueOrVector;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/*
+ * @author tkhot
+ */
+public class RegressionMLNModel extends RegressionTree {
+
+	private NumberGroundingsCalculator calc;
+	
+<span class="fc" id="L24">	private Map&lt;String, Long&gt; cachedRegressionClauseWeights = null; </span>
+
+	public RegressionMLNModel(WILLSetup setup) {
+<span class="fc" id="L27">		super(setup);</span>
+<span class="fc" id="L28">		resetGroundingCalculator();</span>
+<span class="fc" id="L29">	}</span>
+	
+	public void setCachedValues(Map&lt;String, Long&gt; cache) {
+<span class="fc" id="L32">		cachedRegressionClauseWeights = cache;</span>
+<span class="fc" id="L33">	}</span>
+	
+	private void addToCache(Clause cl, Literal eg, long val) {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">		if (cachedRegressionClauseWeights == null) {</span>
+<span class="nc" id="L37">			return;</span>
+		}
+<span class="fc" id="L39">		String key = getCacheKey(cl, eg);</span>
+<span class="fc" id="L40">		cachedRegressionClauseWeights.put(key, val);</span>
+<span class="fc" id="L41">	}</span>
+
+	private String getCacheKey(Clause cl, Literal eg) {
+<span class="fc" id="L44">		return cl.toString() + &quot;:::&quot; + eg.toString();</span>
+	}
+
+	private boolean inCache(Clause cl, Literal eg) {
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">		if (cachedRegressionClauseWeights == null) {</span>
+<span class="nc" id="L49">			return false;</span>
+		}
+<span class="fc" id="L51">		String key = getCacheKey(cl, eg);</span>
+<span class="fc" id="L52">		return cachedRegressionClauseWeights.containsKey(key);</span>
+	}
+
+	private long cachedWeight(Clause cl, Literal eg) {
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">		if (cachedRegressionClauseWeights == null) {</span>
+<span class="nc" id="L57">			Utils.error(&quot;No cache provided&quot;);</span>
+		}
+<span class="fc" id="L59">		String key = getCacheKey(cl, eg);</span>
+<span class="fc" id="L60">		return cachedRegressionClauseWeights.get(key);</span>
+	}
+
+	@Override
+	public void setSetup(WILLSetup setup) {
+<span class="fc" id="L65">		super.setSetup(setup);</span>
+<span class="fc" id="L66">		resetGroundingCalculator();</span>
+<span class="fc" id="L67">	}</span>
+	
+	private void resetGroundingCalculator() {
+<span class="fc" id="L70">		calc = new NumberGroundingsCalculator(setup.getContext());</span>
+<span class="fc" id="L71">	}</span>
+
+	@Override
+	protected RegressionValueOrVector getRegressionClauseWt(Clause clause, Example ex) {
+		
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">		if (clause.getPositiveLiterals().size() != 1) {</span>
+<span class="nc" id="L77">			Utils.error(&quot;Expected horn clause: &quot; + clause);</span>
+		}
+<span class="fc" id="L79">		Literal head = clause.getPosLiteral(0).copy(false);</span>
+<span class="fc" id="L80">		Term y = head.getArgument(head.numberArgs() - 1);</span>
+<span class="fc" id="L81">		RegressionValueOrVector val = BoostingUtils.getRegressionValueOrVectorFromTerm(y);</span>
+<span class="fc" id="L82">		head.removeArgument(y);</span>
+<span class="fc" id="L83">		List&lt;Literal&gt; new_head = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L84">		new_head.add(head);</span>
+		
+<span class="fc" id="L86">		List&lt;Literal&gt; new_body = clause.getDefiniteClauseBody();</span>
+		// remove the cut to get number of proofs
+<span class="fc bfc" id="L88" title="All 2 branches covered.">		if (new_body.size() &gt; 0 &amp;&amp;</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">			new_body.get(new_body.size()-1).equals(setup.getHandler().cutLiteral)) {</span>
+<span class="fc" id="L90">			new_body.remove(new_body.size() - 1);</span>
+		}
+<span class="fc" id="L92">		Clause cl = new Clause(setup.getHandler(), new_head, new_body);</span>
+		// Ignore the negation by failure literals as the ordering takes care
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">		if (calc.isOnlyInHead(cl, ex)) {</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">			for (int i = 0; i &lt; new_body.size(); i++) {</span>
+<span class="fc" id="L96">				Literal lit = new_body.get(i);</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">				if(lit.predicateName.equals(setup.getHandler().standardPredicateNames.negationByFailure)) {</span>
+<span class="nc" id="L98">					new_body.remove(i);</span>
+<span class="nc" id="L99">					i--;</span>
+				}
+			}
+<span class="fc bfc" id="L102" title="All 2 branches covered.">			if (!setup.learnClauses) {</span>
+<span class="fc" id="L103">				setBreakAfterFirstMatch(true);</span>
+			}
+		} else {
+<span class="nc" id="L106">			setBreakAfterFirstMatch(false);</span>
+		}
+
+		
+<span class="fc" id="L110">		cl = new Clause(setup.getHandler(), new_head, new_body);</span>
+		long num;
+<span class="fc bfc" id="L112" title="All 2 branches covered.">		if (inCache(cl, ex)) {</span>
+<span class="fc" id="L113">			num=cachedWeight(cl, ex);</span>
+		} else {
+<span class="fc" id="L115">			num = calc.countNumberOfNonTrivialGroundings(cl, ex);</span>
+<span class="fc" id="L116">			addToCache(cl, ex, num);</span>
+		}
+		// If the clause head unifies with the example and it has no groundings, we want to evaluate the next
+		// clause. So return Nan. If the example doesn't unify with the head, then it doesn't matter if we return 0 or Nan, 
+		// as both will not have any impact on final regression value.
+<span class="fc bfc" id="L121" title="All 2 branches covered.">		if (num ==0) {</span>
+<span class="fc" id="L122">			return null;</span>
+		} 
+<span class="fc" id="L124">		val.multiply(num);</span>
+<span class="fc" id="L125">		return val;</span>
+
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

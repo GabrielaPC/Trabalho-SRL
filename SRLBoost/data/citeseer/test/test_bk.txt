@@ -1,0 +1,12 @@
+usePrologVariables: true.
+setParam: maxTreeDepth=4.
+setParam: nodeSize= 3.
+setParam: numOfClauses=8.
+setParam: recursion=true
+queryPred: hasCat/2.
+
+mode: hasCat(+Id,#cat).
+mode: link(+Id,-Id).
+mode: link(-Id,+Id).
+range: cat={1,2,3,4,5,6,7}.
+

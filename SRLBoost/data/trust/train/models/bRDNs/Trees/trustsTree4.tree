@@ -1,0 +1,14 @@
+setParam: stringsAreCaseSensitive = true.
+
+usePrologVariables: true.
+
+
+(trusts(A, B, 0.3092967441930752) :-  /* #neg=4 #pos=156 */ knows(A, UniqueVar33), knows(UniqueVar33, UniqueVar33), knows(B, A)).
+(trusts(A, B, 0.281042234941252) :-  /* #neg=31 #pos=273 */ knows(A, UniqueVar34), knows(UniqueVar34, UniqueVar34), knows(B, _)).
+(trusts(A, _, 0.3106501510356565) :-  /* #neg=1 #pos=25 */ knows(A, UniqueVar35), knows(UniqueVar35, UniqueVar35)).
+(trusts(A, B, 0.3210188746123899) :-  /* #neg=2 #pos=422 */ knows(UniqueVar36, B), knows(B, UniqueVar36), knows(B, A)).
+(trusts(_, A, 0.310595692518425) :-  /* #neg=23 #pos=775 */ knows(UniqueVar37, A), knows(A, UniqueVar37)).
+(trusts(_, A, 0.1760563400137861) :-  /* #neg=1 #pos=5 */ knows(A, UniqueVar38), knows(UniqueVar38, UniqueVar38)).
+(trusts(A, B, 0.26634993651193806) :-  /* #neg=3 #pos=29 */ knows(A, UniqueVar39), knows(B, UniqueVar39)).
+(trusts(_, A, 0.1922413334543231) :-  /* #neg=2 #pos=8 */ knows(UniqueVar40, A), knows(UniqueVar40, UniqueVar40)).
+trusts(_, _, 0.3089560615984828) /* #neg=10 #pos=238 */ .

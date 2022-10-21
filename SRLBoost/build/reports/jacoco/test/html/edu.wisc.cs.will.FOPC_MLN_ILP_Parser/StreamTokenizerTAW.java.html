@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StreamTokenizerTAW.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC_MLN_ILP_Parser</a> &gt; <span class="el_source">StreamTokenizerTAW.java</span></div><h1>StreamTokenizerTAW.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC_MLN_ILP_Parser;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.Arrays;
+
+/*
+ *
+ * @author twalker
+ */
+class StreamTokenizerTAW {
+
+
+    /* Only one of these will be non-null */
+<span class="fc" id="L16">    private Reader reader = null;</span>
+<span class="fc" id="L17">    private InputStream input = null;</span>
+
+<span class="fc" id="L19">    private char[] buf = new char[20];</span>
+
+    /*
+     * The next character to be considered by the nextToken method.  May also
+     * be NEED_CHAR to indicate that a new character should be read, or SKIP_LF
+     * to indicate that a new character should be read and, if it is a '\n'
+     * character, it should be discarded and a second new character should be
+     * read.
+     */
+<span class="fc" id="L28">    private int peekc = NEED_CHAR;</span>
+
+    private static final int NEED_CHAR = Integer.MAX_VALUE;
+    private static final int SKIP_LF = Integer.MAX_VALUE - 1;
+
+    private boolean pushedBack;
+    private boolean forceLower;
+    /* The line number of the last token read */
+<span class="fc" id="L36">    private int LINENO = 1;</span>
+
+<span class="fc" id="L38">    private boolean eolIsSignificantP = false;</span>
+<span class="fc" id="L39">    private boolean slashSlashCommentsP = false;</span>
+<span class="fc" id="L40">    private boolean slashStarCommentsP = false;</span>
+
+<span class="fc" id="L42">    private final byte[] ctype = new byte[256];</span>
+    private static final byte CT_WHITESPACE = 1;
+    private static final byte CT_DIGIT = 2;
+    private static final byte CT_ALPHA = 4;
+    private static final byte CT_QUOTE = 8;
+    private static final byte CT_COMMENT = 16;
+
+    /*
+     * After a call to the &lt;code&gt;nextToken&lt;/code&gt; method, this field
+     * contains the type of the token just read. For a single character
+     * token, its value is the single character, converted to an integer.
+     * For a quoted string token, its value is the quote character.
+     * Otherwise, its value is one of the following:
+     * &lt;ul&gt;
+     * &lt;li&gt;&lt;code&gt;TT_WORD&lt;/code&gt; indicates that the token is a word.
+     * &lt;li&gt;&lt;code&gt;TT_NUMBER&lt;/code&gt; indicates that the token is a number.
+     * &lt;li&gt;&lt;code&gt;TT_EOL&lt;/code&gt; indicates that the end of line has been read.
+     *     The field can only have this value if the
+     *     &lt;code&gt;eolIsSignificant&lt;/code&gt; method has been called with the
+     *     argument &lt;code&gt;true&lt;/code&gt;.
+     * &lt;li&gt;&lt;code&gt;TT_EOF&lt;/code&gt; indicates that the end of the input stream
+     *     has been reached.
+     * &lt;/ul&gt;
+     * &lt;p&gt;
+     * The initial value of this field is -4.
+     *
+     * @see     java.io.StreamTokenizer#eolIsSignificant(boolean)
+     * @see     java.io.StreamTokenizer#nextToken()
+     * @see     java.io.StreamTokenizer#quoteChar(int)
+     * @see     java.io.StreamTokenizer#TT_EOF
+     * @see     java.io.StreamTokenizer#TT_EOL
+     * @see     java.io.StreamTokenizer#TT_NUMBER
+     * @see     java.io.StreamTokenizer#TT_WORD
+     */
+<span class="fc" id="L76">	int ttype = TT_NOTHING;</span>
+
+    /*
+     * A constant indicating that the end of the stream has been read.
+     */
+    private static final int TT_EOF = -1;
+
+    /*
+     * A constant indicating that the end of the line has been read.
+     */
+    private static final int TT_EOL = '\n';
+
+    /*
+     * A constant indicating that a number token has been read.
+     */
+    static final int TT_NUMBER = -2;
+
+    /*
+     * A constant indicating that a word token has been read.
+     */
+    static final int TT_WORD = -3;
+
+    /* A constant indicating that no token has been read, used for
+     * initializing ttype.  FIXME This could be made public and
+     * made available as the part of the API in a future release.
+     */
+    private static final int TT_NOTHING = -4;
+
+	/*
+     * If the current token is a word token, this field contains a
+     * string giving the characters of the word token. When the current
+     * token is a quoted string token, this field contains the body of
+     * the string.
+     * &lt;p&gt;
+     * The current token is a word when the value of the
+     * &lt;code&gt;ttype&lt;/code&gt; field is &lt;code&gt;TT_WORD&lt;/code&gt;. The current token is
+     * a quoted string token when the value of the &lt;code&gt;ttype&lt;/code&gt; field is
+     * a quote character.
+     * &lt;p&gt;
+     * The initial value of this field is null.
+     *
+     * @see     java.io.StreamTokenizer#quoteChar(int)
+     * @see     java.io.StreamTokenizer#TT_WORD
+     * @see     java.io.StreamTokenizer#ttype
+     */
+	String sval;
+
+    /*
+     * If the current token is a number, this field contains the value
+     * of that number. The current token is a number when the value of
+     * the &lt;code&gt;ttype&lt;/code&gt; field is &lt;code&gt;TT_NUMBER&lt;/code&gt;.
+     * &lt;p&gt;
+     * The initial value of this field is 0.0.
+     *
+     * @see     java.io.StreamTokenizer#TT_NUMBER
+     * @see     java.io.StreamTokenizer#ttype
+     */
+	double nval;
+
+    /* Private constructor that initializes everything except the streams. */
+<span class="fc" id="L136">    private StreamTokenizerTAW() { // Need to handle tokens like Nenê</span>
+<span class="fc" id="L137">		wordChars('a', 'z');</span>
+<span class="fc" id="L138">		wordChars('A', 'Z');</span>
+<span class="fc" id="L139">		wordChars(128 + 32, 255);</span>
+<span class="fc" id="L140">		wordChars('\u00AA', '\u00FF'); // DONT DO THIS BOTH HERE AND IN StringConstant (though not harmful - would just add more quote marks than are necessary).</span>
+<span class="fc" id="L141">		whitespaceChars(0, ' ');</span>
+<span class="fc" id="L142">		commentChar('/');</span>
+<span class="fc" id="L143">		quoteChar('&quot;');</span>
+<span class="fc" id="L144">		quoteChar('\'');</span>
+<span class="fc" id="L145">		parseNumbers();</span>
+<span class="fc" id="L146">    }</span>
+
+    /*
+     * Creates a stream tokenizer that parses the specified input
+     * stream. The stream tokenizer is initialized to the following
+     * default state:
+     * &lt;ul&gt;
+     * &lt;li&gt;All byte values &lt;code&gt;'A'&lt;/code&gt; through &lt;code&gt;'Z'&lt;/code&gt;,
+     *     &lt;code&gt;'a'&lt;/code&gt; through &lt;code&gt;'z'&lt;/code&gt;, and
+     *     &lt;code&gt;'&amp;#92;u00A0'&lt;/code&gt; through &lt;code&gt;'&amp;#92;u00FF'&lt;/code&gt; are
+     *     considered to be alphabetic.
+     * &lt;li&gt;All byte values &lt;code&gt;'&amp;#92;u0000'&lt;/code&gt; through
+     *     &lt;code&gt;'&amp;#92;u0020'&lt;/code&gt; are considered to be white space.
+     * &lt;li&gt;&lt;code&gt;'/'&lt;/code&gt; is a comment character.
+     * &lt;li&gt;Single quote &lt;code&gt;'&amp;#92;''&lt;/code&gt; and double quote &lt;code&gt;'&quot;'&lt;/code&gt;
+     *     are string quote characters.
+     * &lt;li&gt;Numbers are parsed.
+     * &lt;li&gt;Ends of lines are treated as white space, not as separate tokens.
+     * &lt;li&gt;C-style and C++-style comments are not recognized.
+     * &lt;/ul&gt;
+     *
+     * @deprecated As of JDK version 1.1, the preferred way to tokenize an
+     * input stream is to convert it into a character stream, for example:
+     * &lt;blockquote&gt;&lt;pre&gt;
+     *   Reader r = new BufferedReader(new InputStreamReader(is));
+     *   StreamTokenizer st = new StreamTokenizer(r);
+     * &lt;/pre&gt;&lt;/blockquote&gt;
+     *
+     * @param      is        an input stream.
+     * @see        java.io.BufferedReader
+     * @see        java.io.InputStreamReader
+     * @see        java.io.StreamTokenizer#StreamTokenizer(java.io.Reader)
+     */
+    @Deprecated
+    public StreamTokenizerTAW(InputStream is) {
+<span class="nc" id="L181">	this();</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (is == null) {</span>
+<span class="nc" id="L183">            throw new NullPointerException();</span>
+        }
+<span class="nc" id="L185">	input = is;</span>
+<span class="nc" id="L186">    }</span>
+
+    /*
+     * Create a tokenizer that parses the given character stream.
+     *
+     * @param r  a Reader object providing the input stream.
+     * @since   JDK1.1
+     */
+	StreamTokenizerTAW(Reader r) {
+<span class="fc" id="L195">	this();</span>
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">        if (r == null) {</span>
+<span class="nc" id="L197">            throw new NullPointerException();</span>
+        }
+<span class="fc" id="L199">	reader = r;</span>
+<span class="fc" id="L200">    }</span>
+
+    /*
+     * Resets this tokenizer's syntax table so that all characters are
+     * &quot;ordinary.&quot; See the &lt;code&gt;ordinaryChar&lt;/code&gt; method
+     * for more information on a character being ordinary.
+     *
+     * @see     java.io.StreamTokenizer#ordinaryChar(int)
+     */
+	void resetSyntax() {
+<span class="fc bfc" id="L210" title="All 2 branches covered.">		for (int i = ctype.length; --i &gt;= 0;)</span>
+<span class="fc" id="L211">			ctype[i] = 0;</span>
+<span class="fc" id="L212">    }</span>
+
+    /*
+     * Specifies that all characters &lt;i&gt;c&lt;/i&gt; in the range
+     * &lt;code&gt;low&amp;nbsp;&amp;lt;=&amp;nbsp;&lt;i&gt;c&lt;/i&gt;&amp;nbsp;&amp;lt;=&amp;nbsp;high&lt;/code&gt;
+     * are word constituents. A word token consists of a word constituent
+     * followed by zero or more word constituents or number constituents.
+     *
+     * @param   low   the low end of the range.
+     * @param   hi    the high end of the range.
+     */
+	void wordChars(int low, int hi) {
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">	if (low &lt; 0)</span>
+<span class="nc" id="L225">	    low = 0;</span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">	if (hi &gt;= ctype.length)</span>
+<span class="nc" id="L227">	    hi = ctype.length - 1;</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">	while (low &lt;= hi)</span>
+<span class="fc" id="L229">	    ctype[low++] |= CT_ALPHA;</span>
+<span class="fc" id="L230">    }</span>
+
+    /*
+     * Specifies that all characters &lt;i&gt;c&lt;/i&gt; in the range
+     * &lt;code&gt;low&amp;nbsp;&amp;lt;=&amp;nbsp;&lt;i&gt;c&lt;/i&gt;&amp;nbsp;&amp;lt;=&amp;nbsp;high&lt;/code&gt;
+     * are white space characters. White space characters serve only to
+     * separate tokens in the input stream.
+     *
+     * &lt;p&gt;Any other attribute settings for the characters in the specified
+     * range are cleared.
+     *
+     * @param   low   the low end of the range.
+     * @param   hi    the high end of the range.
+     */
+	void whitespaceChars(int low, int hi) {
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">		if (low &lt; 0)</span>
+<span class="nc" id="L246">			low = 0;</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">		if (hi &gt;= ctype.length)</span>
+<span class="nc" id="L248">			hi = ctype.length - 1;</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">		while (low &lt;= hi)</span>
+<span class="fc" id="L250">			ctype[low++] = CT_WHITESPACE;</span>
+<span class="fc" id="L251">    }</span>
+
+	/*
+     * Specifies that the character argument is &quot;ordinary&quot;
+     * in this tokenizer. It removes any special significance the
+     * character has as a comment character, word component, string
+     * delimiter, white space, or number character. When such a character
+     * is encountered by the parser, the parser treats it as a
+     * single-character token and sets &lt;code&gt;ttype&lt;/code&gt; field to the
+     * character value.
+     *
+     * &lt;p&gt;Making a line terminator character &quot;ordinary&quot; may interfere
+     * with the ability of a &lt;code&gt;StreamTokenizer&lt;/code&gt; to count
+     * lines. The &lt;code&gt;lineno&lt;/code&gt; method may no longer reflect
+     * the presence of such terminator characters in its line count.
+     *
+     * @param   ch   the character.
+     * @see     java.io.StreamTokenizer#ttype
+     */
+	void ordinaryChar(int ch) {
+<span class="pc bpc" id="L271" title="2 of 4 branches missed.">        if (ch &gt;= 0 &amp;&amp; ch &lt; ctype.length)</span>
+<span class="fc" id="L272">  	    ctype[ch] = 0;</span>
+<span class="fc" id="L273">    }</span>
+
+    /*
+     * Specified that the character argument starts a single-line
+     * comment. All characters from the comment character to the end of
+     * the line are ignored by this stream tokenizer.
+     *
+     * &lt;p&gt;Any other attribute settings for the specified character are cleared.
+     *
+     * @param   ch   the character.
+     */
+	void commentChar(int ch) {
+<span class="pc bpc" id="L285" title="2 of 4 branches missed.">        if (ch &gt;= 0 &amp;&amp; ch &lt; ctype.length)</span>
+<span class="fc" id="L286">	    ctype[ch] = CT_COMMENT;</span>
+<span class="fc" id="L287">    }</span>
+
+    /*
+     * Specifies that matching pairs of this character delimit string
+     * constants in this tokenizer.
+     * &lt;p&gt;
+     * When the &lt;code&gt;nextToken&lt;/code&gt; method encounters a string
+     * constant, the &lt;code&gt;ttype&lt;/code&gt; field is set to the string
+     * delimiter and the &lt;code&gt;sval&lt;/code&gt; field is set to the body of
+     * the string.
+     * &lt;p&gt;
+     * If a string quote character is encountered, then a string is
+     * recognized, consisting of all characters after (but not including)
+     * the string quote character, up to (but not including) the next
+     * occurrence of that same string quote character, or a line
+     * terminator, or end of file. The usual escape sequences such as
+     * &lt;code&gt;&quot;&amp;#92;n&quot;&lt;/code&gt; and &lt;code&gt;&quot;&amp;#92;t&quot;&lt;/code&gt; are recognized and
+     * converted to single characters as the string is parsed.
+     *
+     * &lt;p&gt;Any other attribute settings for the specified character are cleared.
+     *
+     * @param   ch   the character.
+     * @see     java.io.StreamTokenizer#nextToken()
+     * @see     java.io.StreamTokenizer#sval
+     * @see     java.io.StreamTokenizer#ttype
+     */
+	void quoteChar(int ch) {
+<span class="pc bpc" id="L314" title="2 of 4 branches missed.">        if (ch &gt;= 0 &amp;&amp; ch &lt; ctype.length)</span>
+<span class="fc" id="L315"> 	    ctype[ch] = CT_QUOTE;</span>
+<span class="fc" id="L316">    }</span>
+
+    /*
+     * Specifies that numbers should be parsed by this tokenizer. The
+     * syntax table of this tokenizer is modified so that each of the twelve
+     * characters:
+     * &lt;blockquote&gt;&lt;pre&gt;
+     *      0 1 2 3 4 5 6 7 8 9 . -
+     * &lt;/pre&gt;&lt;/blockquote&gt;
+     * &lt;p&gt;
+     * has the &quot;numeric&quot; attribute.
+     * &lt;p&gt;
+     * When the parser encounters a word token that has the format of a
+     * double precision floating-point number, it treats the token as a
+     * number rather than a word, by setting the &lt;code&gt;ttype&lt;/code&gt;
+     * field to the value &lt;code&gt;TT_NUMBER&lt;/code&gt; and putting the numeric
+     * value of the token into the &lt;code&gt;nval&lt;/code&gt; field.
+     *
+     * @see     java.io.StreamTokenizer#nval
+     * @see     java.io.StreamTokenizer#TT_NUMBER
+     * @see     java.io.StreamTokenizer#ttype
+     */
+	private void parseNumbers() {
+<span class="fc bfc" id="L339" title="All 2 branches covered.">	for (int i = '0'; i &lt;= '9'; i++)</span>
+<span class="fc" id="L340">	    ctype[i] |= CT_DIGIT;</span>
+<span class="fc" id="L341">		ctype['.'] |= CT_DIGIT;</span>
+<span class="fc" id="L342">		ctype['-'] |= CT_DIGIT;</span>
+<span class="fc" id="L343">    }</span>
+
+    /*
+     * Determines whether or not ends of line are treated as tokens.
+     * If the flag argument is true, this tokenizer treats end of lines
+     * as tokens; the &lt;code&gt;nextToken&lt;/code&gt; method returns
+     * &lt;code&gt;TT_EOL&lt;/code&gt; and also sets the &lt;code&gt;ttype&lt;/code&gt; field to
+     * this value when an end of line is read.
+     * &lt;p&gt;
+     * A line is a sequence of characters ending with either a
+     * carriage-return character (&lt;code&gt;'&amp;#92;r'&lt;/code&gt;) or a newline
+     * character (&lt;code&gt;'&amp;#92;n'&lt;/code&gt;). In addition, a carriage-return
+     * character followed immediately by a newline character is treated
+     * as a single end-of-line token.
+     * &lt;p&gt;
+     * If the &lt;code&gt;flag&lt;/code&gt; is false, end-of-line characters are
+     * treated as white space and serve only to separate tokens.
+     *
+     * @param   flag   &lt;code&gt;true&lt;/code&gt; indicates that end-of-line characters
+     *                 are separate tokens; &lt;code&gt;false&lt;/code&gt; indicates that
+     *                 end-of-line characters are white space.
+     * @see     java.io.StreamTokenizer#nextToken()
+     * @see     java.io.StreamTokenizer#ttype
+     * @see     java.io.StreamTokenizer#TT_EOL
+     */
+	void eolIsSignificant() {
+<span class="fc" id="L369">	eolIsSignificantP = false;</span>
+<span class="fc" id="L370">    }</span>
+
+    /*
+     * Determines whether or not the tokenizer recognizes C-style comments.
+     * If the flag argument is &lt;code&gt;true&lt;/code&gt;, this stream tokenizer
+     * recognizes C-style comments. All text between successive
+     * occurrences of &lt;code&gt;/*&lt;/code&gt; and &lt;code&gt;*&amp;#47;&lt;/code&gt; are discarded.
+     * &lt;p&gt;
+     * If the flag argument is &lt;code&gt;false&lt;/code&gt;, then C-style comments
+     * are not treated specially.
+     *
+     * @param   flag   &lt;code&gt;true&lt;/code&gt; indicates to recognize and ignore
+     *                 C-style comments.
+     */
+	void slashStarComments() {
+<span class="fc" id="L385">	slashStarCommentsP = true;</span>
+<span class="fc" id="L386">    }</span>
+
+    /*
+     * Determines whether or not the tokenizer recognizes C++-style comments.
+     * If the flag argument is &lt;code&gt;true&lt;/code&gt;, this stream tokenizer
+     * recognizes C++-style comments. Any occurrence of two consecutive
+     * slash characters (&lt;code&gt;'/'&lt;/code&gt;) is treated as the beginning of
+     * a comment that extends to the end of the line.
+     * &lt;p&gt;
+     * If the flag argument is &lt;code&gt;false&lt;/code&gt;, then C++-style
+     * comments are not treated specially.
+     *
+     * @param   flag   &lt;code&gt;true&lt;/code&gt; indicates to recognize and ignore
+     *                 C++-style comments.
+     */
+	void slashSlashComments() {
+<span class="fc" id="L402">	slashSlashCommentsP = true;</span>
+<span class="fc" id="L403">    }</span>
+
+    /*
+     * Determines whether or not word token are automatically lowercased.
+     * If the flag argument is &lt;code&gt;true&lt;/code&gt;, then the value in the
+     * &lt;code&gt;sval&lt;/code&gt; field is lowercased whenever a word token is
+     * returned (the &lt;code&gt;ttype&lt;/code&gt; field has the
+     * value &lt;code&gt;TT_WORD&lt;/code&gt; by the &lt;code&gt;nextToken&lt;/code&gt; method
+     * of this tokenizer.
+     * &lt;p&gt;
+     * If the flag argument is &lt;code&gt;false&lt;/code&gt;, then the
+     * &lt;code&gt;sval&lt;/code&gt; field is not modified.
+     *
+     * @param   fl   &lt;code&gt;true&lt;/code&gt; indicates that all word tokens should
+     *               be lowercased.
+     * @see     java.io.StreamTokenizer#nextToken()
+     * @see     java.io.StreamTokenizer#ttype
+     * @see     java.io.StreamTokenizer#TT_WORD
+     */
+	void lowerCaseMode() {
+<span class="fc" id="L423">	forceLower = false;</span>
+<span class="fc" id="L424">    }</span>
+
+    /* Read the next character */
+    private int read() throws IOException {
+<span class="pc bpc" id="L428" title="1 of 2 branches missed.">		if (reader != null)</span>
+<span class="fc" id="L429">			return reader.read();</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">		else if (input != null)</span>
+<span class="nc" id="L431">			return input.read();</span>
+		else
+<span class="nc" id="L433">			throw new IllegalStateException();</span>
+    }
+
+    /*
+     * Parses the next token from the input stream of this tokenizer.
+     * The type of the next token is returned in the &lt;code&gt;ttype&lt;/code&gt;
+     * field. Additional information about the token may be in the
+     * &lt;code&gt;nval&lt;/code&gt; field or the &lt;code&gt;sval&lt;/code&gt; field of this
+     * tokenizer.
+     * &lt;p&gt;
+     * Typical clients of this
+     * class first set up the syntax tables and then sit in a loop
+     * calling nextToken to parse successive tokens until TT_EOF
+     * is returned.
+     *
+     * @return     the value of the &lt;code&gt;ttype&lt;/code&gt; field.
+     * @exception  IOException  if an I/O error occurs.
+     * @see        java.io.StreamTokenizer#nval
+     * @see        java.io.StreamTokenizer#sval
+     * @see        java.io.StreamTokenizer#ttype
+     */
+	int nextToken() throws IOException {
+<span class="fc" id="L455">        boolean done = false;</span>
+<span class="fc" id="L456">        int c = 0;</span>
+<span class="fc bfc" id="L457" title="All 2 branches covered.">        while(!done) {</span>
+<span class="fc" id="L458">        done = true;</span>
+<span class="pc bpc" id="L459" title="1 of 2 branches missed.">	if (pushedBack) {</span>
+<span class="nc" id="L460">	    pushedBack = false;</span>
+<span class="nc" id="L461">	    return ttype;</span>
+	}
+<span class="fc" id="L463">	byte[] ct = ctype;</span>
+<span class="fc" id="L464">	sval = null;</span>
+
+<span class="fc" id="L466">	c = peekc;</span>
+<span class="pc bpc" id="L467" title="1 of 2 branches missed.">	if (c &lt; 0)</span>
+<span class="nc" id="L468">	    c = NEED_CHAR;</span>
+<span class="pc bpc" id="L469" title="1 of 2 branches missed.">	if (c == SKIP_LF) {</span>
+<span class="nc" id="L470">	    c = read();</span>
+<span class="nc bnc" id="L471" title="All 2 branches missed.">	    if (c &lt; 0)</span>
+<span class="nc" id="L472">		return ttype = TT_EOF;</span>
+<span class="nc bnc" id="L473" title="All 2 branches missed.">	    if (c == '\n')</span>
+<span class="nc" id="L474">		c = NEED_CHAR;</span>
+	}
+<span class="fc bfc" id="L476" title="All 2 branches covered.">	if (c == NEED_CHAR) {</span>
+<span class="fc" id="L477">	    c = read();</span>
+<span class="fc bfc" id="L478" title="All 2 branches covered.">	    if (c &lt; 0)</span>
+<span class="fc" id="L479">		return ttype = TT_EOF;</span>
+	}
+<span class="fc" id="L481">	ttype = c;		/* Just to be safe */</span>
+
+	/* Set peekc so that the next invocation of nextToken will read
+	 * another character unless peekc is reset in this invocation
+	 */
+<span class="fc" id="L486">	peekc = NEED_CHAR;</span>
+
+<span class="pc bpc" id="L488" title="1 of 2 branches missed.">	int ctype = c &lt; 256 ? ct[c] : CT_ALPHA;</span>
+<span class="fc bfc" id="L489" title="All 2 branches covered.">	while ((ctype &amp; CT_WHITESPACE) != 0) {</span>
+<span class="pc bpc" id="L490" title="1 of 2 branches missed.">	    if (c == '\r') {</span>
+<span class="nc" id="L491">		LINENO++;</span>
+<span class="nc bnc" id="L492" title="All 2 branches missed.">		if (eolIsSignificantP) {</span>
+<span class="nc" id="L493">		    peekc = SKIP_LF;</span>
+<span class="nc" id="L494">		    return ttype = TT_EOL;</span>
+		}
+<span class="nc" id="L496">		c = read();</span>
+<span class="nc bnc" id="L497" title="All 2 branches missed.">		if (c == '\n')</span>
+<span class="nc" id="L498">		    c = read();</span>
+	    } else {
+<span class="fc bfc" id="L500" title="All 2 branches covered.">		if (c == '\n') {</span>
+<span class="fc" id="L501">		    LINENO++;</span>
+<span class="pc bpc" id="L502" title="1 of 2 branches missed.">		    if (eolIsSignificantP) {</span>
+<span class="nc" id="L503">			return ttype = TT_EOL;</span>
+		    }
+		}
+<span class="fc" id="L506">		c = read();</span>
+	    }
+<span class="fc bfc" id="L508" title="All 2 branches covered.">	    if (c &lt; 0)</span>
+<span class="fc" id="L509">		return ttype = TT_EOF;</span>
+<span class="pc bpc" id="L510" title="1 of 2 branches missed.">	    ctype = c &lt; 256 ? ct[c] : CT_ALPHA;</span>
+	}
+
+<span class="pc bpc" id="L513" title="1 of 2 branches missed.">	if ((ctype &amp; CT_DIGIT) != 0) {</span>
+<span class="nc" id="L514">	    boolean neg = false;</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">	    if (c == '-') {</span>
+<span class="nc" id="L516">		c = read();</span>
+<span class="nc bnc" id="L517" title="All 6 branches missed.">		if (c != '.' &amp;&amp; (c &lt; '0' || c &gt; '9')) {</span>
+<span class="nc" id="L518">		    peekc = c;</span>
+<span class="nc" id="L519">		    return ttype = '-';</span>
+		}
+<span class="nc" id="L521">		neg = true;</span>
+	    }
+<span class="nc" id="L523">	    double v = 0;</span>
+<span class="nc" id="L524">	    int decexp = 0;</span>
+<span class="nc" id="L525">	    int seendot = 0;</span>
+	    while (true) {
+<span class="nc bnc" id="L527" title="All 4 branches missed.">		if (c == '.' &amp;&amp; seendot == 0)</span>
+<span class="nc" id="L528">		    seendot = 1;</span>
+<span class="nc bnc" id="L529" title="All 4 branches missed.">		else if ('0' &lt;= c &amp;&amp; c &lt;= '9') {</span>
+<span class="nc" id="L530">		    v = v * 10 + (c - '0');</span>
+<span class="nc" id="L531">		    decexp += seendot;</span>
+		} else
+		    break;
+<span class="nc" id="L534">		c = read();</span>
+	    }
+<span class="nc" id="L536">	    peekc = c;</span>
+<span class="nc bnc" id="L537" title="All 2 branches missed.">	    if (decexp != 0) {</span>
+<span class="nc" id="L538">		double denom = 10;</span>
+<span class="nc" id="L539">		decexp--;</span>
+<span class="nc bnc" id="L540" title="All 2 branches missed.">		while (decexp &gt; 0) {</span>
+<span class="nc" id="L541">		    denom *= 10;</span>
+<span class="nc" id="L542">		    decexp--;</span>
+		}
+		/* Do one division of a likely-to-be-more-accurate number */
+<span class="nc" id="L545">		v = v / denom;</span>
+	    }
+<span class="nc bnc" id="L547" title="All 2 branches missed.">	    nval = neg ? -v : v;</span>
+<span class="nc" id="L548">	    return ttype = TT_NUMBER;</span>
+	}
+
+<span class="fc bfc" id="L551" title="All 2 branches covered.">	if ((ctype &amp; CT_ALPHA) != 0) {</span>
+<span class="fc" id="L552">	    int i = 0;</span>
+	    do {
+<span class="fc bfc" id="L554" title="All 2 branches covered.">		if (i &gt;= buf.length) {</span>
+<span class="fc" id="L555">                    buf = Arrays.copyOf(buf, buf.length * 2);</span>
+		}
+<span class="fc" id="L557">		buf[i++] = (char) c;</span>
+<span class="fc" id="L558">		c = read();</span>
+<span class="pc bpc" id="L559" title="2 of 4 branches missed.">		ctype = c &lt; 0 ? CT_WHITESPACE : c &lt; 256 ? ct[c] : CT_ALPHA;</span>
+<span class="fc bfc" id="L560" title="All 2 branches covered.">	    } while ((ctype &amp; (CT_ALPHA | CT_DIGIT)) != 0);</span>
+<span class="fc" id="L561">	    peekc = c;</span>
+<span class="fc" id="L562">	    sval = String.copyValueOf(buf, 0, i);</span>
+<span class="pc bpc" id="L563" title="1 of 2 branches missed.">	    if (forceLower)</span>
+<span class="nc" id="L564">		sval = sval.toLowerCase();</span>
+<span class="fc" id="L565">	    return ttype = TT_WORD;</span>
+	}
+
+<span class="pc bpc" id="L568" title="1 of 2 branches missed.">	if ((ctype &amp; CT_QUOTE) != 0) {</span>
+<span class="nc" id="L569">	    ttype = c;</span>
+<span class="nc" id="L570">	    int i = 0;</span>
+	    /* Invariants (because \Octal needs a lookahead):
+	     *   (i)  c contains char value
+	     *   (ii) d contains the lookahead
+	     */
+<span class="nc" id="L575">	    int d = read();</span>
+<span class="nc bnc" id="L576" title="All 4 branches missed.">	    while (d &gt;= 0 &amp;&amp; d != ttype /*&amp;&amp; d != '\n' &amp;&amp; d != '\r'*/) {</span>
+<span class="nc bnc" id="L577" title="All 2 branches missed.">	        if (d == '\\') {</span>
+<span class="nc" id="L578">   		    c = read();</span>
+<span class="nc" id="L579">		    int first = c;   /* To allow \377, but not \477 */</span>
+<span class="nc bnc" id="L580" title="All 4 branches missed.">		    if (c &gt;= '0' &amp;&amp; c &lt;= '7') {</span>
+<span class="nc" id="L581">			c = c - '0';</span>
+<span class="nc" id="L582">			int c2 = read();</span>
+<span class="nc bnc" id="L583" title="All 4 branches missed.">			if ('0' &lt;= c2 &amp;&amp; c2 &lt;= '7') {</span>
+<span class="nc" id="L584">			    c = (c &lt;&lt; 3) + (c2 - '0');</span>
+<span class="nc" id="L585">			    c2 = read();</span>
+<span class="nc bnc" id="L586" title="All 6 branches missed.">			    if ('0' &lt;= c2 &amp;&amp; c2 &lt;= '7' &amp;&amp; first &lt;= '3') {</span>
+<span class="nc" id="L587">				c = (c &lt;&lt; 3) + (c2 - '0');</span>
+<span class="nc" id="L588">				d = read();</span>
+			    } else
+<span class="nc" id="L590">				d = c2;</span>
+			} else
+<span class="nc" id="L592">			  d = c2;</span>
+<span class="nc" id="L593">		    } else {</span>
+<span class="nc bnc" id="L594" title="All 8 branches missed.">  		        switch (c) {</span>
+			case 'a':
+<span class="nc" id="L596">			    c = 0x7;</span>
+<span class="nc" id="L597">			    break;</span>
+			case 'b':
+<span class="nc" id="L599">			    c = '\b';</span>
+<span class="nc" id="L600">			    break;</span>
+			case 'f':
+<span class="nc" id="L602">			    c = 0xC;</span>
+<span class="nc" id="L603">			    break;</span>
+			case 'n':
+<span class="nc" id="L605">			    c = '\n';</span>
+<span class="nc" id="L606">			    break;</span>
+		        case 'r':
+<span class="nc" id="L608">			    c = '\r';</span>
+<span class="nc" id="L609">			    break;</span>
+			case 't':
+<span class="nc" id="L611">			    c = '\t';</span>
+<span class="nc" id="L612">			    break;</span>
+			case 'v':
+<span class="nc" id="L614">			    c = 0xB;</span>
+			    break;
+			}
+<span class="nc" id="L617">			d = read();</span>
+		    }
+<span class="nc" id="L619">		} else {</span>
+<span class="nc" id="L620">		    c = d;</span>
+<span class="nc" id="L621">		    d = read();</span>
+		}
+<span class="nc bnc" id="L623" title="All 2 branches missed.">		if (i &gt;= buf.length) {</span>
+<span class="nc" id="L624">                    buf = Arrays.copyOf(buf, buf.length * 2);</span>
+		}
+<span class="nc" id="L626">		buf[i++] = (char)c;</span>
+	    }
+
+	    /* If we broke out of the loop because we found a matching quote
+	     * character then arrange to read a new character next time
+	     * around; otherwise, save the character.
+	     */
+<span class="nc bnc" id="L633" title="All 2 branches missed.">	    peekc = (d == ttype) ? NEED_CHAR : d;</span>
+
+<span class="nc" id="L635">	    sval = String.copyValueOf(buf, 0, i);</span>
+<span class="nc" id="L636">	    return ttype;</span>
+	}
+
+<span class="pc bpc" id="L639" title="3 of 6 branches missed.">	if (c == '/' &amp;&amp; (slashSlashCommentsP || slashStarCommentsP)) {</span>
+<span class="fc" id="L640">	    c = read();</span>
+<span class="pc bpc" id="L641" title="1 of 4 branches missed.">	    if (c == '*' &amp;&amp; slashStarCommentsP) {</span>
+<span class="fc" id="L642">		int prevc = 0;</span>
+<span class="pc bpc" id="L643" title="1 of 4 branches missed.">		while ((c = read()) != '/' || prevc != '*') {</span>
+<span class="pc bpc" id="L644" title="1 of 2 branches missed.">		    if (c == '\r') {</span>
+<span class="nc" id="L645">			LINENO++;</span>
+<span class="nc" id="L646">			c = read();</span>
+<span class="nc bnc" id="L647" title="All 2 branches missed.">			if (c == '\n') {</span>
+<span class="nc" id="L648">			    c = read();</span>
+			}
+		    } else {
+<span class="pc bpc" id="L651" title="1 of 2 branches missed.">		        if (c == '\n') {</span>
+<span class="nc" id="L652">			    LINENO++;</span>
+<span class="nc" id="L653">			    c = read();</span>
+			}
+		    }
+<span class="pc bpc" id="L656" title="1 of 2 branches missed.">		    if (c &lt; 0)</span>
+<span class="nc" id="L657">		        return ttype = TT_EOF;</span>
+<span class="fc" id="L658">		    prevc = c;</span>
+		}
+<span class="fc" id="L660">		return nextToken();</span>
+<span class="pc bpc" id="L661" title="3 of 4 branches missed.">	    } else if (c == '/' &amp;&amp; slashSlashCommentsP) {</span>
+<span class="nc bnc" id="L662" title="All 6 branches missed.">	        while ((c = read()) != '\n' &amp;&amp; c != '\r' &amp;&amp; c &gt;= 0);</span>
+<span class="nc" id="L663">	        peekc = c;</span>
+<span class="nc" id="L664">                done = false;</span>
+<span class="nc" id="L665">            continue;</span>
+	    } else {
+                /* Now see if it is still a single line comment */
+<span class="pc bpc" id="L668" title="1 of 2 branches missed.">                if ((ct['/'] &amp; CT_COMMENT) != 0) {</span>
+<span class="nc bnc" id="L669" title="All 6 branches missed.">                    while ((c = read()) != '\n' &amp;&amp; c != '\r' &amp;&amp; c &gt;= 0);</span>
+<span class="nc" id="L670">                    peekc = c;</span>
+                    //return nextToken();
+<span class="nc" id="L672">                    done = false;</span>
+<span class="nc" id="L673">            continue;</span>
+                } else {
+<span class="fc" id="L675">                    peekc = c;</span>
+<span class="fc" id="L676">                    return ttype = '/';</span>
+                }
+	    }
+        }
+
+<span class="pc bpc" id="L681" title="1 of 2 branches missed.">        if ((ctype &amp; CT_COMMENT) != 0) {</span>
+<span class="nc bnc" id="L682" title="All 6 branches missed.">            while ((c = read()) != '\n' &amp;&amp; c != '\r' &amp;&amp; c &gt;= 0);</span>
+<span class="nc" id="L683">            peekc = c;</span>
+<span class="nc" id="L684">            done = false;</span>
+		}
+<span class="fc" id="L686">        }</span>
+
+<span class="fc" id="L688">	return ttype = c;</span>
+    }
+
+	/*
+     * Return the current line number.
+     *
+     * @return  the current line number of this stream tokenizer.
+     */
+	int lineno() {
+<span class="fc" id="L697">	return LINENO;</span>
+    }
+
+    /*
+     * Returns the string representation of the current stream token and
+     * the line number it occurs on.
+     *
+     * &lt;p&gt;The precise string returned is unspecified, although the following
+     * example can be considered typical:
+     *
+     * &lt;blockquote&gt;&lt;pre&gt;Token['a'], line 10&lt;/pre&gt;&lt;/blockquote&gt;
+     *
+     * @return  a string representation of the token
+     * @see     java.io.StreamTokenizer#nval
+     * @see     java.io.StreamTokenizer#sval
+     * @see     java.io.StreamTokenizer#ttype
+     */
+    public String toString() {
+	String ret;
+<span class="nc bnc" id="L716" title="All 6 branches missed.">	switch (ttype) {</span>
+	  case TT_EOF:
+<span class="nc" id="L718">	    ret = &quot;EOF&quot;;</span>
+<span class="nc" id="L719">	    break;</span>
+	  case TT_EOL:
+<span class="nc" id="L721">	    ret = &quot;EOL&quot;;</span>
+<span class="nc" id="L722">	    break;</span>
+	  case TT_WORD:
+<span class="nc" id="L724">	    ret = sval;</span>
+<span class="nc" id="L725">	    break;</span>
+	  case TT_NUMBER:
+<span class="nc" id="L727">	    ret = &quot;n=&quot; + nval;</span>
+<span class="nc" id="L728">	    break;</span>
+   	  case TT_NOTHING:
+<span class="nc" id="L730">	    ret = &quot;NOTHING&quot;;</span>
+<span class="nc" id="L731">	    break;</span>
+	  default: {
+		/*
+		 * ttype is the first character of either a quoted string or
+		 * is an ordinary character. ttype can definitely not be less
+		 * than 0, since those are reserved values used in the previous
+		 * case statements
+		 */
+<span class="nc bnc" id="L739" title="All 4 branches missed.">		if (ttype &lt; 256 &amp;&amp;</span>
+		    ((ctype[ttype] &amp; CT_QUOTE) != 0)) {
+<span class="nc" id="L741">		    ret = sval;</span>
+<span class="nc" id="L742">		    break;</span>
+		}
+
+<span class="nc" id="L745">		char[] s = new char[3];</span>
+<span class="nc" id="L746">		s[0] = s[2] = '\'';</span>
+<span class="nc" id="L747">		s[1] = (char) ttype;</span>
+<span class="nc" id="L748">		ret = new String(s);</span>
+<span class="nc" id="L749">		break;</span>
+	    }
+	}
+<span class="nc" id="L752">	return &quot;Token[&quot; + ret + &quot;], line &quot; + LINENO;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

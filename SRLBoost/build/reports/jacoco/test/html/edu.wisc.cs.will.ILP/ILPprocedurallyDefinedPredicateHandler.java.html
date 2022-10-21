@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ILPprocedurallyDefinedPredicateHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">ILPprocedurallyDefinedPredicateHandler.java</span></div><h1>ILPprocedurallyDefinedPredicateHandler.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.List;
+
+/*
+ * @author shavlik
+ */
+public class ILPprocedurallyDefinedPredicateHandler extends	ProcedurallyDefinedPredicateHandler {
+    private final LearnOneClause task;
+
+<span class="fc" id="L14">	ILPprocedurallyDefinedPredicateHandler(LearnOneClause task) {</span>
+<span class="fc" id="L15">		this.task = task;</span>
+<span class="fc" id="L16">	}</span>
+
+    @Override
+    public boolean canHandle(PredicateName predicateName, int arity) {
+<span class="fc bfc" id="L20" title="All 2 branches covered.">        if ( predicateName == task.procDefinedEnoughDiffMatches )                return true;</span>
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        if ( predicateName == task.procDefinedForConstants )                     return true;</span>
+<span class="pc bpc" id="L22" title="1 of 4 branches missed.">		return predicateName == task.procDefinedNeedForNewVariables &amp;&amp; arity &gt;= 2;</span>
+	}
+
+	public BindingList handle(Literal literal, BindingList bindingList) {
+<span class="fc" id="L26">		PredicateName pred = literal.predicateName;</span>
+<span class="fc" id="L27">		List&lt;Term&gt;    args = literal.getArguments();</span>
+<span class="fc" id="L28">		int           size = args.size();</span>
+		
+		// If there is a need to make sure no variables are in the arguments, one can use: confirmAllVarsAreBound() below.
+
+		// This built-in predicate is used to make sure that some POS seeds can match a new clause with DIFFERENT bindings for the newly added literal.
+		// This prevents creating clauses like &quot;p(x) :- q(x,y), q(x,z)&quot; unless the two q's can be differently instantiated for some POS seeds.
+<span class="fc bfc" id="L34" title="All 2 branches covered.">		if (pred == task.procDefinedEnoughDiffMatches) {</span>
+<span class="fc" id="L35">			Term firstLiteral = args.get(0); // This literal (which has been &quot;reified&quot; to a term), must be different from ALL of the rest.</span>
+<span class="pc bpc" id="L36" title="1 of 4 branches missed.">			if (size &gt; 1) for (Term otherLiteral : args.subList(1, size)) {</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">				if (firstLiteral.equals(otherLiteral)) { return null; }  // Found a duplicate.  Note that 'equivalent' is stricter than 'variant' - though they are the same when no variables.  Shouldn't have variables here, but if so, seems ok to say different vars are acceptable ...</span>
+<span class="fc" id="L38">			}</span>
+<span class="fc" id="L39">			return bindingList;  // Acceptable since different than all other reified literals.</span>
+		}	
+		
+		// Need to collect the constants to which variables are bound.
+<span class="fc bfc" id="L43" title="All 2 branches covered.">		if (pred == task.procDefinedForConstants) {</span>
+<span class="fc" id="L44">			task.collectConstantBindings(args); // &quot;Call back&quot; to the task with the bindings so they can be used to fill arguments.</span>
+<span class="fc" id="L45">			return null; // We're collecting ALL bindings for the arguments, so we need to ALSO fail here.</span>
+		}
+		
+		// See if the binding for the first argument does NOT appear elsewhere in the arguments.  These shows that it is possible to bind the first argument in a way different than the others. 
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">		if (pred == task.procDefinedNeedForNewVariables) {</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">			if (size &lt; 2) { Utils.error(&quot;Must have more than one arg in &quot; + pred); }</span>
+<span class="fc" id="L51">			List&lt;Term&gt; sublist = args.subList(1, size);</span>
+			
+			// NOTE: be careful if making a new string each time, which is a performance hit, but we might want to get the literal in there in case there is a problem.
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">			if (!confirmAllVarsAreBound(sublist)) {</span>
+<span class="nc" id="L55">				return null; // If some other variable is unbound, then could use that and no need for the new variable, at least on this proof path.</span>
+			}			
+			// See if the new variable was not bound, which can happen if negation-by-failure involved (and maybe other times?  TODO think this through better).
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">			if (args.get(0) instanceof Variable) { return bindingList; }</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">			return (argUsedElsewhere(args.get(0), args.subList(1, size)) ? null : bindingList);</span>
+		}
+		
+<span class="nc" id="L62">		Utils.error(&quot;Unknown procedurally defined predicate for ILP: &quot; + literal); // This literal will be negated, so &quot;turn off&quot; the printing of a negation symbol.</span>
+<span class="nc" id="L63">		return null;</span>
+	}
+	
+	// See if the first argument is also appears elsewhere in this list of arguments.
+	private boolean argUsedElsewhere(Term firstTerm, List&lt;Term&gt; otherArgs) {
+<span class="pc bpc" id="L68" title="1 of 6 branches missed.">		if (otherArgs != null) for (Term other : otherArgs) { if (firstTerm == other) { return true; }}</span>
+<span class="fc" id="L69">		return false;</span>
+	}
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

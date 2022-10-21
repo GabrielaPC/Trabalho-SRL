@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BoostingUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Utils</a> &gt; <span class="el_source">BoostingUtils.java</span></div><h1>BoostingUtils.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Utils;
+
+import edu.wisc.cs.will.Boosting.RDN.RegressionRDNExample;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.Utils.RegressionValueOrVector;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+/*
+ * @author Tushar Khot
+ *
+ */
+<span class="nc" id="L17">public class BoostingUtils {</span>
+
+	public static List&lt;Example&gt; convertToListOfExamples(List&lt;RegressionRDNExample&gt; examples) {
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">		if (examples == null) { return null; }</span>
+<span class="fc" id="L21">		List&lt;Example&gt; results = new ArrayList&lt;&gt;(examples.size());</span>
+<span class="fc" id="L22">		results.addAll(examples);</span>
+<span class="fc" id="L23">		return results;</span>
+	}
+
+	public static List&lt;RegressionRDNExample&gt; castToListOfRegressionRDNExamples(List&lt;Example&gt; examples) {
+<span class="pc bpc" id="L27" title="1 of 2 branches missed.">		if (examples == null) { return null; }</span>
+<span class="fc" id="L28">		List&lt;RegressionRDNExample&gt; results = new ArrayList&lt;&gt;(examples.size());</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">		for (Example ex : examples) { results.add((RegressionRDNExample)ex); }</span>
+<span class="fc" id="L30">		return results;</span>
+	}
+	
+	public static RegressionValueOrVector getRegressionValueOrVectorFromTerm(Term leafTerm) {
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">		if (leafTerm instanceof NumericConstant) {</span>
+<span class="fc" id="L35">			return new RegressionValueOrVector(((NumericConstant) leafTerm).value.doubleValue());</span>
+		}
+<span class="nc" id="L37">		Utils.error(&quot;Uknown type of constant in leaf: &quot; + leafTerm.toPrettyString());</span>
+<span class="nc" id="L38">		return null;</span>
+	}
+
+	public static String getLabelForModelNumber(int modelNumber) {
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">		return (modelNumber &gt; 0 ? &quot;Model&quot; + modelNumber : &quot;&quot;); // Model 0 is only implicitly named, in case we only want one model.</span>
+	}
+
+	public static String getModelFile(CommandLineArguments cmdArgs, String target, boolean includeExtension) {
+<span class="fc" id="L46">		String filename = cmdArgs.getModelDirVal() + &quot;bRDNs/&quot; + target;</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">		if (cmdArgs.getModelFileVal() != null) {</span>
+<span class="nc" id="L48">			 filename += &quot;_&quot; + cmdArgs.getModelFileVal();</span>
+		}
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">		filename += (includeExtension ? &quot;.model&quot; : &quot;&quot;);</span>
+<span class="fc" id="L51">		Utils.ensureDirExists(filename);</span>
+<span class="fc" id="L52">		return filename;</span>
+	}
+
+	public static List&lt;PredicateNameAndArity&gt; convertBodyModesToPNameAndArity(Set&lt;PredicateNameAndArity&gt; pnames) {
+<span class="fc" id="L56">		List&lt;PredicateNameAndArity&gt; pars = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">		for (PredicateNameAndArity predicate : pnames) {</span>
+			// For each spec for the predicate
+<span class="fc bfc" id="L59" title="All 2 branches covered.">			for (PredicateSpec spec : predicate.getPredicateName().getTypeList()) {</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">				if (spec.getTypeSpecList() != null) {</span>
+<span class="fc" id="L61">					int arity = spec.getTypeSpecList().size();</span>
+<span class="fc" id="L62">					PredicateNameAndArity par = new PredicateNameAndArity(predicate.getPredicateName(), arity);</span>
+					// TODO(TVK) use a set.
+<span class="fc bfc" id="L64" title="All 2 branches covered.">					if (!pars.contains(par)) {</span>
+<span class="fc" id="L65">						pars.add(par);</span>
+					}
+				}
+<span class="fc" id="L68">			}</span>
+<span class="fc" id="L69">		}</span>
+<span class="fc" id="L70">		return pars;</span>
+	}
+
+	public static double sigmoid(double numRegExp, double denoRegExp) {
+<span class="fc" id="L74">		return 1/ (Math.exp(denoRegExp - numRegExp) + 1);</span>
+	}
+
+	public static String getCheckPointFile(String saveModelName) {
+<span class="fc" id="L78">		return saveModelName + &quot;.ckpt&quot;;</span>
+	}
+
+	public static String getCheckPointExamplesFile(String saveModelName) {
+<span class="fc" id="L82">		return saveModelName + &quot;.ckptEgs&quot;;</span>
+	}
+
+	public static String getCheckPointFlattenedLitFile(String saveModelName) {
+<span class="fc" id="L86">		return saveModelName + &quot;.ckptLits&quot;;</span>
+	}
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

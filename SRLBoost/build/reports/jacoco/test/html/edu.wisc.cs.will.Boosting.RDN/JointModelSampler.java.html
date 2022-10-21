@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JointModelSampler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.RDN</a> &gt; <span class="el_source">JointModelSampler.java</span></div><h1>JointModelSampler.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.RDN;
+
+import edu.wisc.cs.will.Boosting.Common.SRLInference;
+import edu.wisc.cs.will.Boosting.RDN.Models.DependencyNetwork;
+import edu.wisc.cs.will.Boosting.RDN.Models.RelationalDependencyNetwork;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.Utils.ProbDistribution;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.Utils.condor.CondorFileWriter;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.*;
+
+/*
+ * The class sets the probability of examples, given a joint RDN model (i.e. RDN model
+ * for each predicate). 
+ * 
+ * @author Tushar Khot
+ *
+ */
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">public class JointModelSampler extends SRLInference {</span>
+
+	JointModelSampler(JointRDNModel model, WILLSetup setup) {
+<span class="fc" id="L25">		super(setup);</span>
+<span class="fc" id="L26">		this.jointModel   = model;</span>
+<span class="fc" id="L27">		this.setup   = setup;</span>
+		// Use the model to obtain the RDN structure
+<span class="fc" id="L29">		rdn = new RelationalDependencyNetwork(model, setup);</span>
+<span class="fc" id="L30">	}</span>
+
+	/*
+	 * This method computes the marginal probabilities of {@link RegressionRDNExample} by setting the 
+	 * probOfExample in each example. Make sure to pass all possible groundings of the target predicates
+	 * as it would be using Gibbs Sampling over these examples. If there is no recursion or dependencies
+	 * between the target predicates, Gibbs sampling wont be used and it is safe to pass only some examples. 
+	 * @param jointExamples - The set of examples for which we want to compute the probabilities
+	 */
+	public void getMarginalProbabilities(Map&lt;String, List&lt;RegressionRDNExample&gt;&gt; jointExamples) {
+<span class="fc" id="L40">		Utils.println(&quot;\n% Starting getMarginalProbabilities.&quot;);</span>
+<span class="fc" id="L41">		sampleWorldStates(jointExamples);</span>
+<span class="fc" id="L42">	}</span>
+	
+	private void sampleWorldStates(Map&lt;String, List&lt;RegressionRDNExample&gt;&gt; originalJointExamples) {
+		// TODO(@hayesall): This appears to be the only method which uses `printNetwork`
+
+		// Get the order of the predicates for Gibbs sampling.
+		// We want to order predicates by the number of query/target predicate parents.
+		// For e.g., if &quot;sameBib&quot; has two query predicates as parents, while &quot;sameTitle&quot; has only one
+		// query predicate as parent, we should sample in the order {sameTitle, sameBib}.
+
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">		if (originalJointExamples.keySet().size() &gt; 1) {</span>
+<span class="nc" id="L53">			throw new RuntimeException(&quot;Multiple targets is deprecated.&quot;);</span>
+		}
+
+<span class="fc" id="L56">		Collection&lt;String&gt; orderedPredicates = originalJointExamples.keySet();</span>
+
+		// Print after getting the order, as we print the order in the DOT file too.
+<span class="fc" id="L59">		String rdnDotFile = setup.cmdArgs.getModelDirVal() + &quot;bRDNs/dotFiles/rdn.dot&quot;;</span>
+<span class="fc" id="L60">		printNetwork(rdn, rdnDotFile);</span>
+
+		// Making a copy of the original map, since we will update the map to handle multi-class examples. 
+		// Only the map is copied, the examples are still the same. So careful while modifying the actual examples in jointExamples
+<span class="fc" id="L64">		Map&lt;String, List&lt;RegressionRDNExample&gt;&gt; jointExamples = new HashMap&lt;&gt;(originalJointExamples);</span>
+
+		// Break into components for MAP inference
+<span class="fc" id="L67">		sampleExampleProbabilities(jointExamples, orderedPredicates);</span>
+
+		// Remove all examples.
+<span class="fc" id="L70">		removeAllExamples(originalJointExamples);</span>
+
+<span class="fc" id="L72">		updateProbabilitiesForInput(originalJointExamples, jointExamples);</span>
+
+<span class="fc" id="L74">	}</span>
+
+	private void sampleExampleProbabilities(
+			Map&lt;String, List&lt;RegressionRDNExample&gt;&gt; jointExamples,
+			Collection&lt;String&gt; orderedPredicates) {
+
+		// TODO(hayesall): Most of this method related to sampling when there were multiple targets.
+
+<span class="fc" id="L82">		Map&lt;String,List&lt;Example&gt;&gt;  posEgs = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L83">		Map&lt;String,List&lt;Example&gt;&gt;  negEgs = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L85" title="All 2 branches covered.">		for (String target : jointExamples.keySet()) {</span>
+<span class="fc" id="L86">			List&lt;RegressionRDNExample&gt; examples = jointExamples.get(target);</span>
+
+<span class="fc" id="L88">			posEgs.put(target, new ArrayList&lt;&gt;());</span>
+<span class="fc" id="L89">			negEgs.put(target, new ArrayList&lt;&gt;());</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">			if (examples.isEmpty()) {</span>
+<span class="nc" id="L91">				continue;</span>
+			}
+			// Based on the current sampled state(which would have been randomly assigned in the 
+			// RegressionRDNExample constructor), find out the current positive and negative examples.
+<span class="fc" id="L95">			updatePosNegWithSample(target, examples, posEgs, negEgs);</span>
+<span class="fc" id="L96">		}</span>
+
+<span class="fc bfc" id="L98" title="All 2 branches covered.">		for (String target : orderedPredicates) {</span>
+			// No examples for this predicate
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">			if (!jointExamples.containsKey(target)) {</span>
+<span class="nc" id="L101">				continue;</span>
+			}
+<span class="fc" id="L103">			ConditionalModelPerPredicate mod = jointModel.get(target);</span>
+
+			/*
+			 * If this query predicate doesn't have any query predicates as parents,
+			 * we can just compute the probabilities based on evidence and hence we 
+			 * don't need sampling.
+			 * Also if there is only one query predicate, we don't need joint inference.
+			 *
+			 * TODO(hayesall): Assert there is always a single query predicate.
+			 */
+
+<span class="fc" id="L114">			List&lt;RegressionRDNExample&gt; examples = jointExamples.get(target);</span>
+
+<span class="pc bpc" id="L116" title="1 of 2 branches missed.">			if (examples.isEmpty()) {</span>
+<span class="nc" id="L117">				continue;</span>
+			}
+<span class="fc" id="L119">			setup.prepareFactsAndExamples(posEgs, negEgs, target, false);</span>
+			SRLInference sampler;
+
+<span class="fc" id="L122">			sampler = new SingleModelSampler(mod, setup, jointModel);</span>
+
+			/*
+			 * If we are using recursion for this target, tell SingleModelSampler to use Gibbs sampling
+			 * for probabilities.
+			 */
+<span class="fc" id="L128">			sampler.getProbabilities(examples);</span>
+<span class="fc" id="L129">		}</span>
+<span class="fc" id="L130">	}</span>
+
+	private void updatePosNegWithSample(String target, List&lt;RegressionRDNExample&gt; examples,
+										Map&lt;String,List&lt;Example&gt;&gt; posEgs, 
+										Map&lt;String,List&lt;Example&gt;&gt; negEgs) {
+
+		// All examples are passed in, so reset the example list.
+<span class="pc bpc" id="L137" title="2 of 4 branches missed.">		assert examples != null;</span>
+
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">		if (examples.isEmpty()) {</span>
+<span class="nc" id="L140">			Utils.error(&quot;Expected non-null and non-empty example list&quot;);</span>
+		}
+
+<span class="fc" id="L143">		posEgs.get(target).clear();</span>
+<span class="fc" id="L144">		negEgs.get(target).clear();</span>
+
+<span class="fc" id="L146">		List&lt;Example&gt; posList = posEgs.get(target);</span>
+<span class="fc" id="L147">		List&lt;Example&gt; negList = negEgs.get(target);</span>
+
+<span class="fc bfc" id="L149" title="All 2 branches covered.">		for (RegressionRDNExample rex : examples) {</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">			if (!rex.predicateName.name.equals(target)) {</span>
+<span class="nc" id="L151">				Utils.error(&quot;Found example: '&quot; + rex + &quot;'\nwhile sampling for &quot; + target);</span>
+			}
+<span class="fc bfc" id="L153" title="All 2 branches covered.">			if (rex.getSampledValue() == 1) {</span>
+<span class="fc" id="L154">				posList.add(rex);</span>
+			} else {
+<span class="fc" id="L156">				negList.add(rex);</span>
+			}
+<span class="fc" id="L158">		}</span>
+<span class="fc" id="L159">	}</span>
+
+	/*
+	 * Writes the RDN to a DOT file. Use GraphViz to convert it to an image.
+	 */
+	private void printNetwork(DependencyNetwork dn, String filename) {
+		try {
+<span class="fc" id="L166">			Utils.ensureDirExists(filename);</span>
+			// Create a new file.
+<span class="fc" id="L168">			BufferedWriter writer = new BufferedWriter(new CondorFileWriter(filename, false));</span>
+<span class="fc" id="L169">			dn.printNetworkInDOT(writer);</span>
+<span class="fc" id="L170">			writer.close();</span>
+<span class="nc" id="L171">		} catch (IOException e) {</span>
+<span class="nc" id="L172">			Utils.reportStackTrace(e);</span>
+<span class="nc" id="L173">			Utils.error(&quot;Problem in printRDN.&quot;);</span>
+<span class="fc" id="L174">		}</span>
+<span class="fc" id="L175">	}</span>
+
+	private void updateProbabilitiesForInput(Map&lt;String, List&lt;RegressionRDNExample&gt;&gt; originalJointExamples,
+											 Map&lt;String, List&lt;RegressionRDNExample&gt;&gt; jointExamples) {
+<span class="fc bfc" id="L179" title="All 2 branches covered.">		for (String target : jointExamples.keySet()) {</span>
+<span class="fc" id="L180">			int i = 0;</span>
+			// Store the example probabilities for the multi-class predicates.
+			// These probabilities are used to fill the probabilities in the originalJointExamples
+<span class="fc bfc" id="L183" title="All 2 branches covered.">			for (RegressionRDNExample rex : jointExamples.get(target)) {</span>
+<span class="fc" id="L184">				originalJointExamples.get(target).get(i).setProbOfExample(rex.getProbOfExample());</span>
+<span class="fc" id="L185">				i++;</span>
+<span class="fc" id="L186">			}</span>
+<span class="fc" id="L187">		}</span>
+		
+<span class="fc" id="L189">	}</span>
+
+	private void removeAllExamples(Map&lt;String, List&lt;RegressionRDNExample&gt;&gt; jointExamples) {
+<span class="fc bfc" id="L192" title="All 2 branches covered.">		for (String target : jointExamples.keySet()) {</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">			for (RegressionRDNExample eg : jointExamples.get(target)) {</span>
+<span class="fc" id="L194">				setup.removeFact(eg);</span>
+<span class="fc" id="L195">			}</span>
+<span class="fc" id="L196">		}</span>
+<span class="fc" id="L197">	}</span>
+
+	public void setMaxTrees(int j) {
+<span class="fc bfc" id="L200" title="All 2 branches covered.">		for (ConditionalModelPerPredicate model : this.jointModel.values()) {</span>
+<span class="fc" id="L201">			model.setNumTrees(j);</span>
+<span class="fc" id="L202">		}</span>
+<span class="fc" id="L203">	}</span>
+
+	@Override
+	public ProbDistribution getExampleProbability(Example eg) {
+<span class="nc" id="L207">		Utils.error(&quot;JointModelSampler can't return single example probability as it does sampling&quot;);</span>
+<span class="nc" id="L208">		return null;</span>
+	}
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

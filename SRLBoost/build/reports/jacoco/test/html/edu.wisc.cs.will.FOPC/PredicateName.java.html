@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PredicateName.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">PredicateName.java</span></div><h1>PredicateName.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.Serializable;
+import java.util.*;
+
+/*
+ * @author shavlik
+ *
+ *  All predicates with the same name map to the same instance.
+ */
+public class PredicateName extends AllOfFOPC implements Serializable {
+	public final String                   name;
+<span class="fc" id="L15">	private   List&lt;PredicateSpec&gt;      typeSpecList = null; // Information about this Predicate, e.g. legal arguments to it.  A 'type' describes both the kind of arguments it takes (e.g., 'people' are 'books') and whether these arguments are &quot;input&quot; variables, &quot;output&quot; variables, or constants.</span>
+<span class="fc" id="L16">	private   List&lt;PredicateSpec&gt;      typeOnlyList = null; // Similar to above, but the input/output markers are not included.</span>
+<span class="fc" id="L17">	private   Set&lt;Integer&gt;             typeDeSpeced = null; // Modes that have been disabled - currently all modes of a given arity are disabled</span>
+<span class="fc" id="L18">	private   Map&lt;Integer,Integer&gt; maxOccurrencesPerArity = null; // During structure (i.e., rule) learning, cannot appear more than this many times in one rule.</span>
+<span class="fc" id="L19">	private   Map&lt;Integer,Map&lt;List&lt;Type&gt;,Integer&gt;&gt; maxOccurrencesPerInputVars = null; // During structure (i.e., rule) learning, cannot appear more than this many times in one rule.</span>
+<span class="fc" id="L20">	private   Set&lt;Integer&gt; canBeAbsentThisArity                         = null;  // OK if this predicate name with one of these arities can be absent during theorem proving.</span>
+<span class="fc" id="L21">	private   boolean      canBeAbsentAnyArity                          = false;</span>
+<span class="fc" id="L22">	private   Set&lt;Integer&gt; dontComplainAboutMultipleTypesThisArity      = null;  // OF if this predicate/arity have multiple types for some argument.</span>
+<span class="fc" id="L23">	private   boolean      dontComplainAboutMultipleTypesAnyArity       = false;</span>
+<span class="fc" id="L24">	private   Set&lt;Integer&gt;                   bridgerSpec                = null;  // See if this predicate/arity is meant to be a 'bridger' predicate during ILP's search for clauses.  If the arg# is given (defaults to -1 otherwise), then all other arguments should be bound before this is treated as a 'bridger.'</span>
+<span class="fc" id="L25">	private   Set&lt;Integer&gt;                   queryPredSpec              = null;  // Used with MLNs.</span>
+<span class="fc" id="L26">	private   Set&lt;Integer&gt;                   containsCallable           = null;  // One of the terms of the predicate is called during execution of the predicate.</span>
+
+	final transient private HandleFOPCstrings stringHandler;  // The stringHandler needed to de-serialize the Predicate.
+
+<span class="fc" id="L30">	PredicateName(String name, HandleFOPCstrings stringHandler) { // This is protected because getPredicateName(String name) should be used instead.</span>
+<span class="fc" id="L31">		this.name          = name;</span>
+<span class="fc" id="L32">		this.stringHandler = stringHandler;</span>
+<span class="fc" id="L33">	}	</span>
+
+	public List&lt;PredicateSpec&gt; getTypeList() {
+<span class="pc bpc" id="L36" title="3 of 4 branches missed.">		if (typeDeSpeced == null || typeSpecList == null) { return typeSpecList; }</span>
+		
+<span class="nc" id="L38">		List&lt;PredicateSpec&gt; results = new ArrayList&lt;&gt;(1);</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">		for (PredicateSpec pSpec : typeSpecList) {</span>
+<span class="nc" id="L40">			int          arity = pSpec.getArity();</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">			if (!typeDeSpeced.contains(arity)) { results.add(pSpec); }</span>
+<span class="nc" id="L42">		}</span>
+<span class="nc" id="L43">		return results;</span>
+	}
+	// Only return when the arity matches.
+	public List&lt;PredicateSpec&gt; getTypeListForThisArity(int numberArgs) {
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">		if (typeSpecList == null) { return null; }</span>
+<span class="fc" id="L48">		List&lt;PredicateSpec&gt; results = new ArrayList&lt;&gt;(1);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">		for (PredicateSpec pSpec : getTypeList()) {</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">			if (pSpec.getArity() == numberArgs) {</span>
+<span class="fc" id="L51">				results.add(pSpec);</span>
+			}
+<span class="fc" id="L53">		}</span>
+<span class="fc" id="L54">		return results;</span>
+	}
+	public List&lt;PredicateSpec&gt; getTypeOnlyList() {
+<span class="nc" id="L57">		return typeOnlyList;</span>
+	}
+
+	// See if this literal is a predicate that serves as a 'bridge' in ILP searches.
+	boolean isaBridgerLiteral(List&lt;Term&gt; arguments) {
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">		return (bridgerSpec != null &amp;&amp; bridgerSpec.contains(Utils.getSizeSafely(arguments)));</span>
+	}
+
+	void recordMode(List&lt;Term&gt; signature, List&lt;TypeSpec&gt; typeSpecs, int max, int maxPerInputVars) {
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (Utils.getSizeSafely(signature) != Utils.getSizeSafely(typeSpecs)) {</span>
+<span class="nc" id="L67">            Utils.waitHere(this + &quot; sig = &quot; + signature + &quot; specs = &quot; + typeSpecs);</span>
+        }
+
+<span class="fc" id="L70">        PredicateSpec pSpec = new PredicateSpec(signature, typeSpecs, this);</span>
+
+<span class="fc" id="L72">        addToTypeListForILP(pSpec);</span>
+<span class="fc" id="L73">        addToTypeListForMLN(pSpec);</span>
+
+<span class="fc" id="L75">        int arity = Utils.getSizeSafely(signature);</span>
+
+<span class="fc" id="L77">        setMaxOccurrences(arity, max); // Always do these to catch user errors where the same spec is given, once with a max and another time w/o.</span>
+<span class="fc" id="L78">        setMaxOccurrencesPerInputVars(arity, pSpec, maxPerInputVars);</span>
+
+<span class="fc" id="L80">	}</span>
+	
+	void disableMode(List&lt;Term&gt; signature, List&lt;TypeSpec&gt; typeSpecs) {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (Utils.getSizeSafely(signature) != Utils.getSizeSafely(typeSpecs)) {</span>
+<span class="nc" id="L84">            Utils.waitHere(this + &quot; sig = &quot; + signature + &quot; specs = &quot; + typeSpecs);</span>
+        }
+
+<span class="nc" id="L87">        int arity = Utils.getSizeSafely(signature);</span>
+<span class="nc" id="L88">        addToDeSpecTypeList(arity);</span>
+<span class="nc" id="L89">	}</span>
+	
+	private void addToTypeListForILP(PredicateSpec pSpec) {
+<span class="pc bpc" id="L92" title="2 of 4 branches missed.">		boolean checkForWarnings = !name.startsWith(&quot;isaInteresting&quot;) &amp;&amp;  !name.startsWith(&quot;isaDifferentInteresting&quot;);	</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">		if (checkForWarnings) {</span>
+<span class="fc" id="L94">			boolean hasPlusArg = false; // Modes should have at least one &quot;input argument&quot; or new predicates won't be coupled to the clause being created.  (Maybe allow this to be overridden?)</span>
+<span class="pc bpc" id="L95" title="2 of 6 branches missed.">			if (pSpec.getTypeSpecList() != null) for (TypeSpec spec : pSpec.getTypeSpecList()) if (spec.mustBeBound()) { hasPlusArg = true; break; }</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">			if (!hasPlusArg) {</span>
+<span class="nc" id="L97">				Utils.warning(&quot;At least one argument in a mode should be an input argument.  You provided &quot; + pSpec + &quot; for '&quot; + name + &quot;'.&quot;);</span>
+			}
+		}
+
+<span class="fc bfc" id="L101" title="All 2 branches covered.">		if (typeSpecList == null) { typeSpecList  = new ArrayList&lt;&gt;(1); }</span>
+<span class="pc bpc" id="L102" title="1 of 4 branches missed.">		for (PredicateSpec oldPspec : typeSpecList) if (oldPspec.equals(pSpec)) {</span>
+<span class="nc" id="L103">			return;</span>
+		}
+<span class="fc" id="L105">		typeSpecList.add(pSpec);</span>
+<span class="fc" id="L106">	}	</span>
+	
+	private void addToTypeListForMLN(PredicateSpec pSpec) {
+<span class="fc bfc" id="L109" title="All 2 branches covered.">		if (typeOnlyList == null) { typeOnlyList  = new ArrayList&lt;&gt;(1); }</span>
+<span class="fc" id="L110">		PredicateSpec pSpecStripped = pSpec.strip();</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">		if (typeOnlyList.contains(pSpecStripped)) { return; } // OK here if duplicates, so no need to warn (since ILP +/-/# markers might be different).</span>
+<span class="fc" id="L112">		typeOnlyList.add(pSpecStripped);</span>
+<span class="fc" id="L113">	}</span>
+	
+	private void addToDeSpecTypeList(int arity) {
+<span class="nc bnc" id="L116" title="All 2 branches missed.">		if (typeDeSpeced == null) { typeDeSpeced = new HashSet&lt;&gt;(4); }</span>
+<span class="nc" id="L117">		typeDeSpeced.add(arity);</span>
+<span class="nc" id="L118">	}</span>
+
+	/**
+	 * This is used to say that this predicate/arity should appear at most max times in a learned rule.
+	 */
+	private void setMaxOccurrences(int arity, int max) {		
+<span class="fc bfc" id="L124" title="All 2 branches covered.">		if (maxOccurrencesPerArity == null) {</span>
+<span class="fc" id="L125">			maxOccurrencesPerArity = new HashMap&lt;&gt;(4);</span>
+		}
+<span class="fc" id="L127">		Integer current = maxOccurrencesPerArity.get(arity);</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">		if (current == null) {</span>
+<span class="fc" id="L129">			maxOccurrencesPerArity.put(arity, max);</span>
+		}
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">		else if (current &gt; max) { // Use the MIN of all specifications.</span>
+<span class="nc" id="L132">			maxOccurrencesPerArity.put(arity, max); </span>
+		}		
+<span class="fc" id="L134">	}	</span>
+	public Integer getMaxOccurrences(int arity) {
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">		if (maxOccurrencesPerArity == null) { return null; }</span>
+<span class="fc" id="L137">		return maxOccurrencesPerArity.get(arity);</span>
+	}
+	
+	/*
+	 * This is used to say that this predicate/arity should appear at most max times in a learned rule
+	 * FOR a given binding to the &quot;input&quot; arguments in the typeSpecs.
+	 */
+	private void setMaxOccurrencesPerInputVars(int arity, PredicateSpec typeSpecs, int max) {		
+<span class="fc bfc" id="L145" title="All 2 branches covered.">		if (arity &lt; 2) { </span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">			if (max &lt; Integer.MAX_VALUE) { </span>
+<span class="nc" id="L147">				Utils.waitHere(&quot;It doesn't make sense to call setMaxOccurrencesPerInputVars unless a literal has at least two arguments.  You provided: '&quot; + typeSpecs + &quot;'.&quot;);</span>
+			}
+<span class="fc" id="L149">			return;</span>
+		}
+<span class="fc bfc" id="L151" title="All 2 branches covered.">		if (maxOccurrencesPerInputVars == null) {</span>
+<span class="fc" id="L152">			maxOccurrencesPerInputVars = new HashMap&lt;&gt;(4);</span>
+		}
+<span class="fc" id="L154">		Map&lt;List&lt;Type&gt;, Integer&gt; firstLookUp = maxOccurrencesPerInputVars.computeIfAbsent(arity, k -&gt; new HashMap&lt;&gt;(4));</span>
+<span class="fc" id="L155">		List&lt;Type&gt; inputArgumentTypes = TypeSpec.getListOfInputArgumentTypes(typeSpecs);</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">		if (inputArgumentTypes.size() &lt; 1) {</span>
+<span class="nc" id="L157">			Utils.error(&quot;It does not make sense to setMaxOccurrencesPerInputVars for a mode where there are NO input variables: &quot; + typeSpecs); </span>
+		}
+<span class="fc" id="L159">		Integer secondLookUp = firstLookUp.get(inputArgumentTypes);</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">		if (secondLookUp == null) { // Not currently specified.</span>
+<span class="fc" id="L161">			firstLookUp.put(inputArgumentTypes, max);</span>
+		}
+<span class="nc bnc" id="L163" title="All 2 branches missed.">		else if (secondLookUp &gt; max) { // Maybe use the MIN of all specifications?</span>
+<span class="nc" id="L164">			firstLookUp.put(inputArgumentTypes, max);</span>
+		}		
+<span class="fc" id="L166">	}</span>
+	public Integer getMaxOccurrencesPerInputVars(int arity, List&lt;Type&gt; inputArgumentTypes) {
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">		if (maxOccurrencesPerInputVars == null) { return null; }</span>
+<span class="fc" id="L169">		Map&lt;List&lt;Type&gt;,Integer&gt; firstLookUp = maxOccurrencesPerInputVars.get(arity);</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">		if (firstLookUp == null) { return null; }</span>
+<span class="fc" id="L171">		return firstLookUp.get(inputArgumentTypes);</span>
+	}
+	public boolean haveMaxOccurrencesPerInputVarsForThisArity(int arity) { // Allow a quick look to see if worth computing the input arguments.
+<span class="pc bpc" id="L174" title="1 of 4 branches missed.">		return maxOccurrencesPerInputVars != null &amp;&amp; maxOccurrencesPerInputVars.get(arity) != null;</span>
+	}
+	
+	/*
+	 * Does this literal match some mode? That is, is there some mode for the predicate name of the same arity as this literal?
+	 *
+	 * @return Whether the given literal has a matching mode.
+	 */
+	public boolean hasMatchingMode(Literal lit) {
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">		if (typeSpecList == null) { return false; }</span>
+<span class="fc" id="L184">		int arity = lit.numberArgs();</span>
+<span class="fc" id="L185">		List&lt;PredicateSpec&gt; items = getTypeList();</span>
+<span class="pc bpc" id="L186" title="2 of 4 branches missed.">		for (PredicateSpec spec : items) if (arity == Utils.getSizeSafely(spec.getSignature())) { return true; }</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">		if (typeDeSpeced == null) { Utils.println(&quot;% No mode match to '&quot; + lit + &quot;' in &quot; + items); }  // Only warn if not de-spec'ed.</span>
+<span class="nc" id="L188">		return false;</span>
+	}
+	
+	public boolean canBeAbsent(int arity) {
+<span class="nc bnc" id="L192" title="All 2 branches missed.">		if (canBeAbsentAnyArity) { return true; }</span>
+<span class="nc bnc" id="L193" title="All 4 branches missed.">		return canBeAbsentThisArity != null &amp;&amp; canBeAbsentThisArity.contains(arity);</span>
+	}	
+	public void setCanBeAbsent(int arity) {
+<span class="fc bfc" id="L196" title="All 2 branches covered.">		if (arity &lt; 0) { canBeAbsentAnyArity = true; }</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">		if (canBeAbsentThisArity == null) { canBeAbsentThisArity = new HashSet&lt;&gt;(4); }</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">		if (canBeAbsentThisArity.contains(arity)) { return; } // No need to add again.</span>
+<span class="fc" id="L199">		canBeAbsentThisArity.add(arity);</span>
+<span class="fc" id="L200">	}</span>
+
+	public boolean dontComplainAboutMultipleTypes(int arity) {
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">		if (dontComplainAboutMultipleTypesAnyArity) { return true; }</span>
+<span class="pc bpc" id="L204" title="3 of 4 branches missed.">		return dontComplainAboutMultipleTypesThisArity != null &amp;&amp; dontComplainAboutMultipleTypesThisArity.contains(arity);</span>
+	}	
+	public void setDontComplainAboutMultipleTypes(int arity) {
+<span class="nc bnc" id="L207" title="All 2 branches missed.">		if (arity &lt; 0) { dontComplainAboutMultipleTypesAnyArity = true; }</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">		if (dontComplainAboutMultipleTypesThisArity == null) { dontComplainAboutMultipleTypesThisArity = new HashSet&lt;&gt;(4); }</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">		if (dontComplainAboutMultipleTypesThisArity.contains(arity)) { return; } // No need to add again.</span>
+<span class="nc" id="L210">		dontComplainAboutMultipleTypesThisArity.add(arity);</span>
+<span class="nc" id="L211">	}</span>
+
+	public void addBridger(int arity) {
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">		if (bridgerSpec == null) {</span>
+<span class="fc" id="L215">			bridgerSpec = new HashSet&lt;&gt;(4);</span>
+		}
+<span class="fc" id="L217">		boolean firstLookUp = bridgerSpec.contains(arity);</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">		if (!firstLookUp) { // Not currently specified.</span>
+<span class="fc" id="L219">			bridgerSpec.add(arity);</span>
+		}
+<span class="nc bnc" id="L221" title="All 2 branches missed.">		else if (stringHandler.warningCount &lt; HandleFOPCstrings.maxWarnings) { Utils.println(&quot;% WARNING #&quot; + Utils.comma(stringHandler.warningCount++) + &quot;: Duplicate bridger of &quot; + name + &quot;/&quot; + arity + &quot;.  Will ignore.&quot;); }		</span>
+<span class="fc" id="L222">	}</span>
+
+	public void addQueryPred(int arity) {
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">		if (queryPredSpec == null) {</span>
+<span class="fc" id="L226">			queryPredSpec = new HashSet&lt;&gt;(4);</span>
+		}
+<span class="fc" id="L228">		boolean firstLookUp = queryPredSpec.contains(arity);</span>
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">		if (!firstLookUp) { // Not currently specified.</span>
+<span class="fc" id="L230">			queryPredSpec.add(arity);</span>
+		}
+<span class="nc bnc" id="L232" title="All 2 branches missed.">		else if (stringHandler.warningCount &lt; HandleFOPCstrings.maxWarnings) { Utils.println(&quot;% WARNING #&quot; + Utils.comma(stringHandler.warningCount++) + &quot;: Duplicate query predicate of &quot; + name + &quot;/&quot; + arity + &quot;.  Will ignore.&quot;); </span>
+		}		
+<span class="fc" id="L234">	}</span>
+
+	public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L237">		return name;</span>
+	}
+	public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="fc" id="L240">		return name;</span>
+	}
+
+	@Override
+	public PredicateName applyTheta(Map&lt;Variable, Term&gt; bindings) {
+<span class="nc" id="L245">		return this;</span>
+	}
+
+	@Override
+	public int countVarOccurrencesInFOPC(Variable v) {
+<span class="nc" id="L250">		return 0;</span>
+	}
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="pc bpc" id="L255" title="1 of 2 branches missed.">        if (obj == null) {</span>
+<span class="nc" id="L256">            return false;</span>
+        }
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">        if (getClass() != obj.getClass()) {</span>
+<span class="nc" id="L259">            return false;</span>
+        }
+<span class="fc" id="L261">        final PredicateName other = (PredicateName) obj;</span>
+<span class="fc" id="L262">		return Objects.equals(this.name, other.name);</span>
+	}
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L267">        int hash = 5;</span>
+<span class="pc bpc" id="L268" title="1 of 2 branches missed.">        hash = 59 * hash + (this.name != null ? this.name.hashCode() : 0);</span>
+<span class="fc" id="L269">        return hash;</span>
+    }
+
+    void setContainsCallable() {
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">        if ( containsCallable == null ) {</span>
+<span class="fc" id="L274">            containsCallable = new HashSet&lt;&gt;();</span>
+        }
+<span class="fc" id="L276">        containsCallable.add(1);</span>
+<span class="fc" id="L277">    }</span>
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

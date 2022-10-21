@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProbDistribution.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Utils</a> &gt; <span class="el_source">ProbDistribution.java</span></div><h1>ProbDistribution.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Utils;
+
+import edu.wisc.cs.will.Boosting.Utils.BoostingUtils;
+
+import java.util.Arrays;
+
+/*
+ * @author tkhot
+ */
+public class ProbDistribution {
+
+	/* Used if we don't have a distribution over multiple values but a single probability */
+	private double probOfBeingTrue;
+	
+<span class="fc" id="L15">	private double[] probDistribution = null;</span>
+	
+	private boolean hasDistribution;
+
+<span class="fc" id="L19">	public ProbDistribution(double prob, boolean regression) {</span>
+<span class="fc" id="L20">		setProbOfBeingTrue(prob, regression);</span>
+<span class="fc" id="L21">	}</span>
+
+	public void setProbOfBeingTrue(double probOfBeingTrue, boolean regression) {
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">		if (regression) {</span>
+<span class="fc" id="L25">			setHasDistribution(false);</span>
+<span class="fc" id="L26">			this.probOfBeingTrue = probOfBeingTrue;</span>
+		}
+<span class="fc" id="L28">	}</span>
+
+	/*
+	 * Construct distribution using sigmoid
+	 */
+	public ProbDistribution(RegressionValueOrVector reg) {
+<span class="fc" id="L34">		this(reg, true);</span>
+<span class="fc" id="L35">	}</span>
+	
+<span class="fc" id="L37">	public ProbDistribution(RegressionValueOrVector reg, boolean useSigmoid) {</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">		if (useSigmoid) {</span>
+<span class="fc" id="L39">			initUsingSigmoid(reg);</span>
+		} else {
+<span class="nc" id="L41">			initAfterNormalizing(reg); </span>
+		}
+<span class="fc" id="L43">	}</span>
+	
+	private void initAfterNormalizing(RegressionValueOrVector reg) {
+<span class="nc bnc" id="L46" title="All 2 branches missed.">		if (reg.isHasVector()) {</span>
+<span class="nc" id="L47">			double deno = VectorStatistics.sum(reg.getRegressionVector());</span>
+<span class="nc" id="L48">			double[] probDist = VectorStatistics.scalarProduct(reg.getRegressionVector(), 1/deno);</span>
+<span class="nc" id="L49">			setProbDistribution(probDist);</span>
+<span class="nc" id="L50">		} else {</span>
+<span class="nc" id="L51">			setProbOfBeingTrue(reg.getSingleRegressionValue());</span>
+		}
+<span class="nc" id="L53">	}</span>
+
+	private void initUsingSigmoid(RegressionValueOrVector reg) {
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">		if (reg.isHasVector()) {</span>
+<span class="nc" id="L57">			double[] exp = VectorStatistics.exponentiate(reg.getRegressionVector());</span>
+<span class="nc" id="L58">			double deno = VectorStatistics.sum(exp);</span>
+<span class="nc" id="L59">			double[] probDist = VectorStatistics.scalarProduct(exp, 1/deno);</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">			for (int i = 0; i &lt; probDist.length; i++) {</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">				if (Double.isNaN(probDist[i])) {</span>
+<span class="nc" id="L62">					probDist[i] = 1;</span>
+				}
+			}
+<span class="nc" id="L65">			setProbDistribution(probDist);</span>
+<span class="nc" id="L66">		} else {</span>
+<span class="fc" id="L67">			setProbOfBeingTrue(BoostingUtils.sigmoid(reg.getSingleRegressionValue(), 0));</span>
+		}
+<span class="fc" id="L69">	}</span>
+
+	@Override
+	public String toString() {
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">		if (isHasDistribution()) {</span>
+<span class="nc" id="L74">			return Arrays.toString(probDistribution);</span>
+		} else{
+<span class="fc" id="L76">			return probOfBeingTrue+&quot;&quot;;</span>
+		}
+	}
+
+	public double getProbOfBeingTrue() {
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">		if (isHasDistribution()) {</span>
+<span class="nc" id="L82">			Utils.error(&quot;Expected single probability value but contains distribution&quot;);</span>
+		}
+<span class="fc" id="L84">		return probOfBeingTrue;</span>
+	}
+
+	private void setProbOfBeingTrue(double probOfBeingTrue) {
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">		if (probOfBeingTrue &gt; 1) {</span>
+<span class="nc" id="L89">			Utils.error(&quot;Probability greater than 1!!: &quot; +  probOfBeingTrue);</span>
+		}
+<span class="fc" id="L91">		setHasDistribution(false);		</span>
+<span class="fc" id="L92">		this.probOfBeingTrue = probOfBeingTrue;</span>
+<span class="fc" id="L93">	}</span>
+
+	public double[] getProbDistribution() {
+<span class="nc bnc" id="L96" title="All 2 branches missed.">		if (!isHasDistribution()) {</span>
+<span class="nc" id="L97">			Utils.error(&quot;Expected distribution but contains single probability value&quot;);</span>
+		}
+<span class="nc" id="L99">		return probDistribution;</span>
+	}
+
+	private void setProbDistribution(double[] probDistribution) {
+<span class="nc" id="L103">		setHasDistribution(true);</span>
+<span class="nc" id="L104">		this.probDistribution = probDistribution;</span>
+<span class="nc" id="L105">	}</span>
+
+	public boolean isHasDistribution() {
+<span class="fc" id="L108">		return hasDistribution;</span>
+	}
+
+	private void setHasDistribution(boolean hasDistribution) {
+<span class="fc" id="L112">		this.hasDistribution = hasDistribution;</span>
+<span class="fc" id="L113">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

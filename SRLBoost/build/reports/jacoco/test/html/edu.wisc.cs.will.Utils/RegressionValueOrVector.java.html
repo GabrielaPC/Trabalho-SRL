@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegressionValueOrVector.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Utils</a> &gt; <span class="el_source">RegressionValueOrVector.java</span></div><h1>RegressionValueOrVector.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Utils;
+
+import java.util.Arrays;
+
+/*
+ * @author tkhot
+ */
+public class RegressionValueOrVector {
+
+	/* Used if we don't have a distribution over multiple values but a single probability */
+	private double singleRegressionValue;
+	
+	private double[] regressionVector;
+	
+	private boolean hasVector;
+	
+<span class="fc" id="L17">	public RegressionValueOrVector(double prob) {</span>
+<span class="fc" id="L18">		setSingleRegressionValue(prob);</span>
+<span class="fc" id="L19">	}</span>
+
+<span class="nc" id="L21">	public RegressionValueOrVector(double[] dist) {</span>
+<span class="nc" id="L22">		setRegressionVector(dist);</span>
+<span class="nc" id="L23">	}</span>
+
+	public void multiply(double scalar) {
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">		if (isHasVector()) {</span>
+<span class="nc" id="L27">			regressionVector = VectorStatistics.scalarProduct(regressionVector, scalar); </span>
+		} else {
+<span class="fc" id="L29">			singleRegressionValue *= scalar;</span>
+		}
+<span class="fc" id="L31">	}</span>
+	
+	public void addValueOrVector(RegressionValueOrVector add){
+		// If null, then add 0
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">		if (add == null) {</span>
+<span class="nc" id="L36">			return;</span>
+		}
+		
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">		if (isHasVector()) {</span>
+<span class="nc" id="L40">			regressionVector = VectorStatistics.addVectors(this.regressionVector, add.regressionVector);</span>
+		} else {
+<span class="fc" id="L42">			singleRegressionValue += add.singleRegressionValue;</span>
+		}
+<span class="fc" id="L44">	}</span>
+	
+	public void addScalar(double scalar) {
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">		if (isHasVector()) {</span>
+<span class="nc" id="L48">			regressionVector = VectorStatistics.addScalar(regressionVector, scalar);</span>
+		} else {
+<span class="fc" id="L50">			singleRegressionValue += scalar;</span>
+		}
+<span class="fc" id="L52">	}</span>
+	
+	@Override
+	public String toString() {
+<span class="nc bnc" id="L56" title="All 2 branches missed.">		if (isHasVector()) {</span>
+<span class="nc" id="L57">			return Arrays.toString(regressionVector);</span>
+		} else{
+<span class="nc" id="L59">			return singleRegressionValue+&quot;&quot;;</span>
+		}
+	}
+
+	public double getSingleRegressionValue() {
+<span class="fc" id="L64">		return singleRegressionValue;</span>
+	}
+
+	private void setSingleRegressionValue(double singleRegressionValue) {
+<span class="fc" id="L68">		this.singleRegressionValue = singleRegressionValue;</span>
+<span class="fc" id="L69">	}</span>
+
+	double[] getRegressionVector() {
+<span class="nc" id="L72">		return regressionVector;</span>
+	}
+
+	private void setRegressionVector(double[] regressionVector) {
+<span class="nc" id="L76">		setHasVector();</span>
+<span class="nc" id="L77">		this.regressionVector = regressionVector;</span>
+<span class="nc" id="L78">	}</span>
+
+	public boolean isHasVector() {
+<span class="fc" id="L81">		return hasVector;</span>
+	}
+
+	private void setHasVector() {
+<span class="nc" id="L85">		this.hasVector = true;</span>
+<span class="nc" id="L86">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

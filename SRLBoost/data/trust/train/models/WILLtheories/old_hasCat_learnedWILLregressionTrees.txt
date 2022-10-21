@@ -1,0 +1,1596 @@
+usePrologVariables: true.
+
+% maxTreeDepthInNodes                 = 6
+% maxTreeDepthInLiterals              = 3
+% maxNumberOfLiteralsAtAnInteriorNode = 3
+% maxFreeBridgersInBody               = 0
+% maxNumberOfClauses                  = 8
+% maxNodesToConsider                  = 50
+% maxNodesToCreate                    = 50.000
+% maxAcceptableNodeScoreToStop        = 0,003
+% negPosRatio                         = 2,000
+% testNegPosRatio                     = -1,000
+% # of pos examples                   = 1.863
+% # of neg examples                   = 0
+
+
+
+%%%%%  WILL-Produced Tree #1 @ 0:00:59 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(C, A), link(D, C) )
+%   then return 0.7538323883369187;  // std dev = 0,306, 278,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=249 */
+%   else if ( link(A, E), link(E, F), link(F, G) )
+%   | then return 0.7152917922423697;  // std dev = 2,777, 63,000 (wgt'ed) examples reached here.  /* #neg=9 #pos=54 */
+%   | else if ( link(A, H), link(H, I), link(A, I) )
+%   | | then return 0.6953582374250927;  // std dev = 2,421, 43,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=36 */
+%   | | else if ( link(J, A), link(A, K), link(J, K) )
+%   | | | then return 0.7936328060672536;  // std dev = 1,368, 31,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=29 */
+%   | | | else if ( link(L, A) )
+%   | | | | then if ( link(A, M) )
+%   | | | | | then return 0.7564540198452752;  // std dev = 0,302, 59,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=53 */
+%   | | | | | else if ( link(L, N), link(N, P) )
+%   | | | | | | then return 0.7369368138873891;  // std dev = 3,750, 132,000 (wgt'ed) examples reached here.  /* #neg=16 #pos=116 */
+%   | | | | | | else return 0.7353419175556489;  // std dev = 5,541, 285,000 (wgt'ed) examples reached here.  /* #neg=35 #pos=250 */
+%   | | | | else if ( link(A, Q), link(R, Q), link(S, R) )
+%   | | | | | then return 0.7206489350995129;  // std dev = 3,080, 80,000 (wgt'ed) examples reached here.  /* #neg=11 #pos=69 */
+%   | | | | | else return 0.7550099216465933;  // std dev = 0,304, 892,000 (wgt'ed) examples reached here.  /* #neg=92 #pos=800 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.7538323883369187) :- 
+     link(C, A), 
+     link(D, C), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.7152917922423697) :- 
+     link(A, C), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.6953582374250927) :- 
+     link(A, C), 
+     link(C, D), 
+     link(A, D), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.7936328060672536) :- 
+     link(C, A), 
+     link(A, D), 
+     link(C, D), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.7564540198452752) :- 
+     link(C, A), 
+     link(A, D), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.7369368138873891) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.7353419175556489) :- 
+     link(C, A), 
+     !. // Clause #7.
+
+hasCat(A, B, 0.7206489350995129) :- 
+     link(A, C), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #8.
+
+hasCat(A, B, 0.7550099216465933) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.7538323883369187) :-  /* #neg=29 #pos=249 */ 
+   link(uniqueVar1, a),
+   link(underscore, uniqueVar1),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.7152917922423697) :-  /* #neg=9 #pos=54 */ 
+   link(a, uniqueVar2),
+   link(uniqueVar2, uniqueVar3),
+   link(uniqueVar3, underscore),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.6953582374250927) :-  /* #neg=7 #pos=36 */ 
+   link(a, uniqueVar4),
+   link(uniqueVar4, uniqueVar5),
+   link(a, uniqueVar5),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.7936328060672536) :-  /* #neg=2 #pos=29 */ 
+   link(uniqueVar6, a),
+   link(a, uniqueVar7),
+   link(uniqueVar6, uniqueVar7),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.7564540198452752) :-  /* #neg=6 #pos=53 */ 
+   link(underscore, a),
+   link(a, underscore),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.7369368138873891) :-  /* #neg=16 #pos=116 */ 
+   link(uniqueVar8, a),
+   link(uniqueVar8, uniqueVar9),
+   link(uniqueVar9, underscore),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(a, underscore, 0.7353419175556489) :-  /* #neg=35 #pos=250 */ 
+   link(underscore, a),
+   !. // Flattened version of clause #7.
+
+flattened_hasCat(a, underscore, 0.7206489350995129) :-  /* #neg=11 #pos=69 */ 
+   link(a, uniqueVar10),
+   link(uniqueVar11, uniqueVar10),
+   link(underscore, uniqueVar11),
+   !. // Flattened version of clause #8.
+
+flattened_hasCat(underscore, underscore, 0.7550099216465933) :-  /* #neg=92 #pos=800 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   link(a, uniqueVar4)
+%   link(a, underscore)
+%   link(uniqueVar9, underscore)
+%   link(uniqueVar4, uniqueVar5)
+%   link(uniqueVar6, a)
+%   link(underscore, a)
+%   link(uniqueVar2, uniqueVar3)
+%   link(uniqueVar6, uniqueVar7)
+%   link(uniqueVar1, a)
+%   link(uniqueVar8, a)
+%   link(a, uniqueVar10)
+%   link(underscore, uniqueVar1)
+%   link(uniqueVar3, underscore)
+%   link(uniqueVar11, uniqueVar10)
+%   link(a, uniqueVar7)
+%   link(underscore, uniqueVar11)
+%   link(a, uniqueVar5)
+%   link(uniqueVar8, uniqueVar9)
+%   link(a, uniqueVar2)
+
+%%%%%  WILL-Produced Tree #2 @ 0:01:02 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(C, A), link(C, D), link(A, D) )
+%   then return 0.6748361309573936;  // std dev = 2,369, 94,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=88 */
+%   else if ( link(E, A), link(E, F), link(F, G) )
+%   | then return 0.6218445307166539;  // std dev = 6,224, 368,000 (wgt'ed) examples reached here.  /* #neg=44 #pos=324 */
+%   | else if ( link(A, H), link(I, H), link(J, I) )
+%   | | then return 0.5958241740523644;  // std dev = 4,319, 145,000 (wgt'ed) examples reached here.  /* #neg=22 #pos=123 */
+%   | | else if ( link(K, A), link(L, K) )
+%   | | | then return 0.6567049633038023;  // std dev = 0,276, 60,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=55 */
+%   | | | else if ( link(M, A) )
+%   | | | | then return 0.6207726865884273;  // std dev = 0,328, 285,000 (wgt'ed) examples reached here.  /* #neg=35 #pos=250 */
+%   | | | | else if ( link(A, N) )
+%   | | | | | then return 0.6257872164186944;  // std dev = 0,318, 332,000 (wgt'ed) examples reached here.  /* #neg=38 #pos=294 */
+%   | | | | | else return 0.6413661009980773;  // std dev = 0,298, 579,000 (wgt'ed) examples reached here.  /* #neg=57 #pos=522 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.6748361309573936) :- 
+     link(C, A), 
+     link(C, D), 
+     link(A, D), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.6218445307166539) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.5958241740523644) :- 
+     link(A, C), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.6567049633038023) :- 
+     link(C, A), 
+     link(D, C), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.6207726865884273) :- 
+     link(C, A), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.6257872164186944) :- 
+     link(A, C), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.6413661009980773) :- !. // Clause #7.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.6748361309573936) :-  /* #neg=6 #pos=88 */ 
+   link(uniqueVar12, a),
+   link(uniqueVar12, uniqueVar13),
+   link(a, uniqueVar13),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.6218445307166539) :-  /* #neg=44 #pos=324 */ 
+   link(uniqueVar14, a),
+   link(uniqueVar14, uniqueVar15),
+   link(uniqueVar15, underscore),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.5958241740523644) :-  /* #neg=22 #pos=123 */ 
+   link(a, uniqueVar16),
+   link(uniqueVar17, uniqueVar16),
+   link(underscore, uniqueVar17),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.6567049633038023) :-  /* #neg=5 #pos=55 */ 
+   link(uniqueVar18, a),
+   link(underscore, uniqueVar18),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.6207726865884273) :-  /* #neg=35 #pos=250 */ 
+   link(underscore, a),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.6257872164186944) :-  /* #neg=38 #pos=294 */ 
+   link(a, underscore),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(underscore, underscore, 0.6413661009980773) :-  /* #neg=57 #pos=522 */ 
+   !. // Flattened version of clause #7.
+
+
+% The unique flattened literals:
+%   link(a, underscore)
+%   link(uniqueVar14, a)
+%   link(uniqueVar17, uniqueVar16)
+%   link(underscore, uniqueVar17)
+%   link(underscore, a)
+%   link(uniqueVar14, uniqueVar15)
+%   link(uniqueVar15, underscore)
+%   link(uniqueVar18, a)
+%   link(uniqueVar12, uniqueVar13)
+%   link(a, uniqueVar13)
+%   link(a, uniqueVar16)
+%   link(uniqueVar12, a)
+%   link(underscore, uniqueVar18)
+
+%%%%%  WILL-Produced Tree #3 @ 0:01:05 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(A, C), link(D, A) )
+%   then return 0.5182212159978377;  // std dev = 0,271, 200,000 (wgt'ed) examples reached here.  /* #neg=16 #pos=184 */
+%   else if ( link(E, A), link(E, F), link(F, A) )
+%   | then return 0.43346462939434377;  // std dev = 3,283, 76,000 (wgt'ed) examples reached here.  /* #neg=13 #pos=63 */
+%   | else if ( link(A, G), link(H, G), link(I, H) )
+%   | | then return 0.46832728814331465;  // std dev = 4,319, 145,000 (wgt'ed) examples reached here.  /* #neg=22 #pos=123 */
+%   | | else if ( link(J, A), link(K, J) )
+%   | | | then return 0.5123958970253939;  // std dev = 0,283, 114,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=104 */
+%   | | | else if ( link(L, A) )
+%   | | | | then if ( link(L, M), link(M, N) )
+%   | | | | | then return 0.48733725237953035;  // std dev = 3,750, 132,000 (wgt'ed) examples reached here.  /* #neg=16 #pos=116 */
+%   | | | | | else return 0.4863774348347314;  // std dev = 0,328, 285,000 (wgt'ed) examples reached here.  /* #neg=35 #pos=250 */
+%   | | | | else if ( link(A, P) )
+%   | | | | | then if ( link(P, Q) )
+%   | | | | | | then return 0.5140304132949858;  // std dev = 2,125, 54,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=49 */
+%   | | | | | | else return 0.48458745002965287;  // std dev = 5,393, 278,000 (wgt'ed) examples reached here.  /* #neg=33 #pos=245 */
+%   | | | | | else return 0.5011124515199779;  // std dev = 0,298, 579,000 (wgt'ed) examples reached here.  /* #neg=57 #pos=522 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.5182212159978377) :- 
+     link(A, C), 
+     link(D, A), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.43346462939434377) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, A), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.46832728814331465) :- 
+     link(A, C), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.5123958970253939) :- 
+     link(C, A), 
+     link(D, C), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.48733725237953035) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.4863774348347314) :- 
+     link(C, A), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.5140304132949858) :- 
+     link(A, C), 
+     link(C, D), 
+     !. // Clause #7.
+
+hasCat(A, B, 0.48458745002965287) :- 
+     link(A, C), 
+     !. // Clause #8.
+
+hasCat(A, B, 0.5011124515199779) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.5182212159978377) :-  /* #neg=16 #pos=184 */ 
+   link(a, underscore),
+   link(underscore, a),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.43346462939434377) :-  /* #neg=13 #pos=63 */ 
+   link(uniqueVar19, a),
+   link(uniqueVar19, uniqueVar20),
+   link(uniqueVar20, a),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.46832728814331465) :-  /* #neg=22 #pos=123 */ 
+   link(a, uniqueVar21),
+   link(uniqueVar22, uniqueVar21),
+   link(underscore, uniqueVar22),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.5123958970253939) :-  /* #neg=10 #pos=104 */ 
+   link(uniqueVar23, a),
+   link(underscore, uniqueVar23),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.48733725237953035) :-  /* #neg=16 #pos=116 */ 
+   link(uniqueVar24, a),
+   link(uniqueVar24, uniqueVar25),
+   link(uniqueVar25, underscore),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.4863774348347314) :-  /* #neg=35 #pos=250 */ 
+   link(underscore, a),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(a, underscore, 0.5140304132949858) :-  /* #neg=5 #pos=49 */ 
+   link(a, uniqueVar26),
+   link(uniqueVar26, underscore),
+   !. // Flattened version of clause #7.
+
+flattened_hasCat(a, underscore, 0.48458745002965287) :-  /* #neg=33 #pos=245 */ 
+   link(a, underscore),
+   !. // Flattened version of clause #8.
+
+flattened_hasCat(underscore, underscore, 0.5011124515199779) :-  /* #neg=57 #pos=522 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   link(a, underscore)
+%   link(uniqueVar25, underscore)
+%   link(uniqueVar20, a)
+%   link(a, uniqueVar26)
+%   link(underscore, a)
+%   link(uniqueVar19, a)
+%   link(uniqueVar24, uniqueVar25)
+%   link(uniqueVar22, uniqueVar21)
+%   link(underscore, uniqueVar23)
+%   link(uniqueVar23, a)
+%   link(uniqueVar24, a)
+%   link(a, uniqueVar21)
+%   link(underscore, uniqueVar22)
+%   link(uniqueVar19, uniqueVar20)
+%   link(uniqueVar26, underscore)
+
+%%%%%  WILL-Produced Tree #4 @ 0:01:08 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(C, A), link(D, C), link(A, E) )
+%   then return 0.4007113175315476;  // std dev = 2,363, 88,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=82 */
+%   else if ( link(F, A), link(G, F) )
+%   | then if ( link(H, G) )
+%   | | then return 0.32474096621346454;  // std dev = 3,289, 80,000 (wgt'ed) examples reached here.  /* #neg=13 #pos=67 */
+%   | | else return 0.38924672276761924;  // std dev = 0,287, 110,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=100 */
+%   | else if ( link(A, I), link(J, A) )
+%   | | then return 0.38166377883615266;  // std dev = 0,285, 112,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=102 */
+%   | | else if ( link(A, K) )
+%   | | | then if ( link(L, K), link(M, L) )
+%   | | | | then return 0.3536380881945797;  // std dev = 4,319, 145,000 (wgt'ed) examples reached here.  /* #neg=22 #pos=123 */
+%   | | | | else return 0.36857399393350554;  // std dev = 0,318, 332,000 (wgt'ed) examples reached here.  /* #neg=38 #pos=294 */
+%   | | | else if ( link(N, A) )
+%   | | | | then if ( link(N, P), link(P, Q) )
+%   | | | | | then return 0.3672602726656855;  // std dev = 3,750, 132,000 (wgt'ed) examples reached here.  /* #neg=16 #pos=116 */
+%   | | | | | else return 0.3665715708081913;  // std dev = 0,328, 285,000 (wgt'ed) examples reached here.  /* #neg=35 #pos=250 */
+%   | | | | else return 0.3772015699993805;  // std dev = 0,298, 579,000 (wgt'ed) examples reached here.  /* #neg=57 #pos=522 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.4007113175315476) :- 
+     link(C, A), 
+     link(D, C), 
+     link(A, E), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.32474096621346454) :- 
+     link(C, A), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.38924672276761924) :- 
+     link(C, A), 
+     link(D, C), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.38166377883615266) :- 
+     link(A, C), 
+     link(D, A), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.3536380881945797) :- 
+     link(A, C), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.36857399393350554) :- 
+     link(A, C), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.3672602726656855) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #7.
+
+hasCat(A, B, 0.3665715708081913) :- 
+     link(C, A), 
+     !. // Clause #8.
+
+hasCat(A, B, 0.3772015699993805) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.4007113175315476) :-  /* #neg=6 #pos=82 */ 
+   link(uniqueVar27, a),
+   link(underscore, uniqueVar27),
+   link(a, underscore),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.32474096621346454) :-  /* #neg=13 #pos=67 */ 
+   link(uniqueVar28, a),
+   link(uniqueVar29, uniqueVar28),
+   link(underscore, uniqueVar29),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.38924672276761924) :-  /* #neg=10 #pos=100 */ 
+   link(uniqueVar30, a),
+   link(underscore, uniqueVar30),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.38166377883615266) :-  /* #neg=10 #pos=102 */ 
+   link(a, underscore),
+   link(underscore, a),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.3536380881945797) :-  /* #neg=22 #pos=123 */ 
+   link(a, uniqueVar31),
+   link(uniqueVar32, uniqueVar31),
+   link(underscore, uniqueVar32),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.36857399393350554) :-  /* #neg=38 #pos=294 */ 
+   link(a, underscore),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(a, underscore, 0.3672602726656855) :-  /* #neg=16 #pos=116 */ 
+   link(uniqueVar33, a),
+   link(uniqueVar33, uniqueVar34),
+   link(uniqueVar34, underscore),
+   !. // Flattened version of clause #7.
+
+flattened_hasCat(a, underscore, 0.3665715708081913) :-  /* #neg=35 #pos=250 */ 
+   link(underscore, a),
+   !. // Flattened version of clause #8.
+
+flattened_hasCat(underscore, underscore, 0.3772015699993805) :-  /* #neg=57 #pos=522 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   link(a, underscore)
+%   link(uniqueVar29, uniqueVar28)
+%   link(underscore, uniqueVar29)
+%   link(uniqueVar30, a)
+%   link(uniqueVar33, uniqueVar34)
+%   link(underscore, uniqueVar30)
+%   link(underscore, a)
+%   link(uniqueVar33, a)
+%   link(uniqueVar28, a)
+%   link(uniqueVar34, underscore)
+%   link(uniqueVar27, a)
+%   link(underscore, uniqueVar32)
+%   link(a, uniqueVar31)
+%   link(underscore, uniqueVar27)
+%   link(uniqueVar32, uniqueVar31)
+
+%%%%%  WILL-Produced Tree #5 @ 0:01:11 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(A, C), link(D, A), link(D, C) )
+%   then return 0.30302687119871213;  // std dev = 2,368, 94,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=88 */
+%   else if ( link(A, E), link(E, F), link(F, E) )
+%   | then return 0.31803991892219313;  // std dev = 1,333, 24,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=22 */
+%   | else if ( link(G, A), link(H, G), link(H, A) )
+%   | | then return 0.24282699560449167;  // std dev = 3,411, 85,000 (wgt'ed) examples reached here.  /* #neg=14 #pos=71 */
+%   | | else if ( link(A, I), link(J, I), link(K, J) )
+%   | | | then return 0.27104228720937756;  // std dev = 5,002, 218,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=189 */
+%   | | | else if ( link(A, L), link(L, M), link(M, N) )
+%   | | | | then return 0.23774094105834587;  // std dev = 1,589, 19,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=16 */
+%   | | | | else if ( link(P, A) )
+%   | | | | | then if ( link(Q, P) )
+%   | | | | | | then return 0.2955441771943653;  // std dev = 3,016, 114,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=104 */
+%   | | | | | | else return 0.27650705726499575;  // std dev = 6,690, 417,000 (wgt'ed) examples reached here.  /* #neg=51 #pos=366 */
+%   | | | | | else if ( link(A, R) )
+%   | | | | | | then return 0.28057736912926723;  // std dev = 5,573, 313,000 (wgt'ed) examples reached here.  /* #neg=35 #pos=278 */
+%   | | | | | | else return 0.285061179627401;  // std dev = 7,169, 579,000 (wgt'ed) examples reached here.  /* #neg=57 #pos=522 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.30302687119871213) :- 
+     link(A, C), 
+     link(D, A), 
+     link(D, C), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.31803991892219313) :- 
+     link(A, C), 
+     link(C, D), 
+     link(D, C), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.24282699560449167) :- 
+     link(C, A), 
+     link(D, C), 
+     link(D, A), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.27104228720937756) :- 
+     link(A, C), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.23774094105834587) :- 
+     link(A, C), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.2955441771943653) :- 
+     link(C, A), 
+     link(D, C), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.27650705726499575) :- 
+     link(C, A), 
+     !. // Clause #7.
+
+hasCat(A, B, 0.28057736912926723) :- 
+     link(A, C), 
+     !. // Clause #8.
+
+hasCat(A, B, 0.285061179627401) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.30302687119871213) :-  /* #neg=6 #pos=88 */ 
+   link(a, uniqueVar35),
+   link(uniqueVar36, a),
+   link(uniqueVar36, uniqueVar35),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.31803991892219313) :-  /* #neg=2 #pos=22 */ 
+   link(a, uniqueVar37),
+   link(uniqueVar37, uniqueVar38),
+   link(uniqueVar38, uniqueVar37),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.24282699560449167) :-  /* #neg=14 #pos=71 */ 
+   link(uniqueVar39, a),
+   link(uniqueVar40, uniqueVar39),
+   link(uniqueVar40, a),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.27104228720937756) :-  /* #neg=29 #pos=189 */ 
+   link(a, uniqueVar41),
+   link(uniqueVar42, uniqueVar41),
+   link(underscore, uniqueVar42),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.23774094105834587) :-  /* #neg=3 #pos=16 */ 
+   link(a, uniqueVar43),
+   link(uniqueVar43, uniqueVar44),
+   link(uniqueVar44, underscore),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.2955441771943653) :-  /* #neg=10 #pos=104 */ 
+   link(uniqueVar45, a),
+   link(underscore, uniqueVar45),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(a, underscore, 0.27650705726499575) :-  /* #neg=51 #pos=366 */ 
+   link(underscore, a),
+   !. // Flattened version of clause #7.
+
+flattened_hasCat(a, underscore, 0.28057736912926723) :-  /* #neg=35 #pos=278 */ 
+   link(a, underscore),
+   !. // Flattened version of clause #8.
+
+flattened_hasCat(underscore, underscore, 0.285061179627401) :-  /* #neg=57 #pos=522 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   link(a, uniqueVar43)
+%   link(a, underscore)
+%   link(uniqueVar37, uniqueVar38)
+%   link(uniqueVar38, uniqueVar37)
+%   link(underscore, a)
+%   link(uniqueVar42, uniqueVar41)
+%   link(uniqueVar40, uniqueVar39)
+%   link(uniqueVar45, a)
+%   link(underscore, uniqueVar45)
+%   link(a, uniqueVar37)
+%   link(uniqueVar44, underscore)
+%   link(uniqueVar40, a)
+%   link(uniqueVar39, a)
+%   link(a, uniqueVar41)
+%   link(underscore, uniqueVar42)
+%   link(uniqueVar36, uniqueVar35)
+%   link(a, uniqueVar35)
+%   link(uniqueVar36, a)
+%   link(uniqueVar43, uniqueVar44)
+
+%%%%%  WILL-Produced Tree #6 @ 0:01:15 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(C, A), link(C, D), link(D, C) )
+%   then return 0.29443251060462683;  // std dev = 0,959, 41,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=40 */
+%   else if ( link(E, A), link(F, E), link(G, F) )
+%   | then return 0.1703759943441159;  // std dev = 3,397, 84,000 (wgt'ed) examples reached here.  /* #neg=14 #pos=70 */
+%   | else if ( link(A, H) )
+%   | | then if ( link(H, I) )
+%   | | | then if ( link(A, I) )
+%   | | | | then return 0.21464942730806094;  // std dev = 2,935, 77,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=67 */
+%   | | | | else if ( link(I, J) )
+%   | | | | | then return 0.13259633985326297;  // std dev = 2,363, 34,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=27 */
+%   | | | | | else return 0.2227942351536214;  // std dev = 0,308, 84,000 (wgt'ed) examples reached here.  /* #neg=9 #pos=75 */
+%   | | | else if ( link(K, H), link(L, K) )
+%   | | | | then return 0.22947428504375436;  // std dev = 3,669, 159,000 (wgt'ed) examples reached here.  /* #neg=15 #pos=144 */
+%   | | | | else return 0.20989230063759973;  // std dev = 0,323, 278,000 (wgt'ed) examples reached here.  /* #neg=33 #pos=245 */
+%   | | else if ( link(M, A), link(N, M) )
+%   | | | then return 0.23022946066290315;  // std dev = 0,287, 110,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=100 */
+%   | | | else return 0.21697151418366462;  // std dev = 0,311, 996,000 (wgt'ed) examples reached here.  /* #neg=108 #pos=888 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.29443251060462683) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, C), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.1703759943441159) :- 
+     link(C, A), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.21464942730806094) :- 
+     link(A, C), 
+     link(C, D), 
+     link(A, D), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.13259633985326297) :- 
+     link(A, C), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.2227942351536214) :- 
+     link(A, C), 
+     link(C, D), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.22947428504375436) :- 
+     link(A, C), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.20989230063759973) :- 
+     link(A, C), 
+     !. // Clause #7.
+
+hasCat(A, B, 0.23022946066290315) :- 
+     link(C, A), 
+     link(D, C), 
+     !. // Clause #8.
+
+hasCat(A, B, 0.21697151418366462) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.29443251060462683) :-  /* #neg=1 #pos=40 */ 
+   link(uniqueVar46, a),
+   link(uniqueVar46, uniqueVar47),
+   link(uniqueVar47, uniqueVar46),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.1703759943441159) :-  /* #neg=14 #pos=70 */ 
+   link(uniqueVar48, a),
+   link(uniqueVar49, uniqueVar48),
+   link(underscore, uniqueVar49),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.21464942730806094) :-  /* #neg=10 #pos=67 */ 
+   link(a, uniqueVar50),
+   link(uniqueVar50, uniqueVar51),
+   link(a, uniqueVar51),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.13259633985326297) :-  /* #neg=7 #pos=27 */ 
+   link(a, uniqueVar52),
+   link(uniqueVar52, uniqueVar53),
+   link(uniqueVar53, underscore),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.2227942351536214) :-  /* #neg=9 #pos=75 */ 
+   link(a, uniqueVar54),
+   link(uniqueVar54, underscore),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.22947428504375436) :-  /* #neg=15 #pos=144 */ 
+   link(a, uniqueVar55),
+   link(uniqueVar56, uniqueVar55),
+   link(underscore, uniqueVar56),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(a, underscore, 0.20989230063759973) :-  /* #neg=33 #pos=245 */ 
+   link(a, underscore),
+   !. // Flattened version of clause #7.
+
+flattened_hasCat(a, underscore, 0.23022946066290315) :-  /* #neg=10 #pos=100 */ 
+   link(uniqueVar57, a),
+   link(underscore, uniqueVar57),
+   !. // Flattened version of clause #8.
+
+flattened_hasCat(underscore, underscore, 0.21697151418366462) :-  /* #neg=108 #pos=888 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   link(a, uniqueVar55)
+%   link(a, underscore)
+%   link(uniqueVar52, uniqueVar53)
+%   link(uniqueVar57, a)
+%   link(uniqueVar50, uniqueVar51)
+%   link(uniqueVar56, uniqueVar55)
+%   link(uniqueVar54, underscore)
+%   link(uniqueVar46, a)
+%   link(a, uniqueVar51)
+%   link(uniqueVar46, uniqueVar47)
+%   link(underscore, uniqueVar49)
+%   link(a, uniqueVar54)
+%   link(a, uniqueVar50)
+%   link(uniqueVar47, uniqueVar46)
+%   link(uniqueVar53, underscore)
+%   link(underscore, uniqueVar56)
+%   link(uniqueVar49, uniqueVar48)
+%   link(uniqueVar48, a)
+%   link(a, uniqueVar52)
+%   link(underscore, uniqueVar57)
+
+%%%%%  WILL-Produced Tree #7 @ 0:01:18 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(A, C), link(D, C), link(A, D) )
+%   then return 0.17767120492435134;  // std dev = 2,946, 88,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=78 */
+%   else if ( link(E, A), link(E, F), link(F, A) )
+%   | then return 0.14805101503888546;  // std dev = 3,543, 102,000 (wgt'ed) examples reached here.  /* #neg=15 #pos=87 */
+%   | else if ( link(G, A), link(H, G) )
+%   | | then return 0.182894111214425;  // std dev = 0,279, 163,000 (wgt'ed) examples reached here.  /* #neg=14 #pos=149 */
+%   | | else if ( link(A, I), link(J, I), link(K, J) )
+%   | | | then return 0.16386239614358442;  // std dev = 4,373, 182,000 (wgt'ed) examples reached here.  /* #neg=22 #pos=160 */
+%   | | | else if ( link(A, L), link(L, M) )
+%   | | | | then return 0.19552146709118431;  // std dev = 0,288, 54,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=49 */
+%   | | | | else if ( link(N, A) )
+%   | | | | | then if ( link(N, P), link(P, Q) )
+%   | | | | | | then return 0.16643121099218947;  // std dev = 3,750, 132,000 (wgt'ed) examples reached here.  /* #neg=16 #pos=116 */
+%   | | | | | | else return 0.16572134109540435;  // std dev = 5,541, 285,000 (wgt'ed) examples reached here.  /* #neg=35 #pos=250 */
+%   | | | | | else if ( link(A, R) )
+%   | | | | | | then return 0.16535143136795277;  // std dev = 5,393, 278,000 (wgt'ed) examples reached here.  /* #neg=33 #pos=245 */
+%   | | | | | | else return 0.17509695200117562;  // std dev = 7,169, 579,000 (wgt'ed) examples reached here.  /* #neg=57 #pos=522 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.17767120492435134) :- 
+     link(A, C), 
+     link(D, C), 
+     link(A, D), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.14805101503888546) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, A), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.182894111214425) :- 
+     link(C, A), 
+     link(D, C), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.16386239614358442) :- 
+     link(A, C), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.19552146709118431) :- 
+     link(A, C), 
+     link(C, D), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.16643121099218947) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.16572134109540435) :- 
+     link(C, A), 
+     !. // Clause #7.
+
+hasCat(A, B, 0.16535143136795277) :- 
+     link(A, C), 
+     !. // Clause #8.
+
+hasCat(A, B, 0.17509695200117562) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.17767120492435134) :-  /* #neg=10 #pos=78 */ 
+   link(a, uniqueVar58),
+   link(uniqueVar59, uniqueVar58),
+   link(a, uniqueVar59),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.14805101503888546) :-  /* #neg=15 #pos=87 */ 
+   link(uniqueVar60, a),
+   link(uniqueVar60, uniqueVar61),
+   link(uniqueVar61, a),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.182894111214425) :-  /* #neg=14 #pos=149 */ 
+   link(uniqueVar62, a),
+   link(underscore, uniqueVar62),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.16386239614358442) :-  /* #neg=22 #pos=160 */ 
+   link(a, uniqueVar63),
+   link(uniqueVar64, uniqueVar63),
+   link(underscore, uniqueVar64),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.19552146709118431) :-  /* #neg=5 #pos=49 */ 
+   link(a, uniqueVar65),
+   link(uniqueVar65, underscore),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.16643121099218947) :-  /* #neg=16 #pos=116 */ 
+   link(uniqueVar66, a),
+   link(uniqueVar66, uniqueVar67),
+   link(uniqueVar67, underscore),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(a, underscore, 0.16572134109540435) :-  /* #neg=35 #pos=250 */ 
+   link(underscore, a),
+   !. // Flattened version of clause #7.
+
+flattened_hasCat(a, underscore, 0.16535143136795277) :-  /* #neg=33 #pos=245 */ 
+   link(a, underscore),
+   !. // Flattened version of clause #8.
+
+flattened_hasCat(underscore, underscore, 0.17509695200117562) :-  /* #neg=57 #pos=522 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   link(a, underscore)
+%   link(uniqueVar61, a)
+%   link(a, uniqueVar65)
+%   link(uniqueVar60, uniqueVar61)
+%   link(uniqueVar65, underscore)
+%   link(a, uniqueVar59)
+%   link(a, uniqueVar63)
+%   link(underscore, a)
+%   link(uniqueVar64, uniqueVar63)
+%   link(underscore, uniqueVar62)
+%   link(uniqueVar59, uniqueVar58)
+%   link(uniqueVar66, uniqueVar67)
+%   link(uniqueVar62, a)
+%   link(a, uniqueVar58)
+%   link(uniqueVar60, a)
+%   link(underscore, uniqueVar64)
+%   link(uniqueVar66, a)
+%   link(uniqueVar67, underscore)
+
+%%%%%  WILL-Produced Tree #8 @ 0:01:22 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(A, C), link(D, C), link(C, D) )
+%   then return 0.18235954578278596;  // std dev = 1,321, 39,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=37 */
+%   else if ( link(A, E), link(E, F), link(F, G) )
+%   | then return 0.11622282003062458;  // std dev = 2,600, 54,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=46 */
+%   | else if ( link(H, A), link(I, H), link(J, I) )
+%   | | then return 0.11421442234995363;  // std dev = 3,545, 100,000 (wgt'ed) examples reached here.  /* #neg=15 #pos=85 */
+%   | | else if ( link(A, K), link(L, K), link(A, L) )
+%   | | | then return 0.10156403173466241;  // std dev = 2,419, 43,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=36 */
+%   | | | else if ( link(M, A), link(M, N), link(A, N) )
+%   | | | | then return 0.16584821969855443;  // std dev = 1,682, 54,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=51 */
+%   | | | | else if ( link(A, P), link(Q, P), link(R, Q) )
+%   | | | | | then return 0.13229702103083663;  // std dev = 4,076, 154,000 (wgt'ed) examples reached here.  /* #neg=19 #pos=135 */
+%   | | | | | else if ( link(S, A) )
+%   | | | | | | then return 0.136530717255704;  // std dev = 7,336, 527,000 (wgt'ed) examples reached here.  /* #neg=61 #pos=466 */
+%   | | | | | | else return 0.1405280399972043;  // std dev = 9,079, 892,000 (wgt'ed) examples reached here.  /* #neg=92 #pos=800 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.18235954578278596) :- 
+     link(A, C), 
+     link(D, C), 
+     link(C, D), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.11622282003062458) :- 
+     link(A, C), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.11421442234995363) :- 
+     link(C, A), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.10156403173466241) :- 
+     link(A, C), 
+     link(D, C), 
+     link(A, D), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.16584821969855443) :- 
+     link(C, A), 
+     link(C, D), 
+     link(A, D), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.13229702103083663) :- 
+     link(A, C), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.136530717255704) :- 
+     link(C, A), 
+     !. // Clause #7.
+
+hasCat(A, B, 0.1405280399972043) :- !. // Clause #8.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.18235954578278596) :-  /* #neg=2 #pos=37 */ 
+   link(a, uniqueVar68),
+   link(uniqueVar69, uniqueVar68),
+   link(uniqueVar68, uniqueVar69),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.11622282003062458) :-  /* #neg=8 #pos=46 */ 
+   link(a, uniqueVar70),
+   link(uniqueVar70, uniqueVar71),
+   link(uniqueVar71, underscore),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.11421442234995363) :-  /* #neg=15 #pos=85 */ 
+   link(uniqueVar72, a),
+   link(uniqueVar73, uniqueVar72),
+   link(underscore, uniqueVar73),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.10156403173466241) :-  /* #neg=7 #pos=36 */ 
+   link(a, uniqueVar74),
+   link(uniqueVar75, uniqueVar74),
+   link(a, uniqueVar75),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.16584821969855443) :-  /* #neg=3 #pos=51 */ 
+   link(uniqueVar76, a),
+   link(uniqueVar76, uniqueVar77),
+   link(a, uniqueVar77),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.13229702103083663) :-  /* #neg=19 #pos=135 */ 
+   link(a, uniqueVar78),
+   link(uniqueVar79, uniqueVar78),
+   link(underscore, uniqueVar79),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(a, underscore, 0.136530717255704) :-  /* #neg=61 #pos=466 */ 
+   link(underscore, a),
+   !. // Flattened version of clause #7.
+
+flattened_hasCat(underscore, underscore, 0.1405280399972043) :-  /* #neg=92 #pos=800 */ 
+   !. // Flattened version of clause #8.
+
+
+% The unique flattened literals:
+%   link(a, uniqueVar74)
+%   link(uniqueVar76, uniqueVar77)
+%   link(uniqueVar72, a)
+%   link(uniqueVar73, uniqueVar72)
+%   link(underscore, uniqueVar79)
+%   link(underscore, a)
+%   link(a, uniqueVar68)
+%   link(underscore, uniqueVar73)
+%   link(a, uniqueVar70)
+%   link(a, uniqueVar77)
+%   link(a, uniqueVar75)
+%   link(uniqueVar79, uniqueVar78)
+%   link(uniqueVar75, uniqueVar74)
+%   link(a, uniqueVar78)
+%   link(uniqueVar69, uniqueVar68)
+%   link(uniqueVar71, underscore)
+%   link(uniqueVar70, uniqueVar71)
+%   link(uniqueVar76, a)
+%   link(uniqueVar68, uniqueVar69)
+
+%%%%%  WILL-Produced Tree #9 @ 0:01:26 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(A, C), link(D, C), link(C, D) )
+%   then return 0.1514236099319666;  // std dev = 1,325, 39,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=37 */
+%   else if ( link(A, E), link(F, A) )
+%   | then if ( link(E, G) )
+%   | | then return 0.10770838423194966;  // std dev = 2,304, 54,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=48 */
+%   | | else return 0.1259283415131601;  // std dev = 0,275, 121,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=111 */
+%   | else if ( link(H, A), link(H, I), link(I, A) )
+%   | | then return 0.08164685310400542;  // std dev = 3,269, 76,000 (wgt'ed) examples reached here.  /* #neg=13 #pos=63 */
+%   | | else if ( link(A, J), link(J, K), link(K, L) )
+%   | | | then return 0.08303025624100456;  // std dev = 2,413, 42,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=35 */
+%   | | | else if ( link(A, M), link(N, M), link(P, N) )
+%   | | | | then return 0.0981398873137514;  // std dev = 3,690, 108,000 (wgt'ed) examples reached here.  /* #neg=16 #pos=92 */
+%   | | | | else if ( link(Q, A), link(R, Q) )
+%   | | | | | then return 0.12681942637132798;  // std dev = 0,282, 114,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=104 */
+%   | | | | | else if ( link(S, A) )
+%   | | | | | | then return 0.10803942412571245;  // std dev = 6,690, 417,000 (wgt'ed) examples reached here.  /* #neg=51 #pos=366 */
+%   | | | | | | else return 0.11557340413434904;  // std dev = 9,079, 892,000 (wgt'ed) examples reached here.  /* #neg=92 #pos=800 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.1514236099319666) :- 
+     link(A, C), 
+     link(D, C), 
+     link(C, D), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.10770838423194966) :- 
+     link(A, C), 
+     link(D, A), 
+     link(C, E), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.1259283415131601) :- 
+     link(A, C), 
+     link(D, A), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.08164685310400542) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, A), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.08303025624100456) :- 
+     link(A, C), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.0981398873137514) :- 
+     link(A, C), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.12681942637132798) :- 
+     link(C, A), 
+     link(D, C), 
+     !. // Clause #7.
+
+hasCat(A, B, 0.10803942412571245) :- 
+     link(C, A), 
+     !. // Clause #8.
+
+hasCat(A, B, 0.11557340413434904) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.1514236099319666) :-  /* #neg=2 #pos=37 */ 
+   link(a, uniqueVar80),
+   link(uniqueVar81, uniqueVar80),
+   link(uniqueVar80, uniqueVar81),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.10770838423194966) :-  /* #neg=6 #pos=48 */ 
+   link(a, uniqueVar82),
+   link(underscore, a),
+   link(uniqueVar82, underscore),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.1259283415131601) :-  /* #neg=10 #pos=111 */ 
+   link(a, underscore),
+   link(underscore, a),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.08164685310400542) :-  /* #neg=13 #pos=63 */ 
+   link(uniqueVar83, a),
+   link(uniqueVar83, uniqueVar84),
+   link(uniqueVar84, a),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.08303025624100456) :-  /* #neg=7 #pos=35 */ 
+   link(a, uniqueVar85),
+   link(uniqueVar85, uniqueVar86),
+   link(uniqueVar86, underscore),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.0981398873137514) :-  /* #neg=16 #pos=92 */ 
+   link(a, uniqueVar87),
+   link(uniqueVar88, uniqueVar87),
+   link(underscore, uniqueVar88),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(a, underscore, 0.12681942637132798) :-  /* #neg=10 #pos=104 */ 
+   link(uniqueVar89, a),
+   link(underscore, uniqueVar89),
+   !. // Flattened version of clause #7.
+
+flattened_hasCat(a, underscore, 0.10803942412571245) :-  /* #neg=51 #pos=366 */ 
+   link(underscore, a),
+   !. // Flattened version of clause #8.
+
+flattened_hasCat(underscore, underscore, 0.11557340413434904) :-  /* #neg=92 #pos=800 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   link(a, underscore)
+%   link(uniqueVar85, uniqueVar86)
+%   link(a, uniqueVar85)
+%   link(underscore, a)
+%   link(uniqueVar81, uniqueVar80)
+%   link(uniqueVar89, a)
+%   link(underscore, uniqueVar89)
+%   link(uniqueVar84, a)
+%   link(a, uniqueVar87)
+%   link(uniqueVar83, a)
+%   link(uniqueVar80, uniqueVar81)
+%   link(uniqueVar82, underscore)
+%   link(uniqueVar88, uniqueVar87)
+%   link(uniqueVar83, uniqueVar84)
+%   link(a, uniqueVar80)
+%   link(a, uniqueVar82)
+%   link(underscore, uniqueVar88)
+%   link(uniqueVar86, underscore)
+
+%%%%%  WILL-Produced Tree #10 @ 0:01:30 10/21/22.  %%%%%
+
+% FOR hasCat(A, B):
+%   if ( link(A, C), link(C, D), link(A, D) )
+%   then return 0.10181215194152961;  // std dev = 2,939, 88,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=78 */
+%   else if ( link(A, E), link(E, F) )
+%   | then if ( link(F, G) )
+%   | | then return 0.06619951171210753;  // std dev = 2,410, 49,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=42 */
+%   | | else return 0.10272737748105544;  // std dev = 0,301, 88,000 (wgt'ed) examples reached here.  /* #neg=9 #pos=79 */
+%   | else if ( link(H, A) )
+%   | | then if ( link(I, H), link(J, I) )
+%   | | | then return 0.0675101827211922;  // std dev = 3,533, 95,000 (wgt'ed) examples reached here.  /* #neg=15 #pos=80 */
+%   | | | else if ( link(K, H) )
+%   | | | | then return 0.1157638171481757;  // std dev = 0,268, 140,000 (wgt'ed) examples reached here.  /* #neg=11 #pos=129 */
+%   | | | | else if ( link(A, L), link(H, L) )
+%   | | | | | then return 0.10272173299900593;  // std dev = 1,363, 28,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=26 */
+%   | | | | | else if ( link(H, M), link(M, N) )
+%   | | | | | | then return 0.09091245159000974;  // std dev = 4,306, 180,000 (wgt'ed) examples reached here.  /* #neg=21 #pos=159 */
+%   | | | | | | else return 0.08920603842252971;  // std dev = 5,541, 285,000 (wgt'ed) examples reached here.  /* #neg=35 #pos=250 */
+%   | | else return 0.09471025640864114;  // std dev = 0,308, 910,000 (wgt'ed) examples reached here.  /* #neg=97 #pos=813 */
+
+
+% Clauses:
+
+hasCat(A, B, 0.10181215194152961) :- 
+     link(A, C), 
+     link(C, D), 
+     link(A, D), 
+     !. // Clause #1.
+
+hasCat(A, B, 0.06619951171210753) :- 
+     link(A, C), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #2.
+
+hasCat(A, B, 0.10272737748105544) :- 
+     link(A, C), 
+     link(C, D), 
+     !. // Clause #3.
+
+hasCat(A, B, 0.0675101827211922) :- 
+     link(C, A), 
+     link(D, C), 
+     link(E, D), 
+     !. // Clause #4.
+
+hasCat(A, B, 0.1157638171481757) :- 
+     link(C, A), 
+     link(D, C), 
+     !. // Clause #5.
+
+hasCat(A, B, 0.10272173299900593) :- 
+     link(C, A), 
+     link(A, D), 
+     link(C, D), 
+     !. // Clause #6.
+
+hasCat(A, B, 0.09091245159000974) :- 
+     link(C, A), 
+     link(C, D), 
+     link(D, E), 
+     !. // Clause #7.
+
+hasCat(A, B, 0.08920603842252971) :- 
+     link(C, A), 
+     !. // Clause #8.
+
+hasCat(A, B, 0.09471025640864114) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_hasCat(a, underscore, 0.10181215194152961) :-  /* #neg=10 #pos=78 */ 
+   link(a, uniqueVar90),
+   link(uniqueVar90, uniqueVar91),
+   link(a, uniqueVar91),
+   !. // Flattened version of clause #1.
+
+flattened_hasCat(a, underscore, 0.06619951171210753) :-  /* #neg=7 #pos=42 */ 
+   link(a, uniqueVar92),
+   link(uniqueVar92, uniqueVar93),
+   link(uniqueVar93, underscore),
+   !. // Flattened version of clause #2.
+
+flattened_hasCat(a, underscore, 0.10272737748105544) :-  /* #neg=9 #pos=79 */ 
+   link(a, uniqueVar94),
+   link(uniqueVar94, underscore),
+   !. // Flattened version of clause #3.
+
+flattened_hasCat(a, underscore, 0.0675101827211922) :-  /* #neg=15 #pos=80 */ 
+   link(uniqueVar95, a),
+   link(uniqueVar96, uniqueVar95),
+   link(underscore, uniqueVar96),
+   !. // Flattened version of clause #4.
+
+flattened_hasCat(a, underscore, 0.1157638171481757) :-  /* #neg=11 #pos=129 */ 
+   link(uniqueVar97, a),
+   link(underscore, uniqueVar97),
+   !. // Flattened version of clause #5.
+
+flattened_hasCat(a, underscore, 0.10272173299900593) :-  /* #neg=2 #pos=26 */ 
+   link(uniqueVar98, a),
+   link(a, uniqueVar99),
+   link(uniqueVar98, uniqueVar99),
+   !. // Flattened version of clause #6.
+
+flattened_hasCat(a, underscore, 0.09091245159000974) :-  /* #neg=21 #pos=159 */ 
+   link(uniqueVar100, a),
+   link(uniqueVar100, uniqueVar101),
+   link(uniqueVar101, underscore),
+   !. // Flattened version of clause #7.
+
+flattened_hasCat(a, underscore, 0.08920603842252971) :-  /* #neg=35 #pos=250 */ 
+   link(underscore, a),
+   !. // Flattened version of clause #8.
+
+flattened_hasCat(underscore, underscore, 0.09471025640864114) :-  /* #neg=97 #pos=813 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   link(a, uniqueVar91)
+%   link(underscore, uniqueVar97)
+%   link(uniqueVar94, underscore)
+%   link(uniqueVar97, a)
+%   link(underscore, uniqueVar96)
+%   link(underscore, a)
+%   link(uniqueVar93, underscore)
+%   link(uniqueVar100, a)
+%   link(a, uniqueVar92)
+%   link(a, uniqueVar90)
+%   link(a, uniqueVar99)
+%   link(uniqueVar90, uniqueVar91)
+%   link(uniqueVar98, uniqueVar99)
+%   link(uniqueVar92, uniqueVar93)
+%   link(uniqueVar95, a)
+%   link(uniqueVar98, a)
+%   link(uniqueVar101, underscore)
+%   link(uniqueVar96, uniqueVar95)
+%   link(uniqueVar100, uniqueVar101)
+%   link(a, uniqueVar94)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%  Final call for computing score for hasCat.  %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+stepLength_tree1(1.0).
+stepLength_tree2(1.0).
+stepLength_tree3(1.0).
+stepLength_tree4(1.0).
+stepLength_tree5(1.0).
+stepLength_tree6(1.0).
+stepLength_tree7(1.0).
+stepLength_tree8(1.0).
+stepLength_tree9(1.0).
+stepLength_tree10(1.0).
+
+logPrior(-1.8).
+hasCat(D, E, Total) :- // A general accessor. 
+   hasCat(D, E, 1000000, Total), !.
+hasCat(D, E, Total) :- waitHere("This should not fail", hasCat(D, E, Total)).
+
+hasCat(D, E, TreesToUse, Total) :- // A tree-limited accessor (e.g., for tuning the number of trees to use).
+   logPrior(LogPrior),
+   getScore_hasCat_tree1(D, E, TreesToUse, Total1),
+   getScore_hasCat_tree2(D, E, TreesToUse, Total2),
+   getScore_hasCat_tree3(D, E, TreesToUse, Total3),
+   getScore_hasCat_tree4(D, E, TreesToUse, Total4),
+   getScore_hasCat_tree5(D, E, TreesToUse, Total5),
+   getScore_hasCat_tree6(D, E, TreesToUse, Total6),
+   getScore_hasCat_tree7(D, E, TreesToUse, Total7),
+   getScore_hasCat_tree8(D, E, TreesToUse, Total8),
+   getScore_hasCat_tree9(D, E, TreesToUse, Total9),
+   getScore_hasCat_tree10(D, E, TreesToUse, Total10),
+   Total is LogPrior + Total1 + Total2 + Total3 + Total4 + Total5 + Total6 + Total7 + Total8 + Total9 + Total10,
+   !.
+hasCat(D, E, TreesToUse, Total) :- waitHere("This should not fail", hasCat(D, E, TreesToUse, Total)).
+
+getScore_hasCat_tree1(D, E, TreesToUse, 0.0) :- 1 > TreesToUse, !.
+getScore_hasCat_tree1(D, E, TreesToUse, Total1) :- hasCat_tree1(D, E, Total), stepLength_tree1(StepLen), Total1 is Total * StepLen.
+
+getScore_hasCat_tree2(D, E, TreesToUse, 0.0) :- 2 > TreesToUse, !.
+getScore_hasCat_tree2(D, E, TreesToUse, Total2) :- hasCat_tree2(D, E, Total), stepLength_tree2(StepLen), Total2 is Total * StepLen.
+
+getScore_hasCat_tree3(D, E, TreesToUse, 0.0) :- 3 > TreesToUse, !.
+getScore_hasCat_tree3(D, E, TreesToUse, Total3) :- hasCat_tree3(D, E, Total), stepLength_tree3(StepLen), Total3 is Total * StepLen.
+
+getScore_hasCat_tree4(D, E, TreesToUse, 0.0) :- 4 > TreesToUse, !.
+getScore_hasCat_tree4(D, E, TreesToUse, Total4) :- hasCat_tree4(D, E, Total), stepLength_tree4(StepLen), Total4 is Total * StepLen.
+
+getScore_hasCat_tree5(D, E, TreesToUse, 0.0) :- 5 > TreesToUse, !.
+getScore_hasCat_tree5(D, E, TreesToUse, Total5) :- hasCat_tree5(D, E, Total), stepLength_tree5(StepLen), Total5 is Total * StepLen.
+
+getScore_hasCat_tree6(D, E, TreesToUse, 0.0) :- 6 > TreesToUse, !.
+getScore_hasCat_tree6(D, E, TreesToUse, Total6) :- hasCat_tree6(D, E, Total), stepLength_tree6(StepLen), Total6 is Total * StepLen.
+
+getScore_hasCat_tree7(D, E, TreesToUse, 0.0) :- 7 > TreesToUse, !.
+getScore_hasCat_tree7(D, E, TreesToUse, Total7) :- hasCat_tree7(D, E, Total), stepLength_tree7(StepLen), Total7 is Total * StepLen.
+
+getScore_hasCat_tree8(D, E, TreesToUse, 0.0) :- 8 > TreesToUse, !.
+getScore_hasCat_tree8(D, E, TreesToUse, Total8) :- hasCat_tree8(D, E, Total), stepLength_tree8(StepLen), Total8 is Total * StepLen.
+
+getScore_hasCat_tree9(D, E, TreesToUse, 0.0) :- 9 > TreesToUse, !.
+getScore_hasCat_tree9(D, E, TreesToUse, Total9) :- hasCat_tree9(D, E, Total), stepLength_tree9(StepLen), Total9 is Total * StepLen.
+
+getScore_hasCat_tree10(D, E, TreesToUse, 0.0) :- 10 > TreesToUse, !.
+getScore_hasCat_tree10(D, E, TreesToUse, Total10) :- hasCat_tree10(D, E, Total), stepLength_tree10(StepLen), Total10 is Total * StepLen.
+
+flattenedLiteralsInThisSetOfTrees(hasCat, 161, [
+   link(uniqueVar29, uniqueVar28),
+   link(uniqueVar76, uniqueVar77),
+   link(uniqueVar37, uniqueVar38),
+   link(uniqueVar85, uniqueVar86),
+   link(uniqueVar94, underscore),
+   link(underscore, uniqueVar17),
+   link(uniqueVar2, uniqueVar3),
+   link(uniqueVar23, a),
+   link(a, uniqueVar68),
+   link(uniqueVar3, underscore),
+   link(a, uniqueVar51),
+   link(uniqueVar59, uniqueVar58),
+   link(uniqueVar66, uniqueVar67),
+   link(uniqueVar89, a),
+   link(a, uniqueVar50),
+   link(underscore, uniqueVar22),
+   link(uniqueVar62, a),
+   link(uniqueVar34, underscore),
+   link(uniqueVar49, uniqueVar48),
+   link(a, uniqueVar75),
+   link(a, uniqueVar5),
+   link(a, underscore),
+   link(underscore, uniqueVar29),
+   link(uniqueVar14, a),
+   link(uniqueVar52, uniqueVar53),
+   link(uniqueVar73, uniqueVar72),
+   link(uniqueVar4, uniqueVar5),
+   link(uniqueVar19, a),
+   link(uniqueVar64, uniqueVar63),
+   link(uniqueVar54, underscore),
+   link(uniqueVar100, a),
+   link(uniqueVar24, a),
+   link(a, uniqueVar90),
+   link(a, uniqueVar54),
+   link(uniqueVar90, uniqueVar91),
+   link(a, uniqueVar21),
+   link(a, uniqueVar77),
+   link(uniqueVar47, uniqueVar46),
+   link(uniqueVar19, uniqueVar20),
+   link(uniqueVar80, uniqueVar81),
+   link(underscore, uniqueVar18),
+   link(uniqueVar83, uniqueVar84),
+   link(a, uniqueVar94),
+   link(uniqueVar76, a),
+   link(a, uniqueVar55),
+   link(uniqueVar61, a),
+   link(a, uniqueVar59),
+   link(a, uniqueVar63),
+   link(uniqueVar8, a),
+   link(uniqueVar18, a),
+   link(a, uniqueVar99),
+   link(a, uniqueVar13),
+   link(uniqueVar98, a),
+   link(a, uniqueVar87),
+   link(underscore, uniqueVar56),
+   link(uniqueVar79, uniqueVar78),
+   link(a, uniqueVar82),
+   link(uniqueVar8, uniqueVar9),
+   link(uniqueVar86, underscore),
+   link(a, uniqueVar2),
+   link(a, uniqueVar91),
+   link(underscore, uniqueVar97),
+   link(a, uniqueVar85),
+   link(uniqueVar33, uniqueVar34),
+   link(uniqueVar65, underscore),
+   link(uniqueVar72, a),
+   link(uniqueVar97, a),
+   link(uniqueVar6, a),
+   link(underscore, a),
+   link(underscore, uniqueVar96),
+   link(uniqueVar50, uniqueVar51),
+   link(uniqueVar1, a),
+   link(uniqueVar15, underscore),
+   link(uniqueVar12, uniqueVar13),
+   link(uniqueVar101, underscore),
+   link(uniqueVar53, underscore),
+   link(uniqueVar83, a),
+   link(a, uniqueVar7),
+   link(uniqueVar48, a),
+   link(a, uniqueVar58),
+   link(underscore, uniqueVar57),
+   link(a, uniqueVar43),
+   link(a, uniqueVar65),
+   link(uniqueVar60, uniqueVar61),
+   link(a, uniqueVar26),
+   link(uniqueVar56, uniqueVar55),
+   link(uniqueVar14, uniqueVar15),
+   link(underscore, uniqueVar73),
+   link(a, uniqueVar70),
+   link(underscore, uniqueVar89),
+   link(uniqueVar92, uniqueVar93),
+   link(uniqueVar95, a),
+   link(uniqueVar40, a),
+   link(uniqueVar26, underscore),
+   link(uniqueVar27, a),
+   link(a, uniqueVar41),
+   link(a, uniqueVar80),
+   link(underscore, uniqueVar88),
+   link(a, uniqueVar4),
+   link(uniqueVar17, uniqueVar16),
+   link(uniqueVar25, underscore),
+   link(uniqueVar57, a),
+   link(underscore, uniqueVar30),
+   link(uniqueVar33, a),
+   link(uniqueVar6, uniqueVar7),
+   link(uniqueVar22, uniqueVar21),
+   link(uniqueVar42, uniqueVar41),
+   link(uniqueVar81, uniqueVar80),
+   link(a, uniqueVar92),
+   link(a, uniqueVar10),
+   link(uniqueVar46, a),
+   link(underscore, uniqueVar49),
+   link(uniqueVar44, underscore),
+   link(uniqueVar96, uniqueVar95),
+   link(uniqueVar39, a),
+   link(uniqueVar82, underscore),
+   link(uniqueVar88, uniqueVar87),
+   link(underscore, uniqueVar64),
+   link(underscore, uniqueVar11),
+   link(a, uniqueVar31),
+   link(uniqueVar69, uniqueVar68),
+   link(uniqueVar67, underscore),
+   link(uniqueVar36, a),
+   link(uniqueVar70, uniqueVar71),
+   link(uniqueVar43, uniqueVar44),
+   link(a, uniqueVar74),
+   link(uniqueVar20, a),
+   link(underscore, uniqueVar79),
+   link(underscore, uniqueVar23),
+   link(uniqueVar45, a),
+   link(uniqueVar98, uniqueVar99),
+   link(uniqueVar11, uniqueVar10),
+   link(a, uniqueVar37),
+   link(uniqueVar84, a),
+   link(uniqueVar60, a),
+   link(underscore, uniqueVar42),
+   link(a, uniqueVar78),
+   link(uniqueVar36, uniqueVar35),
+   link(uniqueVar71, underscore),
+   link(underscore, uniqueVar27),
+   link(uniqueVar32, uniqueVar31),
+   link(a, uniqueVar35),
+   link(uniqueVar30, a),
+   link(uniqueVar38, uniqueVar37),
+   link(uniqueVar9, underscore),
+   link(uniqueVar24, uniqueVar25),
+   link(uniqueVar93, underscore),
+   link(uniqueVar40, uniqueVar39),
+   link(underscore, uniqueVar62),
+   link(underscore, uniqueVar1),
+   link(underscore, uniqueVar45),
+   link(uniqueVar46, uniqueVar47),
+   link(a, uniqueVar16),
+   link(uniqueVar28, a),
+   link(uniqueVar12, a),
+   link(underscore, uniqueVar32),
+   link(a, uniqueVar52),
+   link(uniqueVar75, uniqueVar74),
+   link(uniqueVar100, uniqueVar101),
+   link(uniqueVar66, a),
+   link(uniqueVar68, uniqueVar69)]).

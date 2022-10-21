@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegressionInfoHolderForRDN.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP.Regression</a> &gt; <span class="el_source">RegressionInfoHolderForRDN.java</span></div><h1>RegressionInfoHolderForRDN.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP.Regression;
+
+import edu.wisc.cs.will.Boosting.RDN.RegressionRDNExample;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.DataSetUtils.RegressionExample;
+import edu.wisc.cs.will.ILP.LearnOneClause;
+import edu.wisc.cs.will.ILP.SingleClauseNode;
+import edu.wisc.cs.will.Utils.ProbDistribution;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+
+/*
+ * @author tkhot
+ */
+public class RegressionInfoHolderForRDN extends RegressionInfoHolder {
+	
+<span class="fc" id="L17">	public RegressionInfoHolderForRDN() {</span>
+<span class="fc" id="L18">		trueStats = new BranchStats();</span>
+<span class="fc" id="L19">		falseStats = new BranchStats();</span>
+<span class="fc" id="L20">	}</span>
+
+	@Override
+	public double weightedVarianceAtSuccess() {		
+<span class="fc" id="L24">		return trueStats.getWeightedVariance();</span>
+	}
+
+	@Override
+	public double weightedVarianceAtFailure() {
+<span class="fc" id="L29">		return falseStats.getWeightedVariance();</span>
+	}
+
+	@Override
+	public double totalExampleWeightAtSuccess() {
+<span class="fc" id="L34">		return trueStats.getNumExamples();</span>
+	}
+
+	@Override
+	public double totalExampleWeightAtFailure() {
+<span class="fc" id="L39">		return falseStats.getNumExamples();</span>
+	}
+
+	@Override
+	public double meanAtSuccess() {
+<span class="fc" id="L44">		return trueStats.getLambda();</span>
+	}
+
+	@Override
+	public double meanAtFailure() {
+<span class="fc" id="L49">		return falseStats.getLambda();</span>
+	}
+
+	@Override
+	public RegressionInfoHolder addFailureStats(RegressionInfoHolder addThis) {
+<span class="fc" id="L54">		RegressionInfoHolderForRDN regHolder = new RegressionInfoHolderForRDN();</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">		if (addThis == null) {</span>
+<span class="fc" id="L56">			regHolder.falseStats = this.falseStats.add(new BranchStats());</span>
+		} else {
+<span class="fc" id="L58">			regHolder.falseStats = this.falseStats.add(addThis.falseStats);</span>
+		}
+<span class="fc" id="L60">		return regHolder;</span>
+	}
+
+	@Override
+	public void addFailureExample(Example eg, long numGrndg, double weight) {
+<span class="fc" id="L65">		double output =  ((RegressionExample) eg).getOutputValue();</span>
+<span class="fc" id="L66">		ProbDistribution prob   = ((RegressionRDNExample)eg).getProbOfExample();</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">		if (prob.isHasDistribution()) {</span>
+<span class="nc" id="L68">			Utils.error(&quot;Expected single probability value but contains distribution&quot;);</span>
+		}
+<span class="fc" id="L70">		falseStats.addNumOutput(numGrndg, output, weight, prob.getProbOfBeingTrue());</span>
+<span class="fc" id="L71">	}</span>
+
+    @Override
+	public void populateExamples(LearnOneClause task, SingleClauseNode caller) throws SearchInterrupted {
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">		if (!task.regressionTask) { Utils.error(&quot;Should call this when NOT doing regression.&quot;); }</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">		if (caller.getPosCoverage() &lt; 0.0) { caller.computeCoverage(); }</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">		for (Example posEx : task.getPosExamples()) {</span>
+<span class="fc" id="L78">			double weight = posEx.getWeightOnExample();</span>
+<span class="fc" id="L79">			double output = ((RegressionExample) posEx).getOutputValue();</span>
+<span class="fc" id="L80">			ProbDistribution prob   = ((RegressionRDNExample)posEx).getProbOfExample();</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">			if (prob.isHasDistribution()) {</span>
+<span class="nc" id="L82">				Utils.error(&quot;Expected single probability value but contains distribution&quot;);</span>
+			}
+<span class="fc bfc" id="L84" title="All 2 branches covered.">			if (!caller.posExampleAlreadyExcluded(posEx)) {</span>
+<span class="fc" id="L85">				trueStats.addNumOutput(1, output, weight, prob.getProbOfBeingTrue());		</span>
+			}
+<span class="fc" id="L87">		}</span>
+<span class="fc" id="L88">		RegressionInfoHolder totalFalseStats = caller.getTotalFalseBranchHolder() ;</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">		if (totalFalseStats != null) {</span>
+<span class="fc" id="L90">			falseStats = falseStats.add(totalFalseStats.falseStats);</span>
+		}
+<span class="fc" id="L92">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

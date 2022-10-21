@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScoringFunction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.stdAIsearch</a> &gt; <span class="el_source">ScoringFunction.java</span></div><h1>ScoringFunction.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.stdAIsearch;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+/*
+ * @author shavlik
+ */
+public abstract class ScoringFunction {
+
+<span class="fc" id="L10">	protected ScoringFunction() {}</span>
+
+	public abstract double scoreThisNode(SearchNode node) throws SearchInterrupted;
+
+	public double computeMaxPossibleScore(SearchNode node) throws SearchInterrupted {
+		// THESE ARE HERE TO TRAP SOME ODD BEHAVIOR ThAT POPPED UP ONCE WITH ILP SEARCH.  Can delete later (current date = 7/31/08).
+		// TODO(@hayesall): Comment suggests this can be removed, factor out.
+<span class="nc" id="L17">		Utils.waitHere(&quot;Wrong computeMaxPossibleScore?&quot;);</span>
+<span class="nc" id="L18">		Utils.error(&quot;Shouldn't happen?&quot;);</span>
+<span class="nc" id="L19">		return Double.POSITIVE_INFINITY;</span>
+	}
+
+	public double computeBonusScoreForThisNode(SearchNode node) throws SearchInterrupted {
+		// ADD this to the normal score.
+<span class="nc" id="L24">		Utils.waitHere(&quot;Wrong computeBonusScoreForThisNode?&quot;);</span>
+<span class="nc" id="L25">		Utils.error(&quot;Shouldn't happen?&quot;);</span>
+		// Might want to override the regular score to play tricks with insertion into OPEN (eg, used in ILP code).
+<span class="nc" id="L27">		return 0;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

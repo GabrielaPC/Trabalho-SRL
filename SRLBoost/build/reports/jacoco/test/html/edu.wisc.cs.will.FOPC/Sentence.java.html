@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Sentence.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">Sentence.java</span></div><h1>Sentence.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC.visitors.SentenceVisitor;
+import edu.wisc.cs.will.ILP.SentenceCompressor;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.Serializable;
+import java.util.*;
+
+/*
+ * @author shavlik
+ *
+ * This class represents a well-formed formula (wff) in FOPC.  One addition we're including is a WEIGHT on each sentence (since we're doing MLNs).
+ * 
+ * See http://en.wikipedia.org/wiki/First-order_logic or an AI textbook for more info.
+ *
+ */
+public abstract class Sentence extends AllOfFOPC implements Serializable {
+
+	final static double maxWeight     = 300.0; // Since weights are used in exp^weight, want something that avoids overflow.
+	final static double minWeight     = -maxWeight;	 // Also want to avoid underflow (note: code does not yet use this).
+    private final static double defaultWeight = maxWeight + 1.0; // The default weight is 'infinity.'  (Note: the Example class has a weight as well; since these two weights have different semantics, we use two long names.)
+<span class="fc" id="L23">	double wgtSentence   = defaultWeight;</span>
+	transient protected   HandleFOPCstrings stringHandler; // Add another field to everything so it can access this, and hence access things like lowercaseMeansVariable.
+	
+	/*
+	 * The Sentence class represents a well-formed formula (wff) in FOPC.
+	 */
+<span class="fc" id="L29">	Sentence() {}</span>
+
+	public HandleFOPCstrings getStringHandler() {
+<span class="fc" id="L32">		return stringHandler;</span>
+	}
+
+	public Sentence copyAndRenameVariables() {
+<span class="nc" id="L36">		stringHandler.pushVariableHash();</span>
+<span class="nc" id="L37">		Sentence result = copy2();</span>
+<span class="nc" id="L38">		stringHandler.popVariableHash();</span>
+<span class="nc" id="L39">		return result;</span>
+	}
+
+	public abstract Sentence copy(boolean recursiveCopy);
+    
+	public abstract boolean containsTermAsSentence();
+
+	private Sentence copy2() {
+<span class="nc" id="L47">        return copy2(true, new BindingList());</span>
+    }
+
+    public abstract Sentence copy2(boolean recursiveCopy, BindingList bindingList);
+
+	public Sentence wrapFreeVariables() {
+<span class="fc" id="L53">		Collection&lt;Variable&gt; boundVariables = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L54">		Collection&lt;Variable&gt; freeVariables  = collectFreeVariables(boundVariables);</span>
+		
+<span class="pc bpc" id="L56" title="1 of 4 branches missed.">		if (freeVariables == null || freeVariables.size() &lt;= 0) {</span>
+<span class="fc" id="L57">			return this;</span>
+		}
+<span class="fc" id="L59">		UniversalSentence result = new UniversalSentence(stringHandler, freeVariables, this);</span>
+<span class="fc" id="L60">		result.wgtSentence = wgtSentence; // Pull the weight out.  (Could check if the inner weight = maxWeight, but no big deal.</span>
+<span class="fc" id="L61">		wgtSentence = Sentence.maxWeight;</span>
+<span class="fc" id="L62">		return result;</span>
+	}
+	
+	public double getWeightOnSentence() {
+<span class="fc" id="L66">		return wgtSentence;</span>
+	}	
+	private void setWeightOnSentence() { // Set to DEFAULT value if no arguments.
+<span class="fc" id="L69">		wgtSentence = defaultWeight;</span>
+<span class="fc" id="L70">	}</span>
+	public Sentence setWeightOnSentence(double weight) {
+<span class="fc" id="L72">		this.wgtSentence = Math.max(minWeight, Math.min(maxWeight, weight)); // Keep in range.</span>
+<span class="fc" id="L73">		return this; // Returning this makes it convenient to append '.setWeight' to new's.</span>
+	}
+
+	// In the original MLN paper in MLj, if one clause becomes N, divide the weights equally.  However, if at maxWeight, keep as is.
+	// NOTE: this does not preserve the semantics of MLNs (e.g., 'weight [p(x) and q(x)]' not same as 'weight/2 p(x) and weight/2 q(x)', but we live with this so we can represent in clausal form.
+	Sentence divideWeightByN(double weight, int n) {
+<span class="nc bnc" id="L79" title="All 4 branches missed.">		if (weight &gt; minWeight &amp;&amp; weight &lt; maxWeight) { this.wgtSentence = weight / n; }</span>
+<span class="nc" id="L80">		return this; // Returning this makes it convenient to append '.setWeight' to new's.</span>
+	}
+
+	public List&lt;Clause&gt; convertToClausalForm() {
+<span class="fc" id="L84">		Sentence sentence = this;</span>
+
+		// Convert equivalences to implications.   See pages 215 and 295-297 of Russell and Norvig, 2nd edition.
+		// Do some initial scanning since these steps lead to complete copying.  (I'm not sure this is a big deal ..)
+		// Could also do these checks at each step, so only necessary parts are copied, but that might trade off too much time for space?
+		// This can produce a SET of sentences, but they'll be conjoined with an AND.
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">		if (sentence.containsThisFOPCtype(&quot;equivalent&quot;)) {</span>
+<span class="nc" id="L91">			sentence = sentence.convertEquivalenceToImplication();</span>
+		}
+		
+		// Eliminate implications.
+<span class="fc bfc" id="L95" title="All 2 branches covered.">		if (sentence.containsThisFOPCtype(&quot;implies&quot;)) {</span>
+<span class="fc" id="L96">			sentence = sentence.eliminateImplications();</span>
+		}
+		
+		// Move negation inwards.
+<span class="fc bfc" id="L100" title="All 2 branches covered.">		if (sentence.containsThisFOPCtype(&quot;not&quot;)) {</span>
+<span class="fc" id="L101">			sentence = sentence.moveNegationInwards();</span>
+		}
+		
+		// Skolemize.
+<span class="pc bpc" id="L105" title="1 of 4 branches missed.">		if (sentence.containsThisFOPCtype(&quot;exists&quot;) || sentence.containsThisFOPCtype(&quot;forAll&quot;) ){</span>
+			// Need to do the dropUniversalQuantifiers.
+<span class="fc" id="L107">			sentence = sentence.skolemize(null);</span>
+		}
+
+		// Distribute disjunctions over conjunctions.
+<span class="fc bfc" id="L111" title="All 2 branches covered.">		if (sentence.containsThisFOPCtype(&quot;or&quot;)) {</span>
+<span class="fc" id="L112">			double holdWgt = sentence.getWeightOnSentence();</span>
+<span class="fc" id="L113">			sentence.setWeightOnSentence(); // Set to the max weight.</span>
+<span class="fc" id="L114">			sentence = sentence.distributeDisjunctionOverConjunction();</span>
+<span class="fc" id="L115">			sentence.setWeightOnSentence(holdWgt); // We don't want to distribute this top-level weight just yet (convertToListOfClauses will do so).</span>
+		}
+		
+		// Eliminate variable-name clashes. We can do this step LAST (usually it is before Skolemization).
+
+        //sentence = sentence.standardizeVariableNames(null, newToOldBindings);
+
+<span class="fc" id="L122">        sentence = SentenceCompressor.getCompressedSentence(sentence);</span>
+
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">        if (sentence instanceof Clause) {</span>
+<span class="nc" id="L125">            return Collections.singletonList((Clause)sentence);</span>
+        }
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        else if(sentence instanceof Literal) {</span>
+<span class="fc" id="L128">			List&lt;Clause&gt; result = sentence.convertToListOfClauses();</span>
+<span class="pc bpc" id="L129" title="1 of 4 branches missed.">			if (result != null) { for (Clause c : result) { c.checkForCut(); }} // This isolated literal could be the cut, though that is unlikely.</span>
+<span class="fc" id="L130">			return result; // No need to rename variables since an isolated literal, and so will already have unique variables.</span>
+		}
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        else if(sentence instanceof ConnectedSentence) {</span>
+<span class="fc" id="L133">			List&lt;Clause&gt; result = sentence.convertToListOfClauses();</span>
+<span class="pc bpc" id="L134" title="2 of 4 branches missed.">			if (result != null &amp;&amp; result.size() &gt; 1) { // Need to rename all of these.</span>
+<span class="nc" id="L135">				List&lt;Clause&gt; renamedResult = new ArrayList&lt;&gt;(result.size());</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">				for (Clause c : result) {</span>
+<span class="nc" id="L137">					Clause newClause = (Clause) c.copyAndRenameVariables().setWeightOnSentence(c.getWeightOnSentence());</span>
+<span class="nc" id="L138">					newClause.checkForCut();</span>
+<span class="nc" id="L139">					renamedResult.add(newClause);</span>
+<span class="nc" id="L140">				}</span>
+<span class="nc" id="L141">				result = renamedResult;</span>
+			}
+<span class="fc" id="L143">			return result;</span>
+		}
+<span class="nc" id="L145">		Utils.error(&quot;Cannot yet handle this case: &quot; + sentence);</span>
+<span class="nc" id="L146">		return null;</span>
+	}
+	List&lt;Clause&gt; convertToListOfClauses() {
+<span class="nc" id="L149">		Utils.error(&quot;This should not be reached, but reached by: &quot; + this);</span>
+<span class="nc" id="L150">		return null;</span>
+	}
+    
+	Clause convertToClause() {
+<span class="nc" id="L154">        List&lt;Clause&gt; clauses = convertToClausalForm();</span>
+<span class="nc bnc" id="L155" title="All 4 branches missed.">        if (clauses != null &amp;&amp; clauses.size() == 1) {</span>
+<span class="nc" id="L156">            return clauses.get(0);</span>
+        }
+        else {
+<span class="nc" id="L159">            Utils.error(&quot;Sentences can not be represented by a single clause.&quot;);</span>
+<span class="nc" id="L160">            return null;</span>
+        }
+    }
+
+	public abstract Collection&lt;Variable&gt; collectFreeVariables(Collection&lt;Variable&gt; boundVariables);
+	public abstract Collection&lt;Variable&gt; collectAllVariables();
+    @Override
+	public abstract Sentence             applyTheta(Map&lt;Variable,Term&gt; bindings);
+
+	@Override
+	public abstract boolean              equals(Object other);
+	public abstract boolean              containsVariables();
+	public abstract BindingList          variants(Sentence other, BindingList bindings);
+    public boolean                       isVariant(Sentence other) {
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        return variants(other, new BindingList()) != null;</span>
+    }
+	public abstract boolean              containsFreeVariablesAfterSubstitution(BindingList theta);
+
+    public boolean                       isEquivalentUptoVariableRenaming(Sentence that) {
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        return this.isEquivalentUptoVariableRenaming(that, new BindingList()) != null;</span>
+    }
+
+    public abstract BindingList          isEquivalentUptoVariableRenaming(Sentence that, BindingList bindings);
+	
+	// These are all related to converting to clausal form.
+	protected abstract boolean  containsThisFOPCtype(String marker);
+	protected abstract Sentence convertEquivalenceToImplication();
+	protected abstract Sentence eliminateImplications();
+	protected abstract Sentence negate();
+	protected abstract Sentence moveNegationInwards();
+	protected abstract Sentence skolemize(List&lt;Variable&gt; outerUniversalVars);
+	protected abstract Sentence distributeDisjunctionOverConjunction();
+    protected abstract Sentence distributeConjunctionOverDisjunction();
+
+<span class="fc bfc" id="L194" title="All 2 branches covered.">    public boolean isGrounded() { return !containsVariables(); }</span>
+
+	/* Attempts to convert a sentence into a single clause.
+     *
+     * Converts the sentence to clauses via the convertToClausalForm() method.
+     * If the clausal form contains a single clause, that clause is returned.
+     * Otherwise an IllegalStateException is thrown.
+     *
+     * @return Sentence converted into a single clause, if possible.
+     * @throws IllegalStateException Throws exception if the sentence can not be converted
+     * into a single clause.
+     */
+    public Clause asClause() throws IllegalStateException {
+<span class="nc" id="L207">        List&lt;Clause&gt; clauses = this.convertToClausalForm();</span>
+<span class="nc bnc" id="L208" title="All 4 branches missed.">        if (clauses == null || clauses.size() != 1) {</span>
+<span class="nc" id="L209">            throw new IllegalStateException(&quot;Unable to convert sentence into single clause.  Sentence: \n&quot; + this);</span>
+        }
+
+<span class="nc" id="L212">        return clauses.get(0);</span>
+    }
+
+	String returnWeightString() {
+<span class="fc bfc" id="L216" title="All 2 branches covered.">		if (wgtSentence &lt; maxWeight) {</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">			if (AllOfFOPC.printUsingAlchemyNotation) { return Utils.truncate(wgtSentence, 4) + &quot; &quot;; } </span>
+<span class="fc" id="L218">			return                                 &quot;wgt = &quot; + Utils.truncate(wgtSentence, 4) + &quot; &quot;; }</span>
+<span class="fc" id="L219">		return &quot;&quot;;</span>
+	}
+
+	public Literal extractLiteral() {
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">		if (this instanceof Literal) {</span>
+<span class="fc" id="L224">			return (Literal) this;</span>
+		}
+<span class="nc" id="L226">		Utils.error(&quot;Cannot extract a literal from: &quot; + this);</span>
+<span class="nc" id="L227">		return null;</span>
+	}
+
+    public Clause getNegatedQueryClause() throws IllegalArgumentException {
+
+        Clause result;
+
+<span class="fc" id="L234">        List&lt;Clause&gt; clauses = convertToClausalForm();</span>
+<span class="pc bpc" id="L235" title="1 of 2 branches missed.">        if ( clauses.size() == 0 ) {</span>
+<span class="nc" id="L236">            result = stringHandler.getClause();</span>
+        }
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">        else if ( clauses.size() == 1 ) {</span>
+<span class="fc" id="L239">            result = clauses.get(0).getNegatedQueryClause();</span>
+        }
+        else {
+<span class="nc" id="L242">            throw new IllegalArgumentException(&quot;Sentence could not be converted to legal SLDQuery clause: &quot; + this + &quot;.&quot;);</span>
+        }
+
+<span class="fc" id="L245">        return result;</span>
+    }
+
+    public &lt;Return,Data&gt; Return accept(SentenceVisitor&lt;Return,Data&gt; visitor, Data data) {
+<span class="nc" id="L249">        return visitor.visitOtherSentence(this);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

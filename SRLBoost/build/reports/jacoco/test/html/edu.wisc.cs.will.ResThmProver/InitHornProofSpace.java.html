@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InitHornProofSpace.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ResThmProver</a> &gt; <span class="el_source">InitHornProofSpace.java</span></div><h1>InitHornProofSpace.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ResThmProver;
+
+import edu.wisc.cs.will.FOPC.Clause;
+import edu.wisc.cs.will.FOPC.HandleFOPCstrings;
+import edu.wisc.cs.will.FOPC.Literal;
+import edu.wisc.cs.will.ResThmProver.HornClauseProverChildrenGenerator.CutLiteral;
+import edu.wisc.cs.will.ResThmProver.HornClauseProverChildrenGenerator.CutMarkerNode;
+import edu.wisc.cs.will.stdAIsearch.Initializer;
+import edu.wisc.cs.will.stdAIsearch.OpenList;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/*
+ * @author shavlik
+ *
+ */
+public class InitHornProofSpace extends Initializer {
+
+<span class="fc" id="L21">    InitHornProofSpace(HornClauseProver task) {</span>
+<span class="fc" id="L22">		this.task                     = task;</span>
+<span class="fc" id="L23">	}</span>
+
+
+    void loadNegatedSimpleQuery(Literal negatedQuery, OpenList openList) {
+<span class="fc" id="L27">        loadNegatedConjunctiveQuery(Collections.singletonList(negatedQuery), openList);</span>
+<span class="fc" id="L28">    }</span>
+
+	public void loadNegatedConjunctiveQuery(List&lt;Literal&gt; negatedQueryLiterals, OpenList openList) {
+
+        HornSearchNode[] nodes;        
+        
+<span class="fc" id="L34">        HornClauseProverChildrenGenerator.proofCounter = 0;</span>
+<span class="fc" id="L35">        long proofCount = HornClauseProverChildrenGenerator.proofCounter++;</span>
+
+
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if ( containsCut(negatedQueryLiterals) ) {</span>
+<span class="nc" id="L39">            nodes = createCutMarkerNodes(negatedQueryLiterals, proofCount);</span>
+        }
+        else {
+<span class="fc" id="L42">            nodes = createNonCutNodes(negatedQueryLiterals);</span>
+        }
+        
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if ( openList != null ) initializeOpen(openList, nodes);</span>
+
+<span class="fc" id="L47">    }</span>
+
+    private HornSearchNode[] createNonCutNodes(List&lt;Literal&gt; negatedQueryLiterals) {
+<span class="fc" id="L50">        Clause negatedQuery = getStringHandler().getClause(negatedQueryLiterals, false); // These are all negated (i.e., checked above), so tell Clause() that.</span>
+        
+
+<span class="fc" id="L53">        HornSearchNode negatedQueryAsRootNode = new HornSearchNode(getHornClauseProver(), negatedQuery);</span>
+
+<span class="fc" id="L55">        HornSearchNode[] nodes = new HornSearchNode[1];</span>
+<span class="fc" id="L56">        nodes[0] = negatedQueryAsRootNode;</span>
+        
+<span class="fc" id="L58">        return nodes;</span>
+    }
+
+<span class="fc" id="L61">    public void initializeOpen(OpenList openList) {}</span>
+	
+    private void initializeOpen(OpenList openList, HornSearchNode... nodes) {
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        if ( openList != null ) {</span>
+<span class="fc" id="L65">            openList.clear();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            for(HornSearchNode hornSearchNode : nodes) {</span>
+<span class="fc" id="L67">                openList.addToEndOfOpenList(hornSearchNode);</span>
+            }
+        }
+<span class="fc" id="L70">	}</span>
+
+    private HornSearchNode[] createCutMarkerNodes(List&lt;Literal&gt; negatedQueryLiterals, long proofCount) {
+
+<span class="nc" id="L74">        Literal literalBeingCut = getHornClauseProver().getStringHandler().getLiteral(&quot;directProofOfClause&quot;);</span>
+<span class="nc" id="L75">        CutMarkerNode cutMarkerNode = new CutMarkerNode((HornClauseProver)task, literalBeingCut, proofCount);</span>
+<span class="nc" id="L76">        Literal cutLiteral = new CutLiteral(getStringHandler(), cutMarkerNode);</span>
+
+<span class="nc" id="L78">        List&lt;Literal&gt; newQueryLiterals = replaceCutsWithMarkedLiteral(negatedQueryLiterals, cutLiteral);</span>
+
+<span class="nc" id="L80">        Clause newNegatedQuery    = getStringHandler().getClause(newQueryLiterals, false); // These are all negated (i.e., checked above), so tell Clause() that.</span>
+
+<span class="nc" id="L82">        HornSearchNode rootNode          = new HornSearchNode(getHornClauseProver(), newNegatedQuery);</span>
+
+<span class="nc" id="L84">        HornSearchNode[] nodes = new HornSearchNode[2];</span>
+<span class="nc" id="L85">        nodes[0]=rootNode;</span>
+<span class="nc" id="L86">        nodes[1]=cutMarkerNode;</span>
+
+<span class="nc" id="L88">        return nodes;</span>
+    }
+
+    private List&lt;Literal&gt; replaceCutsWithMarkedLiteral(List&lt;Literal&gt; ruleBody, Literal cutLiteral) {
+<span class="nc" id="L92">        List&lt;Literal&gt; newRuleBody = new ArrayList&lt;&gt;(ruleBody.size());</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        for (Literal lit : ruleBody) {</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            if (lit.predicateName == getStringHandler().standardPredicateNames.cut) {</span>
+<span class="nc" id="L95">                newRuleBody.add(cutLiteral);</span>
+            }
+            else {
+<span class="nc" id="L98">                newRuleBody.add(lit);</span>
+            }
+<span class="nc" id="L100">        }</span>
+<span class="nc" id="L101">        return newRuleBody;</span>
+    }
+
+    private HandleFOPCstrings getStringHandler() {
+<span class="fc" id="L105">        return ((HornClauseProver) task).getStringHandler();</span>
+    }
+
+    private boolean containsCut(List&lt;Literal&gt; negatedConjunctiveQuery) {
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if ( negatedConjunctiveQuery != null ) {</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">            for (Literal literal : negatedConjunctiveQuery) {</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">                if (( literal.predicateName == getStringHandler().standardPredicateNames.cut)) {</span>
+<span class="nc" id="L112">                    return true;</span>
+                }
+<span class="fc" id="L114">            }</span>
+        }
+<span class="fc" id="L116">        return false;</span>
+    }
+
+    private HornClauseProver getHornClauseProver() {
+<span class="fc" id="L120">        return (HornClauseProver)this.task;</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StateBasedSearchTask.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.stdAIsearch</a> &gt; <span class="el_source">StateBasedSearchTask.java</span></div><h1>StateBasedSearchTask.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.stdAIsearch;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.List;
+
+
+// TODO sampling search (eg, walksat)
+// TODO how would the case of using a small dataset during initial clause generation work, with a larger one later?  look at nodesExplored, etc.
+// TODO implement code for dealing with CLOSED (ie, how to do equals)
+// TODO implement iterativeDeepening that works with ANY search
+
+/*
+ * The specification of a state-based search task.
+ * 
+ * @param &lt;T&gt; Class of the search nodes.
+ * @author shavlik
+ */
+public class StateBasedSearchTask&lt;T extends SearchNode&gt; {
+<span class="fc" id="L20">	protected String taskName = &quot;unnamedTask&quot;; // Used in println's to clarify which task is being discussed.</span>
+
+    private SearchStrategy strategy;
+
+    public ScoringFunction scorer;
+
+    public ChildrenNodeGenerator childrenGenerator;
+
+    public Initializer initializer;
+
+    public EndTest terminator;
+
+    public OpenList&lt;T&gt; open;
+
+    public ClosedList closed;
+
+<span class="fc" id="L36">    final boolean    addNodesToClosedListWhenCreated = true;</span>
+
+    public SearchMonitor searchMonitor;
+
+    private T lastNodeVisited;
+
+    private SearchNode bestNodeVisited;
+
+<span class="fc" id="L44">    final boolean stopWhenMaxNodesCreatedReached = true;</span>
+
+<span class="fc" id="L46">    final boolean stopWhenMaxNodesCreatedThisIterationReached = true;</span>
+
+<span class="fc" id="L48">    private int maxNodesToConsider = -1;</span>
+
+<span class="fc" id="L50">    private int maxNodesToCreate = -1;</span>
+
+<span class="fc" id="L52">    public int maxSearchDepth = java.lang.Integer.MAX_VALUE;</span>
+
+<span class="fc" id="L54">    public int beamWidth = -1;</span>
+
+<span class="fc" id="L56">    final double minAcceptableScore = Double.NEGATIVE_INFINITY;</span>
+
+<span class="fc" id="L58">    final boolean allowToTieMinAcceptableScore = true;</span>
+
+<span class="fc" id="L60">    final boolean inOpenListPutNewTiesInFront = false;</span>
+
+<span class="fc" id="L62">    private final boolean useIterativeDeepeningDepth = false;</span>
+
+<span class="fc" id="L64">    public boolean continueTheSearch = true;</span>
+
+<span class="fc" id="L66">    private int maxNodesToConsiderPerIteration = -1;</span>
+
+    /*
+     * Allow, per iterative-deepening cycle or in a random-sampling search that
+     * does some local heuristic search, a max on the number of nodes CREATED
+     * (non-pos values mean infinity). The default is -1.
+     */
+<span class="fc" id="L73">    private int maxNodesToCreatePerIteration = -1;</span>
+
+    /*
+     * If 0, no comments. 
+     * If verbosity=1, minimal comments. 
+     * If verbosity=2, moderate comments. 
+     * If verbosity=3, many comments. 
+     * If verbosity&gt;3, maximal comments. 
+     * The default is 0.
+     */
+<span class="fc" id="L83">    public int verbosity = 0;</span>
+
+<span class="fc" id="L85">    protected int nodesConsidered = 0;</span>
+
+<span class="fc" id="L87">    protected int nodesCreated = 0;</span>
+
+<span class="fc" id="L89">    int nodesConsideredThisIteration = 0;</span>
+
+<span class="fc" id="L91">    int nodesCreatedThisIteration = 0;</span>
+
+<span class="fc" id="L93">    private long maximumClockTimePerIterationInMillisec = Integer.MAX_VALUE; // Units are milliseconds.</span>
+
+<span class="fc" id="L95">    private long iterationStartTimeInMillisec = -1;</span>
+
+<span class="fc" id="L97">    private boolean initialized = false;</span>
+
+    /* If true, the open list is not cleared at the end of a search.
+     *
+     * Since the open list is not cleared, it is possible to continue the
+     * search after an answer is found via the continueSearch() method.
+     */
+<span class="fc" id="L104">    protected boolean redoable = false;</span>
+
+
+<span class="fc" id="L107">    double       bestScoreSeenSoFar                                    = Double.NEGATIVE_INFINITY;</span>
+<span class="fc" id="L108">    public    int          nodesNotAddedToOPENsinceMaxScoreTooLow                = 0;</span>
+<span class="fc" id="L109">    public    int          nodesRemovedFromOPENsinceMaxScoreNowTooLow            = 0;</span>
+	
+    /*
+     * Default constructor. Does nothing.
+     */
+<span class="fc" id="L114">    protected StateBasedSearchTask() {</span>
+<span class="fc" id="L115">    }</span>
+
+    /*
+     * Initializes this state-based search task.
+     * 
+     * @param initializer
+     *                The creator of the open list.
+     * @param terminator
+     *                The controller of search termination/satisfaction.
+     *                Optional (may be null).
+     * @param searchMonitor
+     *                The monitor of the search. Optional (may be null). If
+     *                null, a search monitor is created.
+     * @param strategy
+     *                How to search. Optional (may be null). If null, a
+     *                best-first search is created.
+     * @param scorer
+     *                The scoring function. Optional (may be null).
+     * @param childrenGenerator
+     *                The generator of the successor search nodes.
+     * @param closed
+     *                The list of nodes already searched. Optional (may be
+     *                null).
+     */
+    protected void initalizeStateBasedSearchTask(Initializer initializer,
+                                                 EndTest terminator, SearchMonitor searchMonitor,
+                                                 SearchStrategy strategy, ScoringFunction scorer,
+                                                 ChildrenNodeGenerator childrenGenerator, ClosedList closed) {
+        // TODO convert errors to exceptions
+        // TODO(hayesall): Assert strategy is always provided.
+
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (searchMonitor == null) {</span>
+<span class="nc" id="L147">            searchMonitor = new SearchMonitor(this);</span>
+        }
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (initializer == null) {</span>
+<span class="nc" id="L150">            Utils.error(&quot;A method that initiates OPEN must be provided to initalizeStateBasedSearchTask().&quot;);</span>
+        }
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if (childrenGenerator == null) {</span>
+<span class="nc" id="L153">            Utils.error(&quot;A method that generates child nodes must be provided to initalizeStateBasedSearchTask().&quot;);</span>
+        }
+
+<span class="fc" id="L156">        this.initializer        = initializer;</span>
+<span class="fc" id="L157">        this.terminator        = terminator;</span>
+<span class="fc" id="L158">        this.searchMonitor     = searchMonitor;</span>
+<span class="fc" id="L159">        this.strategy          = strategy;</span>
+<span class="fc" id="L160">        this.scorer            = scorer;</span>
+<span class="fc" id="L161">        this.childrenGenerator = childrenGenerator;</span>
+<span class="fc" id="L162">        this.closed            = closed;</span>
+
+<span class="fc" id="L164">        initializer.setSearchTask(this);</span>
+<span class="fc" id="L165">        searchMonitor.setSearchTask(this);</span>
+<span class="fc" id="L166">        strategy.setSearchTask(this);</span>
+
+<span class="fc" id="L168">        childrenGenerator.setSearchTask(this);</span>
+
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (open == null) { open = new OpenList&lt;&gt;(this); }</span>
+<span class="fc" id="L171">    }</span>
+    
+    /*
+     * Clears and resets basic search information such as counters.
+     */
+    private void clearAnySavedBasicSearchInformation(boolean withinInterativeDeepening) {
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        if (withinInterativeDeepening) {</span>
+<span class="nc" id="L178">            nodesConsideredThisIteration = 0;</span>
+<span class="nc" id="L179">            nodesCreatedThisIteration    = 0;</span>
+        }
+        else {
+<span class="fc" id="L182">            nodesConsidered = 0; // Clear some counters, etc.</span>
+<span class="fc" id="L183">            nodesCreated    = 0;</span>
+<span class="fc" id="L184">            lastNodeVisited = null; // Allow this to persist across iterative deep. in case a future use arises.</span>
+
+<span class="fc" id="L186">            bestScoreSeenSoFar = Double.NEGATIVE_INFINITY;</span>
+<span class="fc" id="L187">            nodesNotAddedToOPENsinceMaxScoreTooLow     = 0;</span>
+<span class="fc" id="L188">            nodesRemovedFromOPENsinceMaxScoreNowTooLow = 0;</span>
+
+        }
+<span class="fc" id="L191">        continueTheSearch = true;</span>
+<span class="fc" id="L192">    }</span>
+
+
+    /* Resets the search space completely, including the open and closed list.
+     *
+     * This method resets the complete search state.  If you are doing iterative deepening
+     * or rrr, you probably don't want to use this.  Use the somewhat confusingly named resetAll
+     * which leaves the open and closed lists intact.
+     */
+    public void resetAllForReal() {
+<span class="fc" id="L202">        resetAll(false);</span>
+<span class="fc" id="L203">        clearClosedList();</span>
+<span class="fc" id="L204">        clearOpenList();</span>
+<span class="fc" id="L205">    }</span>
+    
+    private void clearOpenList() {
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">    	if (open != null) {</span>
+<span class="fc" id="L209">            open.clear();</span>
+        }
+<span class="fc" id="L211">    }</span>
+
+    private void initialize() throws SearchInterrupted {
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">        if (!initialized) {</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">            if (closed != null) {</span>
+<span class="fc" id="L216">                closed.emptyClosedList();</span>
+            } // Should we allow closed lists to persist across multiple iterations?  Generally won't want to do so.  Hence another boolean would be needed.
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">            if (open == null) {</span>
+<span class="nc" id="L219">                open = new OpenList&lt;&gt;(this);</span>
+            }
+<span class="fc" id="L221">            initializer.initializeOpen(open); // Do this AFTER clearing CLOSED.</span>
+<span class="fc" id="L222">            initialized = true;</span>
+        }
+<span class="fc" id="L224">    }</span>
+    
+    private void clearClosedList() {
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">        if (closed != null) {</span>
+<span class="fc" id="L228">            closed.emptyClosedList();</span>
+        }   	
+<span class="fc" id="L230">    }</span>
+    
+
+    /*
+     * Resets all the search state.
+     */
+    private void resetAll(boolean withinInterativeDeepening) {
+<span class="fc" id="L237">        clearAnySavedBasicSearchInformation(withinInterativeDeepening); // Explicitly call this rather than counting on subclasses to call super().</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        if (terminator        != null) { terminator.clearAnySavedInformation();    }</span>
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        if (childrenGenerator != null) { childrenGenerator.clearAnySavedInformation(); }</span>
+
+<span class="fc" id="L241">        initialized = false;</span>
+<span class="fc" id="L242">    }</span>
+
+    /*
+     * Conducts the search specified by this search task. All the search state
+     * is reset before the search begins.
+     */
+    public SearchResult performSearch() throws SearchInterrupted {
+        
+<span class="fc" id="L250">        resetAll(false);</span>
+        
+        if (useIterativeDeepeningDepth) { // to do: should max nodes by PER iter. deep. run?  Probably, but then too many params?
+            int holdMaxSearchDepth = maxSearchDepth;
+            boolean goalFound = false;
+            SearchResult result = null;
+
+            maxSearchDepth = 0;
+            while (!goalFound &amp;&amp; maxSearchDepth &lt; holdMaxSearchDepth) {
+                resetAll(true);
+                result = performSearchIteration();
+                if (result.goalFound()) { goalFound = true; }
+                maxSearchDepth++;
+            }
+            maxSearchDepth = holdMaxSearchDepth;
+            return result;
+        }
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">		if (open == null) {</span>
+<span class="nc" id="L268">		    open = new OpenList&lt;&gt;(this);</span>
+<span class="nc" id="L269">		    initializer.initializeOpen(open);</span>
+		} // Do this here so that 'verbosity' can be set before OPEN is created.
+
+<span class="fc" id="L272">		maxNodesToConsiderPerIteration = -1; // Don't want these playing a role in a non-iterative search.</span>
+<span class="fc" id="L273">		maxNodesToCreatePerIteration   = -1; // Don't want these playing a role in a non-iterative search.</span>
+		
+<span class="fc" id="L275">		return performSearchIteration();</span>
+    }
+
+
+    /*
+     * Performs a basic search, that is, either not an iterative deepening
+     * search or one iteration of an iterative deepening search.
+     */
+    private SearchResult performSearchIteration() throws SearchInterrupted { 
+<span class="fc" id="L284">        initialize();</span>
+
+<span class="fc" id="L286">        return search();</span>
+    }
+    
+    public boolean isThereNotTimeLeft() {
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">    	if (maximumClockTimePerIterationInMillisec == Long.MAX_VALUE) { return false; }</span>
+
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">        return (System.currentTimeMillis() - iterationStartTimeInMillisec &gt;= maximumClockTimePerIterationInMillisec);</span>
+    }
+    
+    public String explainTimeLeft() {
+<span class="nc bnc" id="L296" title="All 2 branches missed.">    	if (maximumClockTimePerIterationInMillisec == Long.MAX_VALUE) { return &quot;All the time in the world is left.&quot;; }</span>
+
+<span class="nc" id="L298">        return &quot;Have spent &quot; + Utils.convertMillisecondsToTimeSpan(System.currentTimeMillis() - iterationStartTimeInMillisec)</span>
+<span class="nc" id="L299">        		+ &quot; but only have &quot; + Utils.convertMillisecondsToTimeSpan(maximumClockTimePerIterationInMillisec);</span>
+    }
+
+<span class="fc" id="L302">    private int countOfWarnings =   0;</span>
+
+    /* Performs that actual search loop.
+     */
+    private SearchResult search() throws SearchInterrupted {
+<span class="fc" id="L307">        boolean done = false;</span>
+
+<span class="fc bfc" id="L309" title="All 2 branches covered.">        boolean useClosedList = (closed != null);</span>
+
+<span class="fc" id="L311">        iterationStartTimeInMillisec = System.currentTimeMillis();</span>
+        
+<span class="pc bpc" id="L313" title="1 of 4 branches missed.">        if (open.isEmpty() || !continueTheSearch) {</span>
+<span class="pc bpc" id="L314" title="1 of 2 branches missed.">        	if (redoable) {</span>
+<span class="fc" id="L315">        		searchMonitor.searchResult = SearchMonitor.openBecameEmpty;</span>
+        	} else  {
+<span class="nc" id="L317">        		Utils.waitHere(&quot;This search will never start for '&quot; + taskName + &quot;': continueTheSearch = &quot; + continueTheSearch + &quot;, |open| = &quot; + Utils.comma(open));</span>
+        	}
+        }
+
+<span class="pc bpc" id="L321" title="1 of 6 branches missed.">        while (continueTheSearch &amp;&amp; !done &amp;&amp; !open.isEmpty()) {</span>
+<span class="fc" id="L322">        	lastNodeVisited = open.popOpenList();</span>
+
+<span class="pc bpc" id="L324" title="1 of 2 branches missed.">        	if (verbosity &gt; 10) { Utils.println(&quot;% VISIT for '&quot; + taskName  + &quot;.&quot;); }</span>
+
+            // After this limit hit, be more terse in warnings.
+<span class="fc" id="L327">            int maxWarnings = 100;</span>
+<span class="pc bpc" id="L328" title="2 of 4 branches missed.">            if (getMaxNodesToConsider() &gt; 0 &amp;&amp; nodesConsidered &gt;= getMaxNodesToConsider()) {</span>
+<span class="nc" id="L329">                done = true;</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">                if (countOfWarnings++ &lt; maxWarnings) {</span>
+<span class="nc" id="L331">                	Utils.warning(        &quot;#&quot; + Utils.comma(countOfWarnings) + &quot; TOO MANY NODES CONSIDERED (i.e., 'expanded') for '&quot; + taskName + &quot;': nodesConsidered = &quot; + Utils.comma(nodesConsidered) + &quot; and maxNodesToConsider = &quot; + Utils.comma(getMaxNodesToConsider()) + &quot;.&quot;);  // ; node = &quot; + lastNodeVisited);</span>
+                } else {
+<span class="nc" id="L333">                	Utils.println(&quot;Warning #&quot; + Utils.comma(countOfWarnings) + &quot; TOO MANY NODES CONSIDERED (i.e., 'expanded') for '&quot; + taskName + &quot;'.&quot;);</span>
+                }
+<span class="nc" id="L335">                searchMonitor.searchEndedByMaxNodesConsidered(nodesConsidered);</span>
+            }
+
+<span class="pc bpc" id="L338" title="1 of 2 branches missed.">            if (isThereNotTimeLeft()) {</span>
+<span class="nc" id="L339">                done = true;</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">                if (countOfWarnings++ &lt; maxWarnings) {</span>
+<span class="nc" id="L341">                    long currentTime = System.currentTimeMillis();</span>
+<span class="nc" id="L342">                  	Utils.warning(        &quot;#&quot; + Utils.comma(countOfWarnings) + &quot; TOO MUCH TIME SPENT for '&quot; + taskName + &quot;': '&quot; + Utils.convertMillisecondsToTimeSpan(currentTime - iterationStartTimeInMillisec) + &quot;' vs. '&quot; + Utils.convertMillisecondsToTimeSpan(maximumClockTimePerIterationInMillisec) + &quot;'.&quot;);</span>
+<span class="nc" id="L343">                } else {</span>
+<span class="nc" id="L344">                  	Utils.println(&quot;Warning #&quot; + Utils.comma(countOfWarnings) + &quot; TOO MUCH TIME SPENT for '&quot; + taskName + &quot;.&quot;);</span>
+                }	
+<span class="nc" id="L346">                searchMonitor.searchEndedByMaxTimeUsed();</span>
+            }
+
+            // Some searches don't want to stop when reaching max nodes CREATED.  Instead, don't add any more children to OPEN.
+<span class="pc bpc" id="L350" title="3 of 6 branches missed.">            if (!done &amp;&amp; getMaxNodesToCreate() &gt; 0 &amp;&amp; nodesCreated &gt;= getMaxNodesToCreate()) {</span>
+<span class="nc" id="L351">                done = searchMonitor.searchReachedMaxNodesCreated(nodesCreated); // Since this setting of 'done' is conditional, make sure done=false when reaching here.</span>
+<span class="nc bnc" id="L352" title="All 2 branches missed.">                if (done) {</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">                	if (countOfWarnings++ &lt; maxWarnings) {</span>
+<span class="nc" id="L354">                    	Utils.warning(            &quot;#&quot; + Utils.comma(countOfWarnings) + &quot; TOO MANY NODES CREATED for '&quot; + taskName + &quot;':  maxNodesToCreate = &quot;      + Utils.comma(getMaxNodesToCreate())      + &quot; vs nodesCreated = &quot;   + Utils.comma(nodesCreated) + &quot;.&quot;); // ; node = &quot; + lastNodeVisited);</span>
+                	} else {
+<span class="nc" id="L356">                    	Utils.println(&quot;\n% Warning #&quot; + Utils.comma(countOfWarnings) + &quot; TOO MANY NODES CREATED for '&quot; + taskName + &quot;'.&quot;);</span>
+                    }	
+                }
+            }
+
+            if (useIterativeDeepeningDepth) {
+                if (maxNodesToConsiderPerIteration &gt; 0 &amp;&amp; nodesConsideredThisIteration &gt;= maxNodesToConsiderPerIteration) {
+                    done = true;
+                    searchMonitor.searchEndedByMaxNodesConsideredThisIteration(nodesConsideredThisIteration);
+                }
+                if (!done &amp;&amp; maxNodesToCreatePerIteration &gt; 0 &amp;&amp; nodesCreatedThisIteration &gt;= maxNodesToCreatePerIteration) {
+                    done = searchMonitor.searchReachedMaxNodesCreatedThisIteration(nodesCreatedThisIteration); // Since this setting of 'done' is conditional, make sure done=false when reaching here.
+                }
+            }
+<span class="fc bfc" id="L370" title="All 4 branches covered.">            if (terminator != null &amp;&amp; terminator.endSearch(lastNodeVisited)) {</span>
+<span class="fc" id="L371">                done = true;</span>
+<span class="fc" id="L372">                searchMonitor.searchEndedByTerminator();</span>
+<span class="pc bpc" id="L373" title="1 of 2 branches missed.">                if (verbosity &gt; 3) { Utils.warning(&quot;Search ended for '&quot; + taskName + &quot;' by terminator for some reason.&quot;); }</span>
+            }
+<span class="fc bfc" id="L375" title="All 2 branches covered.">            if (!done) {</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">                if (useClosedList &amp;&amp; !addNodesToClosedListWhenCreated) { closed.addNodeToClosed(lastNodeVisited); } // Need to do this before adding children to prevent self-loops.</span>
+<span class="pc bpc" id="L377" title="1 of 2 branches missed.">                if (lastNodeVisited.depth &lt; maxSearchDepth) {</span>
+<span class="fc" id="L378">                    List&lt;T&gt; children = childrenGenerator.collectChildren(lastNodeVisited);</span>
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">                    if (verbosity &gt; 1) {Utils.println(&quot;%  Add &quot; + Utils.comma(children) + &quot; to OPEN.&quot;); }</span>
+<span class="fc bfc" id="L380" title="All 2 branches covered.">                    if (Utils.getSizeSafely(children) &gt; 0) {</span>
+
+<span class="fc bfc" id="L382" title="All 2 branches covered.">                        for (SearchNode searchNode : children) {</span>
+<span class="fc bfc" id="L383" title="All 4 branches covered.">                            if ( bestNodeVisited == null || searchNode.score &gt; bestNodeVisited.score ) {</span>
+<span class="fc" id="L384">                                bestNodeVisited = searchNode;</span>
+                            }
+<span class="fc" id="L386">                        }</span>
+
+<span class="fc" id="L388">                        strategy.addChildrenToOpenList(open, children);</span>
+                    }
+<span class="fc" id="L390">                } </span>
+                else {
+<span class="nc bnc" id="L392" title="All 2 branches missed.">                	if (countOfWarnings++ &lt; maxWarnings) {</span>
+<span class="nc" id="L393">                    	Utils.warning(&quot;Warning #&quot; + Utils.comma(countOfWarnings) + &quot; % Skipped expansion of first open node.  Maximum depth reached: node.depth = &quot; + Utils.comma(lastNodeVisited.depth) + &quot; vs maxSearchDepth = &quot; + Utils.comma(maxSearchDepth) + &quot;.&quot;); // ; node = &quot; + lastNodeVisited);</span>
+                	} else {
+<span class="nc" id="L395">                    	Utils.println(&quot;Warning #&quot; + Utils.comma(countOfWarnings) + &quot; % Skipped expansion of first open node.  Maximum depth reached for '&quot; + taskName);</span>
+                    }
+<span class="nc bnc" id="L397" title="All 2 branches missed.">                    if (verbosity &gt; -10) {</span>
+<span class="nc" id="L398">                        Utils.waitHere(&quot;Did you really want to hit the depth limit?&quot;);</span>
+                    }
+                }
+                
+<span class="pc bpc" id="L402" title="1 of 2 branches missed.">                if (verbosity &gt; 2) { Utils.println(&quot;  task=&quot; + taskName + &quot;  |open| = &quot; + open.size() + &quot;  done=&quot; + &quot; continueTheSearch=&quot; + continueTheSearch); }</span>
+
+<span class="fc bfc" id="L404" title="All 2 branches covered.">                if (open.isEmpty()) {</span>
+<span class="fc" id="L405">                    done = true;</span>
+<span class="fc" id="L406">                    searchMonitor.searchEndedBecauseOPENbecameEmpty();</span>
+                } 
+            }
+<span class="fc bfc" id="L409" title="All 4 branches covered.">            if (done &amp;&amp; !redoable) {</span>
+<span class="fc" id="L410">            	open.clear(); // Even if we worried about getting the next solution (see TAW notes below), ok to clear here since we hit limits (which prevent spending time on more solutions).</span>
+<span class="fc bfc" id="L411" title="All 2 branches covered.">            	if (closed != null) { closed.emptyClosedList(); } // Ditto.</span>
+<span class="pc bpc" id="L412" title="1 of 2 branches missed.">            	if (verbosity &gt; 2) { Utils.println(&quot;  task=&quot; + taskName + &quot;;  |open| = &quot; + open.size() + &quot;;  done=&quot; + &quot;; continueTheSearch=&quot; + continueTheSearch + &quot;.&quot;); } // &quot;; node = &quot; + lastNodeVisited); }</span>
+            } 
+<span class="fc" id="L414">        }</span>
+<span class="fc" id="L415">        return searchMonitor.getSearchResult();</span>
+    }
+
+    public void setMaximumClockTimePerIterationInMillisec(long maximumClockTimePerIterationInMilliseconds) {
+<span class="fc" id="L419">        this.maximumClockTimePerIterationInMillisec = maximumClockTimePerIterationInMilliseconds;</span>
+<span class="fc" id="L420">    }</span>
+
+	public int getNodesConsidered() {
+<span class="fc" id="L423">		return nodesConsidered;</span>
+	}
+
+    public int getNodesCreated() {
+<span class="fc" id="L427">		return nodesCreated;</span>
+	}
+
+	public void setNodesCreated(int nodesCreated) {
+<span class="fc" id="L431">		this.nodesCreated = nodesCreated;</span>
+<span class="fc" id="L432">	}</span>
+
+    public int getMaxNodesToConsider() {
+<span class="fc" id="L435">        return maxNodesToConsider;</span>
+    }
+
+    public void setMaxNodesToConsider(int maxNodesToConsider) {
+<span class="fc" id="L439">        this.maxNodesToConsider = maxNodesToConsider;</span>
+<span class="fc" id="L440">    }</span>
+
+    public int getMaxNodesToCreate() {
+<span class="fc" id="L443">        return maxNodesToCreate;</span>
+    }
+
+    public void setMaxNodesToCreate(int maxNodesToCreate) {
+<span class="fc" id="L447">        this.maxNodesToCreate = maxNodesToCreate;</span>
+<span class="fc" id="L448">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

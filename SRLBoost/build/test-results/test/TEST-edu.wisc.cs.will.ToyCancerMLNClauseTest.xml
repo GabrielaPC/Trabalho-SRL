@@ -1,0 +1,1957 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="edu.wisc.cs.will.ToyCancerMLNClauseTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2022-10-20T17:10:36" hostname="Ubuntu" time="1.272">
+  <properties/>
+  <testcase name="testToyCancerMLNClauseLearnInfer()" classname="edu.wisc.cs.will.ToyCancerMLNClauseTest" time="1.272"/>
+  <system-out><![CDATA[
+% Calling SETUP.
+
+% Switching to VarIndicator = uppercase.
+
+% Unset'ing VarIndicator.
+
+Resetting the LazyGroundNthArgumentClauseIndex.
+
+% Calling ILPouterLoop from createRegressionOuterLooper.
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/train/train_pos.txt, data/toy_cancer/train/train_neg.txt, data/toy_cancer/train/train_bk.txt, data/toy_cancer/train/train_facts.txt]
+%  for N=0: args[N]=data/toy_cancer/train/train_pos.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/train/train_pos.txt, data/toy_cancer/train/train_neg.txt, data/toy_cancer/train/train_bk.txt, data/toy_cancer/train/train_facts.txt]
+%  for N=1: args[N]=data/toy_cancer/train/train_neg.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/train/train_pos.txt, data/toy_cancer/train/train_neg.txt, data/toy_cancer/train/train_bk.txt, data/toy_cancer/train/train_facts.txt]
+%  for N=2: args[N]=data/toy_cancer/train/train_bk.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/train/train_pos.txt, data/toy_cancer/train/train_neg.txt, data/toy_cancer/train/train_bk.txt, data/toy_cancer/train/train_facts.txt]
+%  for N=3: args[N]=data/toy_cancer/train/train_facts.txt
+
+% Welcome to the WILL ILP/SRL systems.
+
+% Reading background theory from dir: null
+
+% Switching to VarIndicator = uppercase.
+
+***** Warning: % Since this is the first setting of the notation for variables, will keep:
+%   variableIndicator = uppercase *****
+
+% [ LazyGroundClauseIndex ]  Building full index for mode/1 with 1 assertions.
+
+%  Read the facts.
+%  Have read 15 facts.
+% Have read 4 examples from 'data/toy_cancer/train' [data/toy_cancer/train/train*].
+% Have read 2 examples from 'data/toy_cancer/train' [data/toy_cancer/train/train*].
+
+%  LearnOneClause initialized.
+
+% The outer looper has been created.
+
+% Initializing the ILP inner looper.
+
+% NEW target:                 cancer(A)
+%  targetPred:                cancer/1
+%  targetArgTypes:            signature = [const], types = [+person]
+%  targets:                   [cancer(A)]
+%  targetPredicates:          [cancer/1]
+%  targetArgSpecs:            [[A[+person]]]
+%  variablesInTargets:        [[A]]
+
+% Started collecting constants
+
+% Collecting the types of constants.
+
+% Looking at the training examples to see if any types of new constants can be inferred.
+% Time to collect constants: 2 milliseconds
+
+% Read 4 pos examples and 2 neg examples.
+% Time to init learnOneClause: 6 milliseconds
+% Old dirnull
+Setting model dir
+
+% Have 4 'raw' positive examples and kept 4.
+% Have 2 'raw' negative examples and kept 2.
+
+% processing backup's for cancer
+%  POS EX = 4
+%  NEG EX = 2
+
+% Memory usage by WILLSetup (just counts # targets?):
+%  |backupPosExamples| = 1
+%  |backupNegExamples| = 1
+%  |predicatesAsFacts| = 0
+%  |addedToFactBase|   = 0
+data/toy_cancer/train/models/
+% Learning 10 trees in this iteration for cancer
+
+% Learn model for: cancer
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Have prepared facts.
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+
+***** Warning: % Have only 6 positive examples, so cannot choose 10 of them. *****
+
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% LearnOneClause Parameters:
+%   Targets (1):
+%    cancer(+person)
+%  Modes (3):
+%    friends(+person, -person),
+%    friends(-person, +person),
+%    smokes(+person)
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+% [ LazyGroundClauseIndex ]  Building full index for friends/2 with 12 assertions.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 0:  Building full index for friends/2.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for friends/2.
+% [ LazyGroundClauseIndex ]  Building full index for smokes/1 with 3 assertions.
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.8581489350995121 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,67 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (20).
+
+% ******************************************
+adding regression values
+Added 0.8581489350995121 to wgt = 0,8581 (cancer(A) :- smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 1 trees is 111 milliseconds.
+
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.7194734122109545 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,67 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (10).
+
+% ******************************************
+adding regression values
+Added 0.7194734122109545 to wgt = 0,7195 (cancer(A) :- smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 2 trees is 137 milliseconds.
+
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 2 milliseconds
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.5553664367462845 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,67 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (6).
+
+% ******************************************
+adding regression values
+Added 0.5553664367462845 to wgt = 0,5554 (cancer(A) :- smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 3 trees is 152 milliseconds.
+
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:1 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.41751358415830997 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,67 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (5).
+
+% ******************************************
+adding regression values
+Added 0.41751358415830997 to wgt = 0,4175 (cancer(A) :- smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 4 trees is 169 milliseconds.
+
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:1 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,666668 (regressionFit = 0,666667, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,666668): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,700954 (regressionFit = 0,700952, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,700954 (regressionFit = 0,700952, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,468895 (regressionFit = 0,468893, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,468895): cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,468895 (regressionFit = 0,468893, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.10690394905338323 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,47 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- friends(A, Anon1141), smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (4).
+
+% ******************************************
+adding regression values
+Added 0.10690394905338323 to wgt = 0,1069 (cancer(A) :- friends(A, _), smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 5 trees is 250 milliseconds.
+
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:0 seconds
+No hidden examples for : cancer
+Time to build dataset: 2 milliseconds
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,667768 (regressionFit = 0,667767, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,667768): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,700089 (regressionFit = 0,700087, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,700089 (regressionFit = 0,700087, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,468031 (regressionFit = 0,468029, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,468031): cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,468031 (regressionFit = 0,468029, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.08523446036632586 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,47 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- friends(A, Anon1855), smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (3).
+
+% ******************************************
+adding regression values
+Added 0.08523446036632586 to wgt = 0,0852 (cancer(A) :- friends(A, _), smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 6 trees is 305 milliseconds.
+
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:1 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 2 milliseconds
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,669371 (regressionFit = 0,669370, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,669371): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,698077 (regressionFit = 0,698075, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,698077 (regressionFit = 0,698075, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,466018 (regressionFit = 0,466016, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,466018): cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,466018 (regressionFit = 0,466016, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.07048012783733461 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,47 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- friends(A, Anon2407), smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (2).
+
+% ******************************************
+adding regression values
+Added 0.07048012783733461 to wgt = 0,0705 (cancer(A) :- friends(A, _), smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 7 trees is 345 milliseconds.
+
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:1 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 2 milliseconds
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,670574 (regressionFit = 0,670573, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,670574): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,695642 (regressionFit = 0,695640, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,695642 (regressionFit = 0,695640, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,463583 (regressionFit = 0,463581, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,463583): cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,463583 (regressionFit = 0,463581, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.060001428842602046 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,46 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- friends(A, Anon2797), smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (2).
+
+% ******************************************
+adding regression values
+Added 0.060001428842602046 to wgt = 0,0600 (cancer(A) :- friends(A, _), smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 8 trees is 390 milliseconds.
+
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:2 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 2 milliseconds
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,671319 (regressionFit = 0,671318, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,671319): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693180 (regressionFit = 0,693178, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693180 (regressionFit = 0,693178, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,717897 (regressionFit = 0,717894, penalties=3.130000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(A, _), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693181 (regressionFit = 0,693178, penalties=2.920000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(A, B), friends(B, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,671321 (regressionFit = 0,671318, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- smokes(A), friends(A, B), friends(B, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,717897 (regressionFit = 0,717894, penalties=3.130000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(A, _), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,671321 (regressionFit = 0,671318, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- smokes(A), friends(A, B), friends(_, B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693181 (regressionFit = 0,693178, penalties=2.920000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(A, B), smokes(B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693181 (regressionFit = 0,693178, penalties=2.920000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(B, A), friends(A, B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,717897 (regressionFit = 0,717894, penalties=3.130000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(_, A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,671321 (regressionFit = 0,671318, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- smokes(A), friends(B, A), friends(B, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,717897 (regressionFit = 0,717894, penalties=3.130000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(_, A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,671321 (regressionFit = 0,671318, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- smokes(A), friends(B, A), friends(_, B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693181 (regressionFit = 0,693178, penalties=2.920000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(B, A), smokes(B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,277031 (regressionFit = 0,277028, penalties=3.130000000000001E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,277031): cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,461122 (regressionFit = 0,461119, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(C, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,671321 (regressionFit = 0,671318, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,277031 (regressionFit = 0,277028, penalties=3.130000000000001E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(B, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,671321 (regressionFit = 0,671318, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,461122 (regressionFit = 0,461119, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(C, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,671321 (regressionFit = 0,671318, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,277031 (regressionFit = 0,277028, penalties=3.130000000000001E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(B, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,671321 (regressionFit = 0,671318, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,461122 (regressionFit = 0,461119, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.011900725521221456 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,28 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- friends(A, Anon3187), friends(A, Anon3369), smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(C, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(B, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(C, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(B, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (2).
+
+% ******************************************
+adding regression values
+Added 0.011900725521221456 to wgt = 0,0119 (cancer(A) :- friends(A, _), friends(A, _), smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Time taken to learn 9 trees is 763 milliseconds.
+
+% Kept 4 of the 4 positive examples.
+% Kept 2 of the 2 negative examples.
+% Dataset size: 6
+Computing probabilities
+prob time:1 milliseconds
+No hidden examples for : cancer
+Time to build dataset: 1 milliseconds
+
+% Have these 6 positive seeds: 0 1 2 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,672566 (regressionFit = 0,672565, penalties=1.0100000000000003E-6) for clause:  cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,672566): cancer(A) :- smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693761 (regressionFit = 0,693759, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693761 (regressionFit = 0,693759, penalties=2.1200000000000005E-6) for clause:  cancer(A) :- smokes(A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,716123 (regressionFit = 0,716120, penalties=3.130000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(A, _), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693762 (regressionFit = 0,693759, penalties=2.920000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(A, B), friends(B, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,672568 (regressionFit = 0,672565, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- smokes(A), friends(A, B), friends(B, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,716123 (regressionFit = 0,716120, penalties=3.130000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(A, _), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,672568 (regressionFit = 0,672565, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- smokes(A), friends(A, B), friends(_, B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693762 (regressionFit = 0,693759, penalties=2.920000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(A, B), smokes(B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693762 (regressionFit = 0,693759, penalties=2.920000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(B, A), friends(A, B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,716123 (regressionFit = 0,716120, penalties=3.130000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(_, A), friends(A, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,672568 (regressionFit = 0,672565, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- smokes(A), friends(B, A), friends(B, _).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,716123 (regressionFit = 0,716120, penalties=3.130000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(_, A), friends(_, A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,672568 (regressionFit = 0,672565, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- smokes(A), friends(B, A), friends(_, B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,693762 (regressionFit = 0,693759, penalties=2.920000000000001E-6) for clause:  cancer(A) :- smokes(A), friends(B, A), smokes(B).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,275257 (regressionFit = 0,275254, penalties=3.130000000000001E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% Gleaner: New best node found (score = -0,275257): cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,461703 (regressionFit = 0,461700, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(C, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,672568 (regressionFit = 0,672565, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,275257 (regressionFit = 0,275254, penalties=3.130000000000001E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(B, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,672568 (regressionFit = 0,672565, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,461703 (regressionFit = 0,461700, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(C, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,672568 (regressionFit = 0,672565, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,275257 (regressionFit = 0,275254, penalties=3.130000000000001E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(B, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,672568 (regressionFit = 0,672565, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -0,461703 (regressionFit = 0,461700, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+Setting 0.010693358428605368 for 
+ // Learned this clause on outer loop cycle #1.  It scores=-0,28 and has recall=0,49, precision=0,97, and F1=0,65 (using m-estimates).
+ // It covers 50,0% of the positive examples, 3 of 6,
+(cancer(A) :- friends(A, Anon6237), friends(A, Anon6419), smokes(A))
+
+% On cycle #1, the best clause found is:
+%      cancer(A) :- friends(A, _), friends(A, _), smokes(A).  [covers 3,0/6,0 pos, 0,0/0,0 neg]
+% This clause covers 3 positive examples, of which 3 are newly covered.
+% It also covers 0 negative examples, of which 0 are newly covered.
+% The current set of 1 best clauses covers 50,0% of the positive examples and NaN% of the negatives.}
+
+% Have these 3 positive seeds: 3 4 5
+
+% target           = cancer(A)
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.1E-7) for clause:  cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+% Most-general root: cancer(_).  [covers 6,0/6,0 pos, 0,0/0,0 neg]  score = -Infinity
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.12E-6) for clause:  cancer(A) :- friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=1.9200000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.1300000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0300000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.0200000000000006E-6) for clause:  cancer(A) :- friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(A, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(A, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, _), friends(A, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(C, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(B, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(A, B), friends(B, C), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(A, _), friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, _), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(B, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), friends(_, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(A, B), friends(C, B), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(B, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(A, B), smokes(B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(C, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(B, _), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(B, A), friends(B, C), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.1400000000000004E-6) for clause:  cancer(A) :- friends(_, A), friends(_, A), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(_, A), friends(B, A), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000003E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.8300000000000004E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(B, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(C, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0400000000000005E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9400000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), friends(_, C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), friends(_, B), smokes(B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.9300000000000007E-6) for clause:  cancer(A) :- friends(B, A), friends(C, B), smokes(C).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=2.920000000000001E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(A, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(A, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(B, _).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(_, A).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+%     Score = -Infinity (regressionFit = Infinity, penalties=3.0300000000000002E-6) for clause:  cancer(A) :- friends(B, A), smokes(B), friends(_, B).  [covers 6,0/6,0 pos, 0,0/0,0 neg]
+
+% The best node found: null
+
+% No acceptable clause was learned on this cycle of the ILP inner loop (LearnOneClause).
+% The closest-to-acceptable node found (score = -Infinity):
+%  null
+
+% ******************************************
+
+% Have stopped ILP's outer loop because have reached the maximum number of iterations (2).
+
+% ******************************************
+adding regression values
+Added 0.010693358428605368 to wgt = 0,0107 (cancer(A) :- friends(A, _), friends(A, _), smokes(A))
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model.ckpt
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%  Final call for computing score for cancer.  %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+stepLength_tree1(1.0).
+stepLength_tree2(1.0).
+stepLength_tree3(1.0).
+stepLength_tree4(1.0).
+stepLength_tree5(1.0).
+stepLength_tree6(1.0).
+stepLength_tree7(1.0).
+stepLength_tree8(1.0).
+stepLength_tree9(1.0).
+stepLength_tree10(1.0).
+
+logPrior(-1.8).
+cancer(A, Total) :- // A general accessor. 
+   cancer(A, 1000000, Total), !.
+cancer(A, Total) :- waitHere("This should not fail", cancer(A, Total)).
+
+cancer(A, TreesToUse, Total) :- // A tree-limited accessor (e.g., for tuning the number of trees to use).
+   logPrior(LogPrior),
+   getScore_cancer_tree1(A, TreesToUse, Total1),
+   getScore_cancer_tree2(A, TreesToUse, Total2),
+   getScore_cancer_tree3(A, TreesToUse, Total3),
+   getScore_cancer_tree4(A, TreesToUse, Total4),
+   getScore_cancer_tree5(A, TreesToUse, Total5),
+   getScore_cancer_tree6(A, TreesToUse, Total6),
+   getScore_cancer_tree7(A, TreesToUse, Total7),
+   getScore_cancer_tree8(A, TreesToUse, Total8),
+   getScore_cancer_tree9(A, TreesToUse, Total9),
+   getScore_cancer_tree10(A, TreesToUse, Total10),
+   Total is LogPrior + Total1 + Total2 + Total3 + Total4 + Total5 + Total6 + Total7 + Total8 + Total9 + Total10,
+   !.
+cancer(A, TreesToUse, Total) :- waitHere("This should not fail", cancer(A, TreesToUse, Total)).
+
+getScore_cancer_tree1(A, TreesToUse, 0.0) :- 1 > TreesToUse, !.
+getScore_cancer_tree1(A, TreesToUse, Total1) :- cancer_tree1(A, Total), stepLength_tree1(StepLen), Total1 is Total * StepLen.
+
+getScore_cancer_tree2(A, TreesToUse, 0.0) :- 2 > TreesToUse, !.
+getScore_cancer_tree2(A, TreesToUse, Total2) :- cancer_tree2(A, Total), stepLength_tree2(StepLen), Total2 is Total * StepLen.
+
+getScore_cancer_tree3(A, TreesToUse, 0.0) :- 3 > TreesToUse, !.
+getScore_cancer_tree3(A, TreesToUse, Total3) :- cancer_tree3(A, Total), stepLength_tree3(StepLen), Total3 is Total * StepLen.
+
+getScore_cancer_tree4(A, TreesToUse, 0.0) :- 4 > TreesToUse, !.
+getScore_cancer_tree4(A, TreesToUse, Total4) :- cancer_tree4(A, Total), stepLength_tree4(StepLen), Total4 is Total * StepLen.
+
+getScore_cancer_tree5(A, TreesToUse, 0.0) :- 5 > TreesToUse, !.
+getScore_cancer_tree5(A, TreesToUse, Total5) :- cancer_tree5(A, Total), stepLength_tree5(StepLen), Total5 is Total * StepLen.
+
+getScore_cancer_tree6(A, TreesToUse, 0.0) :- 6 > TreesToUse, !.
+getScore_cancer_tree6(A, TreesToUse, Total6) :- cancer_tree6(A, Total), stepLength_tree6(StepLen), Total6 is Total * StepLen.
+
+getScore_cancer_tree7(A, TreesToUse, 0.0) :- 7 > TreesToUse, !.
+getScore_cancer_tree7(A, TreesToUse, Total7) :- cancer_tree7(A, Total), stepLength_tree7(StepLen), Total7 is Total * StepLen.
+
+getScore_cancer_tree8(A, TreesToUse, 0.0) :- 8 > TreesToUse, !.
+getScore_cancer_tree8(A, TreesToUse, Total8) :- cancer_tree8(A, Total), stepLength_tree8(StepLen), Total8 is Total * StepLen.
+
+getScore_cancer_tree9(A, TreesToUse, 0.0) :- 9 > TreesToUse, !.
+getScore_cancer_tree9(A, TreesToUse, Total9) :- cancer_tree9(A, Total), stepLength_tree9(StepLen), Total9 is Total * StepLen.
+
+getScore_cancer_tree10(A, TreesToUse, 0.0) :- 10 > TreesToUse, !.
+getScore_cancer_tree10(A, TreesToUse, Total10) :- cancer_tree10(A, Total), stepLength_tree10(StepLen), Total10 is Total * StepLen.
+
+flattenedLiteralsInThisSetOfTrees(0, []).
+% Time taken to learn model for 'cancer': 1,120 seconds.
+% Saving model in: data/toy_cancer/train/models/bRDNs/cancer.model
+cached groundings hit: 0
+Misses: 0
+
+% Switching to standard-logic notation for variables; previous setting = uppercase
+
+% Switching to VarIndicator = lowercase.
+
+% Switching to Prolog notation for variables; previous setting = lowercase
+
+% Switching to VarIndicator = uppercase.
+
+% Total learning time (10 trees): 1,199 seconds.
+
+% Switching to VarIndicator = uppercase.
+
+% Unset'ing VarIndicator.
+
+Resetting the LazyGroundNthArgumentClauseIndex.
+
+% Calling ILPouterLoop from createRegressionOuterLooper.
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/test/test_pos.txt, data/toy_cancer/test/test_neg.txt, data/toy_cancer/test/test_bk.txt, data/toy_cancer/test/test_facts.txt]
+%  for N=0: args[N]=data/toy_cancer/test/test_pos.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/test/test_pos.txt, data/toy_cancer/test/test_neg.txt, data/toy_cancer/test/test_bk.txt, data/toy_cancer/test/test_facts.txt]
+%  for N=1: args[N]=data/toy_cancer/test/test_neg.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/test/test_pos.txt, data/toy_cancer/test/test_neg.txt, data/toy_cancer/test/test_bk.txt, data/toy_cancer/test/test_facts.txt]
+%  for N=2: args[N]=data/toy_cancer/test/test_bk.txt
+
+% getInputArgWithDefaultValue: args=[data/toy_cancer/test/test_pos.txt, data/toy_cancer/test/test_neg.txt, data/toy_cancer/test/test_bk.txt, data/toy_cancer/test/test_facts.txt]
+%  for N=3: args[N]=data/toy_cancer/test/test_facts.txt
+
+% Welcome to the WILL ILP/SRL systems.
+
+% Reading background theory from dir: null
+
+% Switching to VarIndicator = uppercase.
+
+***** Warning: % Since this is the first setting of the notation for variables, will keep:
+%   variableIndicator = uppercase *****
+
+% [ LazyGroundClauseIndex ]  Building full index for mode/1 with 1 assertions.
+
+%  Read the facts.
+%  Have read 13 facts.
+% Have read 3 examples from 'data/toy_cancer/test' [data/toy_cancer/test/test*].
+% Have read 2 examples from 'data/toy_cancer/test' [data/toy_cancer/test/test*].
+
+%  LearnOneClause initialized.
+
+% The outer looper has been created.
+
+% Initializing the ILP inner looper.
+
+% NEW target:                 cancer(A)
+%  targetPred:                cancer/1
+%  targetArgTypes:            signature = [const], types = [+person]
+%  targets:                   [cancer(A)]
+%  targetPredicates:          [cancer/1]
+%  targetArgSpecs:            [[A[+person]]]
+%  variablesInTargets:        [[A]]
+
+% Started collecting constants
+
+% Collecting the types of constants.
+
+% Looking at the training examples to see if any types of new constants can be inferred.
+% Time to collect constants: 0 seconds
+
+% Read 3 pos examples and 2 neg examples.
+% Time to init learnOneClause: 1 milliseconds
+% Old dirdata/toy_cancer/train/models/
+
+% Have 3 'raw' positive examples and kept 3.
+% Have 2 'raw' negative examples and kept 2.
+
+% processing backup's for cancer
+%  POS EX = 3
+%  NEG EX = 2
+
+% Memory usage by WILLSetup (just counts # targets?):
+%  |backupPosExamples| = 1
+%  |backupNegExamples| = 1
+%  |predicatesAsFacts| = 0
+%  |addedToFactBase|   = 0
+
+% Getting bRDN's target predicates.
+% Did not learn a model for 'cancer' this run.
+%   loadModel (#0): data/toy_cancer/train/models/bRDNs/Trees/cancerTree0.tree
+%   loadModel (#1): data/toy_cancer/train/models/bRDNs/Trees/cancerTree1.tree
+%   loadModel (#2): data/toy_cancer/train/models/bRDNs/Trees/cancerTree2.tree
+%   loadModel (#3): data/toy_cancer/train/models/bRDNs/Trees/cancerTree3.tree
+%   loadModel (#4): data/toy_cancer/train/models/bRDNs/Trees/cancerTree4.tree
+%   loadModel (#5): data/toy_cancer/train/models/bRDNs/Trees/cancerTree5.tree
+%   loadModel (#6): data/toy_cancer/train/models/bRDNs/Trees/cancerTree6.tree
+%   loadModel (#7): data/toy_cancer/train/models/bRDNs/Trees/cancerTree7.tree
+%   loadModel (#8): data/toy_cancer/train/models/bRDNs/Trees/cancerTree8.tree
+%   loadModel (#9): data/toy_cancer/train/models/bRDNs/Trees/cancerTree9.tree
+%  Done loading 10 models.
+
+% for cancer |lookupPos| = 3
+% for cancer |lookupNeg| = 2
+% getJointExamples: |pos| = 3, |neg| = 2
+
+% Starting inference in bRDN.
+
+% Subsampling the negative examples.
+% Trees = 10
+% [ LazyGroundClauseIndex ]  Building full index for smokes/1 with 3 assertions.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 0:  Building full index for friends/2.
+ (Arithmetic) Mean Probability Assigned to Correct Output Class: 4,163/5,00 = 0,832557
+
+ The weighted count of positive examples = 3,000 and the weighted count of negative examples = 2,000
+
+printExamples: Writing out predictions (for Tuffy?) on 5 examples for 'cancer' to:
+  data/toy_cancer/test/results_cancer.db
+ and to:
+  data/toy_cancer/test/query_cancer.db
+
+% Computing Area Under Curves.
+%Pos=3
+%Neg=2
+%LL:-0.6118800149438474
+%LL:-0.9178352359959957
+Best F1 = 1.0
+% F1 = 1.0
+% Threshold = 0.4786730255863978
+
+%   AUC ROC   = 1,000000
+%   AUC PR    = 1,000000
+%   CLL	      = -0,183567
+%   Precision = 1,000000 at threshold = 0,500
+%   Recall    = 1,000000
+%   F1        = 1,000000
+
+% Total inference time (10 trees): 71 milliseconds.
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

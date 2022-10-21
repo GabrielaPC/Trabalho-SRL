@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultFOPCVisitor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC.visitors</a> &gt; <span class="el_source">DefaultFOPCVisitor.java</span></div><h1>DefaultFOPCVisitor.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC.visitors;
+
+import edu.wisc.cs.will.FOPC.*;
+
+import java.util.ArrayList;
+import java.util.List;
+ 
+/*
+ * @author twalker
+ */
+public class DefaultFOPCVisitor&lt;Data&gt; implements SentenceVisitor&lt;Sentence, Data&gt;, TermVisitor&lt;Term, Data&gt; {
+
+<span class="fc" id="L13">    protected DefaultFOPCVisitor() {</span>
+<span class="fc" id="L14">    }</span>
+
+    public Sentence visitOtherSentence(Sentence otherSentence) {
+<span class="nc" id="L17">        return otherSentence;</span>
+    } 
+
+    public Sentence visitConnectedSentence(ConnectedSentence sentence, Data data) {
+<span class="fc bfc" id="L21" title="All 2 branches covered.">        Sentence a = sentence.getSentenceA() == null ? null : sentence.getSentenceA().accept(this, data);</span>
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">        Sentence b = sentence.getSentenceB() == null ? null : sentence.getSentenceB().accept(this, data);</span>
+
+<span class="fc" id="L24">        return getCombinedConnectedSentence(sentence, a, b);</span>
+    }
+
+    /* Performs some &quot;smart&quot; recombining of connected sentences.
+     *
+     * This method attempts to handle cases where the subsentence visits return null.  In many
+     * cases, specially handling will be required to maintain the semantics of the returned
+     * sentence, but this provided a simple why to handle null values.
+     */
+    private static Sentence getCombinedConnectedSentence(ConnectedSentence originalSentence, Sentence newA, Sentence newB) {
+
+        Sentence result;
+
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (ConnectiveName.isaNOT(originalSentence.getConnective().name)) {</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">            if (newB == null) {</span>
+<span class="nc" id="L39">                newB = originalSentence.getStringHandler().trueLiteral;</span>
+            }
+<span class="fc" id="L41">            result = originalSentence.getStringHandler().getConnectedSentence(originalSentence.getConnective(), newB);</span>
+        }
+        else {
+<span class="pc bpc" id="L44" title="3 of 4 branches missed.">            if (newA == null &amp;&amp; newB == null) {</span>
+<span class="nc" id="L45">                result = null;</span>
+            }
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">            else if (newB == null) {</span>
+<span class="nc" id="L48">                result = newA;</span>
+            }
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">            else if (newA == null) {</span>
+<span class="nc" id="L51">                result = newB;</span>
+            }
+            else {
+<span class="fc" id="L54">                result = originalSentence.getStringHandler().getConnectedSentence(newA, originalSentence.getConnective(), newB);</span>
+            }
+        }
+
+<span class="fc" id="L58">        return result;</span>
+
+    }
+
+    public Sentence visitClause(Clause clause, Data data) {
+<span class="nc" id="L63">        List&lt;Literal&gt; positiveLits = null;</span>
+<span class="nc" id="L64">        List&lt;Literal&gt; negativeLits = null;</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (clause.getPosLiteralCount() &gt; 0) {</span>
+<span class="nc" id="L67">            positiveLits = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            for (Literal literal : clause.getPositiveLiterals()) {</span>
+<span class="nc" id="L69">                Sentence newStuff = literal.accept(this, data);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                if (newStuff != null) {</span>
+<span class="nc" id="L71">                    positiveLits.addAll(newStuff.asClause().getPositiveLiterals());</span>
+                }
+<span class="nc" id="L73">            }</span>
+        }
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (clause.getNegLiteralCount() &gt; 0) {</span>
+<span class="nc" id="L77">            negativeLits = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            for (Literal literal : clause.getNegativeLiterals()) {</span>
+<span class="nc" id="L79">                Sentence newStuff = literal.accept(this, data);</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">                if (newStuff != null) {</span>
+<span class="nc" id="L81">                    negativeLits.addAll(newStuff.asClause().getPositiveLiterals());</span>
+                }
+<span class="nc" id="L83">            }</span>
+        }
+
+<span class="nc" id="L86">        return clause.getStringHandler().getClause(positiveLits, negativeLits);</span>
+    }
+
+    /* Visit the literal.
+     *
+     * The DefaultFOPCVisitor assumes that the return value of visitLiteral
+     * is either a Literal, a Clause with all positive literals, or null.
+     *
+     * Children can return other sentence forms, but should be aware that
+     * unexpected behavior will result.
+     */
+    public Sentence visitLiteral(Literal literal, Data data) {
+
+<span class="fc" id="L99">        Literal result = literal;</span>
+
+        List&lt;Term&gt; newTerms;
+
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (literal.getArity() != 0) {</span>
+<span class="fc" id="L104">            newTerms = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L106" title="All 2 branches covered.">            for (Term term : literal.getArguments()) {</span>
+<span class="fc" id="L107">                Term newTerm = term.accept(this, data);</span>
+<span class="fc" id="L108">                newTerms.add(newTerm);</span>
+<span class="fc" id="L109">            }</span>
+
+<span class="fc" id="L111">            result = literal.getStringHandler().getLiteral(literal, newTerms);</span>
+        }
+
+<span class="fc" id="L114">        return result;</span>
+    }
+
+    public Term visitFunction(Function function, Data data) {
+
+<span class="nc" id="L119">        Function result = function;</span>
+
+        List&lt;Term&gt; newTerms;
+
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (function.getArity() != 0) {</span>
+<span class="nc" id="L124">            newTerms = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">            for (Term term : function.getArguments()) {</span>
+<span class="nc" id="L126">                Term newTerm = term.accept(this, data);</span>
+<span class="nc" id="L127">                newTerms.add(newTerm);</span>
+<span class="nc" id="L128">            }</span>
+
+<span class="nc" id="L130">            result = function.getStringHandler().getFunction(function, newTerms);</span>
+        }
+
+<span class="nc" id="L133">        return result;</span>
+
+    }
+
+    public Term visitVariable(Variable variable, Data data) {
+<span class="fc" id="L138">        return variable;</span>
+    }
+
+    public Term visitNumericConstant(NumericConstant numericConstant) {
+<span class="fc" id="L142">        return numericConstant;</span>
+    }
+
+    public Term visitStringConstant(StringConstant stringConstant) {
+<span class="fc" id="L146">        return stringConstant;</span>
+    }
+
+    public Term visitOtherTerm(Term term) {
+<span class="nc" id="L150">        return term;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

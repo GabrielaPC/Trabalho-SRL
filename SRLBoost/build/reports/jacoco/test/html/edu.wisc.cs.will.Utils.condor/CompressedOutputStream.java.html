@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompressedOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Utils.condor</a> &gt; <span class="el_source">CompressedOutputStream.java</span></div><h1>CompressedOutputStream.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Utils.condor;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.zip.GZIPOutputStream;
+
+/*
+ * @author twalker
+ */
+public class CompressedOutputStream extends OutputStream {
+
+    private final OutputStream realStream;
+
+    public CompressedOutputStream(String fileName, boolean compressOutput) throws IOException {
+<span class="nc" id="L16">        this(new File(fileName), compressOutput);</span>
+<span class="nc" id="L17">    }</span>
+
+<span class="nc" id="L19">    private CompressedOutputStream(File file, boolean compressOutput) throws IOException {</span>
+<span class="nc bnc" id="L20" title="All 2 branches missed.">        if (compressOutput) {</span>
+<span class="nc" id="L21">            File gzFile = CompressionUtilities.getGZFile(file);</span>
+<span class="nc" id="L22">            realStream = new GZIPOutputStream(new CondorFileOutputStream(gzFile));</span>
+<span class="nc" id="L23">        }</span>
+        else {
+<span class="nc" id="L25">            File noGZFile = CompressionUtilities.getNonGZFile(file);</span>
+<span class="nc" id="L26">            realStream = new CondorFileOutputStream(noGZFile);</span>
+        }
+<span class="nc" id="L28">    }</span>
+
+    @Override
+    public void write(int b) throws IOException {
+<span class="nc" id="L32">        realStream.write(b);</span>
+<span class="nc" id="L33">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="nc" id="L37">        realStream.close();</span>
+<span class="nc" id="L38">    }</span>
+
+    @Override
+    public void flush() throws IOException {
+<span class="nc" id="L42">        realStream.flush();</span>
+<span class="nc" id="L43">    }</span>
+
+    @Override
+    public void write(byte[] b) throws IOException {
+<span class="nc" id="L47">        realStream.write(b);</span>
+<span class="nc" id="L48">    }</span>
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+<span class="nc" id="L52">        realStream.write(b, off, len);</span>
+<span class="nc" id="L53">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

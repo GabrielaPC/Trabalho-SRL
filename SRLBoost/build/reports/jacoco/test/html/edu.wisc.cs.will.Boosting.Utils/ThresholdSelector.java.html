@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ThresholdSelector.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Utils</a> &gt; <span class="el_source">ThresholdSelector.java</span></div><h1>ThresholdSelector.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Utils;
+
+import edu.wisc.cs.will.ILP.CoverageScore;
+
+import java.util.ArrayList;
+
+/*
+ * @author Tushar Khot
+ */
+public class ThresholdSelector {
+
+	static class ProbabilityResult {
+
+		ProbabilityResult(double prob, boolean posEg) {
+<span class="fc" id="L15">			super();</span>
+<span class="fc" id="L16">			this.prob = prob;</span>
+<span class="fc" id="L17">			this.posEg = posEg;</span>
+<span class="fc" id="L18">		}</span>
+
+		public String toString() {
+<span class="nc" id="L21">			return prob +&quot;:&quot; + posEg;</span>
+		}
+		
+		final double prob;
+		final boolean posEg;
+	}
+	
+<span class="fc" id="L28">	static class descendingProbs implements java.util.Comparator&lt;ProbabilityResult&gt; {</span>
+
+		 public int compare(ProbabilityResult ob1, ProbabilityResult ob2) {
+<span class="fc bfc" id="L31" title="All 2 branches covered.">			if (ob1.prob == ob2.prob) {</span>
+<span class="pc bpc" id="L32" title="1 of 4 branches missed.">				if (ob1.posEg &amp;&amp; ob2.posEg) {</span>
+<span class="fc" id="L33">					return 0;</span>
+				}
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">				if (ob1.posEg) {</span>
+<span class="nc" id="L36">					return -1;</span>
+				}
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">				if (ob2.posEg) {</span>
+<span class="nc" id="L39">					return 1;</span>
+				}
+<span class="fc" id="L41">				return 0;</span>
+			} else {
+<span class="fc" id="L43">				return (int) Math.ceil(ob2.prob - ob1.prob);</span>
+			}
+		 }
+	}
+	
+	private final ArrayList&lt;ProbabilityResult&gt; results;
+
+<span class="fc" id="L50">	public double lastComputedF1 = Double.NaN;</span>
+
+<span class="fc" id="L52">	public ThresholdSelector() {</span>
+<span class="fc" id="L53">		results = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L54">	}</span>
+
+	public void addProbResult(double prob, boolean posEg) {
+<span class="fc" id="L57">		results.add(new ProbabilityResult(prob, posEg));</span>
+<span class="fc" id="L58">	}</span>
+	
+	public double selectBestThreshold() {
+<span class="fc" id="L61">		results.sort(new descendingProbs());</span>
+<span class="fc" id="L62">		CoverageScore score = new CoverageScore();</span>
+<span class="fc" id="L63">		int numP=0;</span>
+<span class="fc" id="L64">		int numN=0;</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">		for (ProbabilityResult res : results) {</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">			if (res.posEg)</span>
+<span class="fc" id="L67">				numP++;</span>
+			else
+<span class="fc" id="L69">				numN++;</span>
+<span class="fc" id="L70">		}</span>
+<span class="fc" id="L71">		score.setCounts(0, 0, numN, numP);</span>
+		
+<span class="fc" id="L73">		double bestThreshold = 0;</span>
+<span class="fc" id="L74">		double bestF1 = 0;</span>
+<span class="fc" id="L75">		double lastProb = 1;</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">		for (ProbabilityResult res : results) {</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">			if (lastProb != res.prob) {</span>
+<span class="fc" id="L78">				double f1 = score.getF1();</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">				if (f1 &gt; bestF1) {</span>
+<span class="fc" id="L80">					bestThreshold = (lastProb + res.prob)/2;</span>
+<span class="fc" id="L81">					bestF1 = f1;</span>
+				}
+<span class="fc" id="L83">				lastProb = res.prob;</span>
+			}
+<span class="fc bfc" id="L85" title="All 2 branches covered.">			if (res.posEg) {</span>
+<span class="fc" id="L86">				score.setTruePositives(score.getTruePositives() + 1);</span>
+<span class="fc" id="L87">				score.setFalseNegatives(score.getFalseNegatives()-1);</span>
+			} else {
+<span class="fc" id="L89">				score.setFalsePositives(score.getFalsePositives()+1);</span>
+<span class="fc" id="L90">				score.setTrueNegatives(score.getTrueNegatives()-1);</span>
+			}
+<span class="fc" id="L92">		}</span>
+<span class="fc" id="L93">		System.out.println(&quot;Best F1 = &quot; + bestF1);</span>
+<span class="fc" id="L94">		lastComputedF1 = bestF1;</span>
+<span class="fc" id="L95">		return bestThreshold;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

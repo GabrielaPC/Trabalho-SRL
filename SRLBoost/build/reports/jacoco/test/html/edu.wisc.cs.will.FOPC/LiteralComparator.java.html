@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LiteralComparator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">LiteralComparator.java</span></div><h1>LiteralComparator.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import java.util.Comparator;
+
+/*
+ * @author shavlik
+ */
+<span class="pc bpc" id="L8" title="1 of 2 branches missed.">public class LiteralComparator implements Comparator&lt;Literal&gt; {</span>
+
+<span class="fc" id="L10">	public LiteralComparator() {</span>
+<span class="fc" id="L11">	}</span>
+
+	public int compare(Literal lit0, Literal lit1) {
+		// TODO(@hayesall): Suspicious `(lit0 == lit1)` before null check.
+<span class="pc bpc" id="L15" title="1 of 2 branches missed.">		if (lit0 == lit1) { return 0; }</span>
+
+<span class="pc bpc" id="L17" title="2 of 4 branches missed.">		assert lit0 != null;</span>
+<span class="pc bpc" id="L18" title="2 of 4 branches missed.">		assert lit1 != null;</span>
+
+<span class="fc" id="L20">		int int0 = lit0.predicateName.hashCode();</span>
+<span class="fc" id="L21">		int int1 = lit1.predicateName.hashCode();</span>
+		
+<span class="fc bfc" id="L23" title="All 2 branches covered.">		if (int0 != int1) { return int0 - int1; }</span>
+		
+<span class="fc" id="L25">		int len0 = lit0.numberArgs();</span>
+<span class="fc" id="L26">		int len1 = lit1.numberArgs();</span>
+		
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">		if (len0 != len1) { return len0 - len1; }</span>
+		
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">		for (int i = 0; i &lt; len0; i++) {</span>
+<span class="fc" id="L31">			Term arg0 = lit0.getArgument(i);</span>
+<span class="fc" id="L32">			Term arg1 = lit1.getArgument(i);</span>
+			
+<span class="fc bfc" id="L34" title="All 2 branches covered.">			if (arg0 == arg1) { continue; }  // Sort based on the first non-matching term.</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">			if (arg0 instanceof Variable) {</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">				if (arg1 instanceof Variable) {  // Sort variables based on their name.</span>
+<span class="fc" id="L37">					Variable v0 = (Variable) arg0;</span>
+<span class="fc" id="L38">					Variable v1 = (Variable) arg1;</span>
+<span class="fc" id="L39">					String   s0 = v0.toString();</span>
+<span class="fc" id="L40">					String   s1 = v1.toString();</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">					if (s0.equals(s1)) {</span>
+						// These are longs and we need an int, so cannot simply subtract.
+<span class="fc" id="L43">						return Long.compare(v0.counter, v1.counter);</span>
+					}
+<span class="fc" id="L45">					return s0.hashCode() - s1.hashCode();</span>
+				}
+<span class="nc" id="L47">				return -1;</span>
+			}
+<span class="nc bnc" id="L49" title="All 2 branches missed.">			if (arg1 instanceof Variable) { return 1; } </span>
+			
+<span class="nc" id="L51">			int arg0int = arg0.hashCode();  // TODO should recur inside of these, in case there are functions.</span>
+<span class="nc" id="L52">			int arg1int = arg1.hashCode();  // TODO probably should implement hashCode for all FOPC classes.</span>
+			
+<span class="nc" id="L54">			return arg0int - arg1int;</span>
+		}
+		
+<span class="nc" id="L57">		return 0;  // Could find no difference.</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

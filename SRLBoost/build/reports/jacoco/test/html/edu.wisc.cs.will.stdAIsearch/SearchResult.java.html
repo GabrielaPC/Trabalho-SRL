@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.stdAIsearch</a> &gt; <span class="el_source">SearchResult.java</span></div><h1>SearchResult.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.stdAIsearch;
+
+import java.io.Serializable;
+
+/*
+ * Collects the information of interest from a search (e.g., best node found).
+ * @author shavlik
+ */
+public class SearchResult implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
+	private final boolean goalFound;
+
+	private final String reason;
+
+<span class="fc" id="L17">	SearchResult(boolean goalFound, String reason) {</span>
+<span class="fc" id="L18">		this.goalFound = goalFound;</span>
+<span class="fc" id="L19">		this.reason = reason;</span>
+<span class="fc" id="L20">	}</span>
+	
+	public boolean goalFound() {
+<span class="fc" id="L23">		return goalFound;</span>
+	}
+	
+	public String toString() {
+<span class="nc bnc" id="L27" title="All 2 branches missed.">		if (goalFound) {</span>
+<span class="nc" id="L28">			return &quot;Search ended successfully.  &quot;   + reason;</span>
+		}
+		else {
+<span class="nc" id="L31">			return &quot;Search ended unsuccessfully.  &quot; + reason;</span>
+		}
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

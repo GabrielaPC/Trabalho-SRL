@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegressionInfoHolderForMLN.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP.Regression</a> &gt; <span class="el_source">RegressionInfoHolderForMLN.java</span></div><h1>RegressionInfoHolderForMLN.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP.Regression;
+
+import edu.wisc.cs.will.Boosting.RDN.RegressionRDNExample;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.DataSetUtils.RegressionExample;
+import edu.wisc.cs.will.ILP.LearnOneClause;
+import edu.wisc.cs.will.ILP.SingleClauseNode;
+import edu.wisc.cs.will.Utils.ProbDistribution;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+
+/*
+ * @author tkhot
+ */
+public class RegressionInfoHolderForMLN extends RegressionInfoHolderForRDN {
+
+	public RegressionInfoHolderForMLN() {
+<span class="fc" id="L18">		super();</span>
+<span class="fc" id="L19">	}</span>
+
+	@Override
+	public void populateExamples(LearnOneClause task, SingleClauseNode caller) throws SearchInterrupted {
+<span class="pc bpc" id="L23" title="1 of 2 branches missed.">		if (!task.regressionTask) { Utils.error(&quot;Should call this when NOT doing regression.&quot;); }</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">		if (caller.getPosCoverage() &lt; 0.0) { caller.computeCoverage(); }</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">		for (Example posEx : task.getPosExamples()) {</span>
+<span class="fc" id="L26">			double weight = posEx.getWeightOnExample();</span>
+<span class="fc" id="L27">			double output = ((RegressionExample) posEx).getOutputValue();</span>
+<span class="fc" id="L28">			ProbDistribution prob   = ((RegressionRDNExample)posEx).getProbOfExample();</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">			if (prob.isHasDistribution()) {</span>
+<span class="nc" id="L30">				Utils.error(&quot;Expected single probability value but contains distribution&quot;);</span>
+			}
+<span class="fc bfc" id="L32" title="All 2 branches covered.">			if (!caller.posExampleAlreadyExcluded(posEx)) {</span>
+<span class="fc" id="L33">				long num = 1;</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">				if (caller != caller.getRootNode()) {</span>
+<span class="fc" id="L35">					num  = caller.getNumberOfGroundingsForRegressionEx(posEx);</span>
+				}
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">				if (num == 0) {</span>
+<span class="nc" id="L38">					Utils.waitHere(&quot;Number of groundings = 0 for &quot; + posEx + &quot; with &quot; + caller.getClause());</span>
+<span class="nc" id="L39">					num = 1;</span>
+				}
+<span class="fc" id="L41">				trueStats.addNumOutput(num, output, weight, prob.getProbOfBeingTrue());		</span>
+			}
+<span class="fc" id="L43">		}</span>
+<span class="fc" id="L44">		RegressionInfoHolder totalFalseStats = caller.getTotalFalseBranchHolder() ;</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">		if (totalFalseStats != null) {</span>
+<span class="fc" id="L46">			falseStats = falseStats.add(totalFalseStats.falseStats);</span>
+		}
+<span class="fc" id="L48">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

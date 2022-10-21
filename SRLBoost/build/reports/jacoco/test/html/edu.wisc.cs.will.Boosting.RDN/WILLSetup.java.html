@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WILLSetup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.RDN</a> &gt; <span class="el_source">WILLSetup.java</span></div><h1>WILLSetup.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.RDN;
+
+import edu.wisc.cs.will.Boosting.Utils.BoostingUtils;
+import edu.wisc.cs.will.Boosting.Utils.CommandLineArguments;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.DataSetUtils.RegressionExample;
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.ILP.*;
+import edu.wisc.cs.will.ResThmProver.*;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.Utils.condor.CondorFile;
+import edu.wisc.cs.will.stdAIsearch.BestFirstSearch;
+import edu.wisc.cs.will.stdAIsearch.SearchStrategy;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
+/*
+ *
+ * @author shavlik
+ * @author tushar
+ */
+public final class WILLSetup {
+
+	// TODO(@hayesall): The `WILLSetup.outerLooper` ILPouterLoop is touched by quite a few functions.
+	private ILPouterLoop outerLooper;
+
+	// These are meant for ease of access and should never be modified.
+	// They can also be obtained by using outerLooper.
+	private LearnOneClause innerLooper;
+	private HandleFOPCstrings handler;
+	private HornClauseContext context;
+
+	private Map&lt;String, List&lt;Example&gt;&gt; backupPosExamples;
+	private Map&lt;String, List&lt;Example&gt;&gt; backupNegExamples;
+
+<span class="fc" id="L38">	public boolean useMLNs = false;</span>
+<span class="fc" id="L39">	public boolean learnClauses = false;</span>
+
+	/**
+	 * Cached list of predicate and arities for neighboring facts
+	 */
+<span class="fc" id="L44">	private List&lt;PredicateNameAndArity&gt; neighboringFactFilterList = null;</span>
+	
+	public CommandLineArguments cmdArgs;
+<span class="fc" id="L47">	public WILLSetup() { }</span>
+
+	private String getRunTypeMarker() {
+<span class="fc" id="L50">		boolean learn = cmdArgs.isLearnVal();</span>
+<span class="fc" id="L51">		boolean infer = cmdArgs.isInferVal();</span>
+		
+<span class="pc bpc" id="L53" title="1 of 4 branches missed.">		if (learn &amp;&amp; infer) { return &quot;_learnPlusInfer&quot;; } // Dribble files might overlap in this case.</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">		if (learn)          { return &quot;_learn&quot;;          }</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">		if (infer)          { return &quot;_infer&quot;;          }</span>
+<span class="nc" id="L56">		return                       &quot;_runTypeIsUnknown&quot;;</span>
+	}
+
+	public boolean setup(CommandLineArguments args, String directory, boolean forTraining) {
+
+<span class="fc" id="L61">		this.cmdArgs = args;</span>
+<span class="fc" id="L62">		this.useMLNs = args.isLearnMLN();</span>
+<span class="fc" id="L63">		this.learnClauses = args.isLearningMLNClauses();</span>
+
+<span class="fc" id="L65">		Utils.Verbosity defaultVerbosity = Utils.Verbosity.Medium;</span>
+
+		// TODO(@hayesall): Providing a seed could be useful for replicating results.
+		//	Utils.seedRandom((long) 12345); // Use this if we want to repeat runs exactly.
+
+<span class="fc" id="L70">		Utils.seedRandom(System.currentTimeMillis() % 100000); // Only use the last few digits (though probably doesn't matter).  JWS</span>
+<span class="fc" id="L71">		Utils.setVerbosity(defaultVerbosity);</span>
+
+<span class="fc" id="L73">		File dir = new CondorFile(directory);</span>
+
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">		if (!dir.isDirectory()) {</span>
+<span class="nc" id="L76">			throw new IllegalArgumentException(&quot;Unable to find task directory: &quot; + directory + &quot;.&quot;);</span>
+		}
+
+<span class="fc" id="L79">		directory     = dir.getPath();</span>
+<span class="fc" id="L80">		String prefix = dir.getName();</span>
+
+		// Slice the '/' off the prefix if it was passed in with one ...
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">		if ( prefix.endsWith(&quot;/&quot; ) ) {</span>
+<span class="nc" id="L84">			prefix = prefix.substring(0, prefix.length() - 1);</span>
+		}
+
+<span class="fc" id="L87">		String[] file_paths = new String[4];</span>
+
+<span class="fc" id="L89">		file_paths[0] = directory + &quot;/&quot; + prefix + &quot;_pos&quot;   + Utils.defaultFileExtensionWithPeriod;</span>
+<span class="fc" id="L90">		file_paths[1] = directory + &quot;/&quot; + prefix + &quot;_neg&quot;   + Utils.defaultFileExtensionWithPeriod;</span>
+<span class="fc" id="L91">		file_paths[3] = directory + &quot;/&quot; + prefix + &quot;_facts&quot; + Utils.defaultFileExtensionWithPeriod;</span>
+<span class="fc" id="L92">		file_paths[2] = directory + &quot;/&quot; + prefix + &quot;_bk&quot;                                    + Utils.defaultFileExtensionWithPeriod;</span>
+
+<span class="fc" id="L94">		String appendToPrefix=&quot;&quot;;</span>
+<span class="pc bpc" id="L95" title="1 of 4 branches missed.">		if (forTraining &amp;&amp; cmdArgs.getModelFileVal() != null) {</span>
+<span class="nc" id="L96">			appendToPrefix = cmdArgs.getModelFileVal();</span>
+		}
+<span class="pc bpc" id="L98" title="1 of 4 branches missed.">		if (!forTraining &amp;&amp; cmdArgs.getModelFileVal() != null) {</span>
+<span class="nc" id="L99">			appendToPrefix = cmdArgs.getModelFileVal();</span>
+		}
+
+		// Try to place dribble files in the directory where RESULTS will go.
+<span class="fc" id="L103">		String resultsDir = cmdArgs.getResultsDirVal();</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">		if (resultsDir == null) { resultsDir = directory + &quot;/&quot;; }</span>
+
+<span class="fc" id="L106">		Utils.createDribbleFile(resultsDir + prefix + getRunTypeMarker() + appendToPrefix  + &quot;_dribble&quot; + Utils.defaultFileExtensionWithPeriod);</span>
+<span class="fc" id="L107">		Utils.touchFile(        resultsDir + prefix + getRunTypeMarker() + appendToPrefix  + &quot;_started&quot; + Utils.defaultFileExtensionWithPeriod);</span>
+<span class="fc" id="L108">		createRegressionOuterLooper(file_paths, directory, prefix, cmdArgs.getSampleNegsToPosRatioVal(), cmdArgs.isLearnRegression());</span>
+
+<span class="fc" id="L110">		Utils.println(&quot;\n% Initializing the ILP inner looper.&quot;);</span>
+<span class="fc" id="L111">		getOuterLooper().initialize(false);</span>
+
+<span class="fc" id="L113">		Utils.println(&quot;% Old dir&quot; + cmdArgs.getModelDirVal());</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">		if (cmdArgs.getModelDirVal() == null) {</span>
+<span class="fc" id="L115">			Utils.println(&quot;Setting model dir&quot;);	</span>
+<span class="fc" id="L116">			cmdArgs.setModelDirVal(getOuterLooper().getWorkingDirectory() + &quot;/models/&quot;);</span>
+		}
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">		if (cmdArgs.getResultsDirVal() == null) { // Usually we want MODEL and RESULTS to be the same, but not if we're running on a fresh testset (i.e., one completely separate from the trainset).</span>
+<span class="fc" id="L119">			cmdArgs.setResultsDirVal(cmdArgs.getModelDirVal());</span>
+		}
+
+<span class="fc" id="L122">		List&lt;Literal&gt; targets = getInnerLooper().targets;</span>
+<span class="fc" id="L123">		Set&lt;Integer&gt; arities = new HashSet&lt;&gt;(4);</span>
+<span class="pc bpc" id="L124" title="1 of 4 branches missed.">		if (targets != null) for (Literal target : targets) { arities.add(target.getArity()); }</span>
+
+		// Use LIST since there can (legally) be duplicates.
+<span class="fc" id="L127">		List&lt;Example&gt; posExamplesRaw = getOuterLooper().getPosExamples();</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">		List&lt;Example&gt; negExamplesRaw = getOuterLooper().getNegExamples() == null ? new ArrayList&lt;&gt;(): getOuterLooper().getNegExamples();</span>
+<span class="fc" id="L129">		List&lt;Example&gt; posExamples    = new ArrayList&lt;&gt;(posExamplesRaw.size());</span>
+<span class="fc" id="L130">		List&lt;Example&gt; negExamples    = new ArrayList&lt;&gt;(negExamplesRaw.size());</span>
+		
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">		if (targets != null) {</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">			for (Example pos : posExamplesRaw) {</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">				if (arities.contains(pos.getArity())) { </span>
+					// If not in the list of targets, we would add to facts
+<span class="fc bfc" id="L136" title="All 2 branches covered.">					if (cmdArgs.getTargetPredVal().contains(pos.predicateName.name)) {</span>
+<span class="fc" id="L137">						posExamples.add(pos);</span>
+					} else {
+<span class="fc" id="L139">						addFact(pos);</span>
+					}
+				} else { 
+<span class="nc" id="L142">					Utils.println(&quot; Ignore this pos (arity not in &quot; + arities + &quot;): &quot; + pos); </span>
+				}
+<span class="fc" id="L144">			}</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">			for (Example neg : negExamplesRaw) {</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">				if (arities.contains(neg.getArity())) {</span>
+					// If not in the list of targets, we would add to facts
+<span class="fc bfc" id="L148" title="All 2 branches covered.">					if (cmdArgs.getTargetPredVal().contains(neg.predicateName.name)) {</span>
+<span class="fc" id="L149">						negExamples.add(neg);</span>
+					}
+				} else { 
+<span class="nc" id="L152">					Utils.println(&quot; Ignore this neg (arity not in &quot; + arities + &quot;): &quot; + neg);</span>
+				}
+<span class="fc" id="L154">			}</span>
+
+		} else {
+			// If no targets (say because only testing and there are no positive examples), then simply accept all the examples.
+			// If not in the list of targets, we would add to facts
+
+<span class="nc bnc" id="L160" title="All 2 branches missed.">			for (Example neg : negExamplesRaw) {</span>
+				// If not in the list of targets, we would add to facts
+<span class="nc bnc" id="L162" title="All 2 branches missed.">				if (cmdArgs.getTargetPredVal().contains(neg.predicateName.name)) {</span>
+<span class="nc" id="L163">					negExamples.add(neg);</span>
+				}
+<span class="nc" id="L165">			}</span>
+		}
+
+<span class="fc" id="L168">		Utils.println(&quot;\n% Have &quot; + Utils.comma(posExamplesRaw) + &quot; 'raw' positive examples and kept &quot; + Utils.comma(posExamples) + &quot;.&quot;);</span>
+<span class="fc" id="L169">		Utils.println(  &quot;% Have &quot; + Utils.comma(negExamplesRaw) + &quot; 'raw' negative examples and kept &quot; + Utils.comma(negExamples) + &quot;.&quot;);</span>
+
+		// These shouldn't be RegressionRDNExamples. They are assumed to be &quot;Example&quot;s. 
+<span class="fc" id="L172">		backupPosExamples = getExamplesByPredicateName(posExamples); // Do bagging on the outermost loop.</span>
+<span class="fc" id="L173">		backupNegExamples = getExamplesByPredicateName(negExamples);	// But only if TRAINING.</span>
+		// Needed to get examples from fact files.
+<span class="fc" id="L175">		fillMissingExamples();</span>
+
+<span class="pc bpc" id="L177" title="1 of 4 branches missed.">		if (backupPosExamples != null) for (String target : backupPosExamples.keySet()) {</span>
+<span class="fc" id="L178">			Collection&lt;Example&gt; posegs = backupPosExamples.get(target);</span>
+<span class="fc" id="L179">			Collection&lt;Example&gt; negegs = backupNegExamples.get(target);</span>
+<span class="fc" id="L180">			Example.labelTheseExamples(&quot;#pos=&quot;, posegs);  // Used in comments only.</span>
+<span class="fc" id="L181">			Example.labelTheseExamples(&quot;#neg=&quot;, negegs);  // Used in comments only.</span>
+<span class="fc" id="L182">			Utils.println(&quot;\n% processing backup's for &quot; + target +&quot;\n%  POS EX = &quot; + Utils.comma(posegs) +  &quot;\n%  NEG EX = &quot; + Utils.comma(negegs)	);</span>
+			
+<span class="fc" id="L184">		}</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(backupPosExamples) &lt; 1) {</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">			if (Utils.getSizeSafely(backupNegExamples) &lt; 1) { Utils.println(&quot;No pos nor neg examples!&quot;); return false; }</span>
+		}
+
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(backupPosExamples) + Utils.getSizeSafely(backupNegExamples) &lt; 1) {</span>
+			// TODO(hayesall): Refactored to remove `getDoInferenceIfModNEqualsThis()`, safe to delete?
+<span class="nc" id="L191">			Utils.println(&quot;No pos nor neg examples after calling getDoInferenceIfModNequalsThis()!&quot;); </span>
+<span class="nc" id="L192">			return false; </span>
+		}
+		
+<span class="fc" id="L195">		reportStats();</span>
+
+<span class="fc" id="L197">		return true;</span>
+	}
+
+	/**
+	 * This method moves facts to Examples if they are part of the joint inference task.
+	 */
+	private void fillMissingExamples() throws RuntimeException {
+<span class="fc" id="L204">		Set&lt;String&gt; missingPositiveTargets = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L205" title="All 2 branches covered.">		for (String pred : cmdArgs.getTargetPredVal()) {</span>
+			// Make sure all targets have facts
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">			if (!backupPosExamples.containsKey(pred) ||</span>
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">				 backupPosExamples.get(pred) == null ||</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">				 backupPosExamples.get(pred).isEmpty()) {</span>
+<span class="nc" id="L210">				Utils.println(&quot;% No pos ex for &quot; + pred);</span>
+<span class="nc" id="L211">				missingPositiveTargets.add(pred);</span>
+			}
+			// Make sure all targets have facts
+<span class="fc bfc" id="L214" title="All 2 branches covered.">			if (!backupNegExamples.containsKey(pred) ||</span>
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">				backupNegExamples.get(pred) == null ||</span>
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">				backupNegExamples.get(pred).isEmpty()) {</span>
+<span class="fc" id="L217">				Utils.println(&quot;% No neg ex for &quot; + pred);</span>
+			}
+			// Initialize the hash map
+<span class="pc" id="L220">			backupPosExamples.computeIfAbsent(pred, k -&gt; new ArrayList&lt;&gt;());</span>
+<span class="fc" id="L221">			backupNegExamples.computeIfAbsent(pred, k -&gt; new ArrayList&lt;&gt;());</span>
+<span class="fc" id="L222">		}</span>
+
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">		if (!missingPositiveTargets.isEmpty()) {</span>
+<span class="nc" id="L225">			throw new RuntimeException(&quot;If you've reached this point, something has gone wrong.&quot;);</span>
+		}
+<span class="fc" id="L227">	}</span>
+
+	void reportStats() {
+<span class="fc" id="L230">		Utils.println(&quot;\n% Memory usage by WILLSetup (just counts # targets?):&quot;);</span>
+<span class="fc" id="L231">		Utils.println(&quot;%  |backupPosExamples| = &quot; + Utils.comma(backupPosExamples));</span>
+<span class="fc" id="L232">		Utils.println(&quot;%  |backupNegExamples| = &quot; + Utils.comma(backupNegExamples));</span>
+<span class="fc" id="L233">		Utils.println(&quot;%  |predicatesAsFacts| = &quot; + Utils.comma(predicatesAsFacts));</span>
+<span class="fc" id="L234">		Utils.println(&quot;%  |addedToFactBase|   = &quot; + Utils.comma(addedToFactBase));</span>
+<span class="fc" id="L235">	}	</span>
+	
+	public void prepareFactsAndExamples(String predicate) {
+<span class="fc" id="L238">		prepareFactsAndExamples(backupPosExamples, backupNegExamples, predicate, true);</span>
+<span class="fc" id="L239">	}</span>
+
+	// Maintain a list of predicates that are already added, so that we can save on time.
+<span class="fc" id="L242">	private final HashSet&lt;String&gt; predicatesAsFacts = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L243">	private final HashSet&lt;Literal&gt; addedToFactBase  = new HashSet&lt;&gt;();</span>
+
+<span class="fc" id="L245">	private final Set&lt;PredicateNameAndArity&gt; backupTargetModes=new HashSet&lt;&gt;();</span>
+
+	void addAllTargetModes() {
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">		if (backupTargetModes.isEmpty()) {</span>
+<span class="fc" id="L249">			return;</span>
+		}
+		
+<span class="nc bnc" id="L252" title="All 2 branches missed.">		for (PredicateNameAndArity mode : backupTargetModes) {</span>
+<span class="nc" id="L253">			getInnerLooper().addBodyMode(mode);</span>
+<span class="nc" id="L254">		}</span>
+<span class="nc" id="L255">		backupTargetModes.clear();</span>
+<span class="nc" id="L256">	}</span>
+	
+	void prepareFactsAndExamples(Map&lt;String, List&lt;Example&gt;&gt; posEg,
+								 Map&lt;String, List&lt;Example&gt;&gt; negEg,
+								 String predicate, boolean forLearning) {
+
+<span class="pc bpc" id="L262" title="2 of 4 branches missed.">		if (posEg.keySet().size() &gt; 1 || negEg.keySet().size() &gt; 1) {</span>
+			// JWS added the negEq check since we need to work with only NEG examples (ie, on an unlabeled testset).
+<span class="nc" id="L264">			throw new RuntimeException(&quot;Should only be possible when there is more than one target.&quot;);</span>
+		}
+<span class="fc" id="L266">		prepareExamplesForTarget(posEg.get(predicate), negEg.get(predicate), predicate, forLearning);</span>
+<span class="fc" id="L267">	}</span>
+
+	public void prepareExamplesForTarget(String predicate) {
+<span class="fc" id="L270">		prepareExamplesForTarget(backupPosExamples.get(predicate), backupNegExamples.get(predicate), predicate, true);</span>
+<span class="fc" id="L271">	}	</span>
+	
+	private void prepareExamplesForTarget(List&lt;Example&gt; newPosEg,
+										  List&lt;Example&gt; newNegEg,
+										  String predicate,
+										  boolean forLearning) {
+
+<span class="fc" id="L278">		getOuterLooper().setPosExamples(new ArrayList&lt;&gt;(newPosEg));</span>
+<span class="fc" id="L279">		getOuterLooper().setNegExamples(new ArrayList&lt;&gt;(newNegEg));</span>
+
+<span class="fc bfc" id="L281" title="All 2 branches covered.">		if (forLearning) {</span>
+			// 	Move the examples into facts and get facts to predicates.
+<span class="fc" id="L283">			getOuterLooper().morphToRDNRegressionOuterLoop(</span>
+					1,
+					0,
+<span class="fc" id="L286">					cmdArgs.getSampleNegsToPosRatioVal(),</span>
+<span class="fc" id="L287">					cmdArgs.getSamplePosProbVal(),</span>
+<span class="fc bfc" id="L288" title="All 4 branches covered.">					cmdArgs.isLearnMLN() &amp;&amp; cmdArgs.isLearningMLNClauses(),</span>
+<span class="fc" id="L289">					cmdArgs.isLearnRegression());</span>
+		}
+		// Set target literal to be just one literal.
+<span class="fc" id="L292">		getOuterLooper().innerLoopTask.setTargetAs(predicate, false, null);</span>
+<span class="fc" id="L293">		handler.getPredicateName(predicate).setCanBeAbsent(-1);</span>
+
+		
+<span class="fc" id="L296">	}</span>
+
+	private Map&lt;String,List&lt;Example&gt;&gt; getExamplesByPredicateName(List&lt;Example&gt; examples) {
+		// TODO(@TVK): remove the common stuff from `getJointExamples`
+
+<span class="fc" id="L301">		Map&lt;String,List&lt;Example&gt;&gt; result = new HashMap&lt;&gt;();</span>
+
+<span class="fc bfc" id="L303" title="All 2 branches covered.">		for (Example eg : examples) {</span>
+<span class="fc" id="L304">			String target = eg.predicateName.name;</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">			if (!result.containsKey(target)) {</span>
+<span class="fc" id="L306">				result.put(target, new ArrayList&lt;&gt;());</span>
+			}
+<span class="fc" id="L308">			result.get(target).add(eg);</span>
+<span class="fc" id="L309">		}</span>
+<span class="fc" id="L310">		return result;</span>
+	}
+	
+	public HashMap&lt;String,List&lt;RegressionRDNExample&gt;&gt; getJointExamples(Set&lt;String&gt; targets) {
+		// TODO(@hayesall): Large section of duplicated code, refactor.
+
+<span class="fc" id="L316">		HashMap&lt;String,List&lt;RegressionRDNExample&gt;&gt; result = new HashMap&lt;&gt;();</span>
+		
+		// TODO(?): Currently assuming they are marked as examples already.
+<span class="fc" id="L319">		int counterPos = 0, counterNeg = 0;</span>
+<span class="fc bfc" id="L320" title="All 2 branches covered.">		for (String pred : targets) {</span>
+<span class="pc bpc" id="L321" title="1 of 2 branches missed.">			if (!result.containsKey(pred)) {</span>
+<span class="fc" id="L322">				result.put(pred, new ArrayList&lt;&gt;());</span>
+			}
+<span class="fc" id="L324">			List&lt;Example&gt; lookupPos = backupPosExamples.get(pred);  Utils.println(&quot;\n% for &quot; + pred + &quot; |lookupPos| = &quot; + Utils.comma(lookupPos));</span>
+<span class="pc bpc" id="L325" title="1 of 4 branches missed.">			if (lookupPos != null) for (Example ex : lookupPos) {</span>
+<span class="fc" id="L326">				RegressionRDNExample rex = new RegressionRDNExample(getHandler(), ex.extractLiteral(), 1, ex.provenance, ex.extraLabel);</span>
+<span class="fc bfc" id="L327" title="All 2 branches covered.">				if (cmdArgs.isLearnRegression()) {</span>
+<span class="pc bpc" id="L328" title="1 of 2 branches missed.">					if (ex instanceof RegressionExample) {</span>
+<span class="fc" id="L329">						rex.originalRegressionOrProbValue = ((RegressionExample)ex).getOutputValue();</span>
+					} else {
+<span class="nc" id="L331">						Utils.waitHere(&quot;Expected regression examples for learning regression trees&quot;);</span>
+					}
+				}
+<span class="fc" id="L334">				rex.setOriginalTruthValue(true);</span>
+<span class="fc" id="L335">				String target = ex.predicateName.name;</span>
+<span class="pc bpc" id="L336" title="1 of 2 branches missed.">				if (targets.contains(target)) { </span>
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">					if (!result.containsKey(target)) {</span>
+<span class="nc" id="L338">						result.put(target, new ArrayList&lt;&gt;());</span>
+					}
+<span class="fc" id="L340">					result.get(target).add(rex); counterPos++;</span>
+
+				} else {
+<span class="nc" id="L343">					Utils.error(&quot;Didn't expect this example as target. Model absent: &quot; + target);</span>
+				}
+<span class="fc" id="L345">			}</span>
+<span class="fc" id="L346">			List&lt;Example&gt; lookupNeg = backupNegExamples.get(pred);  Utils.println(&quot;% for &quot; + pred + &quot; |lookupNeg| = &quot; + Utils.comma(lookupNeg));</span>
+<span class="pc bpc" id="L347" title="1 of 4 branches missed.">			if (lookupNeg != null) for (Example ex  : lookupNeg) {</span>
+<span class="fc" id="L348">				RegressionRDNExample rex = new RegressionRDNExample(getHandler(), ex.extractLiteral(), 0, ex.provenance, ex.extraLabel);</span>
+<span class="fc" id="L349">				rex.setOriginalTruthValue(false);</span>
+<span class="pc bpc" id="L350" title="1 of 2 branches missed.">				if (cmdArgs.isLearnRegression()) {</span>
+<span class="nc bnc" id="L351" title="All 2 branches missed.">					if (ex instanceof RegressionExample) {</span>
+<span class="nc" id="L352">						rex.originalRegressionOrProbValue = ((RegressionExample)ex).getOutputValue();</span>
+					} else {
+<span class="nc" id="L354">						Utils.waitHere(&quot;Expected regression examples for learning regression trees&quot;);</span>
+					}
+				}
+<span class="fc" id="L357">				String target = ex.predicateName.name;</span>
+<span class="pc bpc" id="L358" title="1 of 2 branches missed.">				if (targets.contains(target)) { </span>
+<span class="pc bpc" id="L359" title="1 of 2 branches missed.">					if (!result.containsKey(target)) {</span>
+<span class="nc" id="L360">						result.put(target, new ArrayList&lt;&gt;());</span>
+					}
+<span class="fc" id="L362">					result.get(target).add(rex); counterNeg++;</span>
+				} else {
+<span class="nc" id="L364">					Utils.error(&quot;Didn't expect this example as target. Model absent: &quot; + target);</span>
+				}
+<span class="fc" id="L366">			}	</span>
+
+<span class="fc" id="L368">		}</span>
+
+<span class="fc" id="L370">		Utils.println(&quot;% getJointExamples: |pos| = &quot; + Utils.comma(counterPos) + &quot;, |neg| = &quot; + Utils.comma(counterNeg));</span>
+<span class="fc" id="L371">		return result;</span>
+	}
+
+	public Clause convertFactToClause(String fact) {
+<span class="nc" id="L375">		return getInnerLooper().getParser().parseDefiniteClause(fact);</span>
+	}
+
+	private void setOuterLooper(ILPouterLoop outerLooper) {
+<span class="fc" id="L379">		this.outerLooper = outerLooper;</span>
+<span class="fc" id="L380">		this.innerLooper = outerLooper.innerLoopTask;</span>
+<span class="fc" id="L381">		this.handler     = outerLooper.innerLoopTask.getStringHandler();</span>
+<span class="fc" id="L382">		this.context     = outerLooper.innerLoopTask.getContext();</span>
+<span class="fc" id="L383">		neighboringFactFilterList = null;</span>
+<span class="fc" id="L384">	}</span>
+
+	public ILPouterLoop getOuterLooper() {
+<span class="fc" id="L387">		return outerLooper;</span>
+	}
+
+	public LearnOneClause getInnerLooper() {
+<span class="fc" id="L391">		return innerLooper;</span>
+	}
+
+	public HandleFOPCstrings getHandler() {
+<span class="fc" id="L395">		return handler;</span>
+	}
+
+	public HornClauseContext getContext() {
+<span class="fc" id="L399">		return context;</span>
+	}
+
+	void removeFact(Literal eg) {
+<span class="fc" id="L403">		getContext().getClausebase().retractAllClausesWithUnifyingBody(eg);</span>
+<span class="fc" id="L404">	}</span>
+
+	void addFact(Literal eg) {
+<span class="fc" id="L407">		getContext().getClausebase().assertFact(eg);</span>
+<span class="fc" id="L408">	}</span>
+
+	// Pulled out by JWS (7/8/10) so could be called elsewhere for a plain regression-tree learning.
+	private void createRegressionOuterLooper(String[] newArgList, String directory, String prefix, double negToPosRatio, boolean isaRegressionTaskRightAway) {
+
+		try {
+<span class="fc" id="L414">			SearchStrategy         strategy = new BestFirstSearch();</span>
+<span class="fc" id="L415">			ScoreSingleClause        scorer = new ScoreRegressionNode(cmdArgs.isLearnMLN());</span>
+
+			// We're (sometimes) using A SMALL INDEX HERE, since the memory needs are already very large (i.e., trade off time for space).
+			// We need to keep all the literals related to a specific proof (i.e., test of a hypothesis) around, but are willing to redo between proofs.
+			// TODO(?): add 'runningLargeTask' to the passed-in arguments.
+
+			// Need to set these BEFORE creating the LazyHornClausebase.
+<span class="fc" id="L422">			LazyGroundNthArgumentClauseIndex.setMaximumIndexSize(100);</span>
+<span class="fc" id="L423">			LazyGroundClauseIndex.setMaximumIndexSize(           100);</span>
+					
+<span class="fc" id="L425">			HandleFOPCstrings stringHandler = new HandleFOPCstrings(true); // Let the first file read set the default.  (Are libraries read first?)</span>
+			HornClausebase clausebase;
+<span class="fc" id="L427">			clausebase = new LazyHornClausebase(stringHandler);</span>
+
+<span class="fc" id="L429">			HornClauseContext context = new DefaultHornClauseContext(clausebase);</span>
+
+			// TODO(?): `runningLargeTask`? Add to pass-in arguments?
+<span class="fc" id="L432">			context.getStringHandler().variantFactHandling = VariantClauseAction.SILENTLY_KEEP_VARIANTS;</span>
+<span class="fc" id="L433">			context.getStringHandler().variantRuleHandling = VariantClauseAction.WARN_AND_REMOVE_VARIANTS;</span>
+
+<span class="fc" id="L435">			stringHandler.keepQuoteMarks                       = true;</span>
+<span class="fc" id="L436">			stringHandler.dontComplainIfMoreThanOneTargetModes = true;</span>
+<span class="fc" id="L437">			Utils.println(&quot;\n% Calling ILPouterLoop from createRegressionOuterLooper.&quot;);</span>
+<span class="fc" id="L438">			setOuterLooper(new ILPouterLoop(directory, prefix, newArgList, strategy, scorer, new Gleaner(), context, isaRegressionTaskRightAway));</span>
+<span class="fc" id="L439">			Utils.println(&quot;\n% The outer looper has been created.&quot;);</span>
+<span class="nc" id="L440">		} catch (IOException e) {</span>
+<span class="nc" id="L441">			Utils.reportStackTrace(e);</span>
+<span class="nc" id="L442">			Utils.error(&quot;Encountered a problem: &quot; + e);</span>
+<span class="fc" id="L443">		}</span>
+
+<span class="fc" id="L445">        getInnerLooper().maxSearchDepth     =  10000;</span>
+<span class="fc" id="L446">		getInnerLooper().verbosity          =      0;</span>
+
+<span class="fc" id="L448">		getInnerLooper().maxNumberOfNewVars =      7;</span>
+<span class="fc" id="L449">		getInnerLooper().maxDepthOfNewVars  =      7;</span>
+<span class="fc" id="L450">		getOuterLooper().max_total_nodesExpanded = 10000000;</span>
+<span class="fc" id="L451">		getOuterLooper().max_total_nodesCreated  = 10 * getOuterLooper().max_total_nodesExpanded;</span>
+<span class="fc" id="L452">		getInnerLooper().setMEstimatePos(0.1);</span>
+<span class="fc" id="L453">		getInnerLooper().setMEstimateNeg(0.1);</span>
+<span class="fc" id="L454">		getInnerLooper().setMaxNegCoverage(0.499);</span>
+
+<span class="fc" id="L456">		getInnerLooper().getProver().setMaxNodesToConsider(1000000);</span>
+<span class="fc" id="L457">		getInnerLooper().getProver().setMaxNodesToCreate( 10000000);</span>
+
+		// JWS: this is (sometimes) set high (multiple minutes), e.g. for a threshold calc for the breast-cancer dataset.
+<span class="fc" id="L460">		getInnerLooper().getProver().setMaximumClockTimePerIterationInMillisec(300000);</span>
+
+		// Units are milliseconds.  So 3600000 = 1 hour.
+<span class="fc" id="L463">		getInnerLooper().setMaximumClockTimePerIterationInMillisec(           7200000);</span>
+
+		// Sometimes we start out with a BOOLEAN task then later turn into a regression one.
+<span class="fc" id="L466">		getInnerLooper().regressionTask = isaRegressionTaskRightAway;</span>
+
+		// This is a fraction of the current set of examples at the root.
+<span class="fc" id="L469">		double minFractionOnBranches = Math.max(0.005, 0.05 / negToPosRatio);</span>
+
+		// If a set has less than this much VARIANCE per example, it will become a leaf.
+<span class="fc" id="L472">		getOuterLooper().setMaxAcceptableNodeScoreToStop(0.0025);</span>
+
+		// If a recursive call involves fewer than this number of examples, make a leaf node (ALSO IMPACTS THE INITIAL CALL?)
+<span class="fc" id="L475">		getOuterLooper().setOverallMinPosWeight(10);</span>
+<span class="fc bfc" id="L476" title="All 2 branches covered.">		if (!cmdArgs.isLearnRegression()) {</span>
+<span class="fc" id="L477">			getInnerLooper().setMinPosCoverageAsFraction(minFractionOnBranches);   // For a clause to be acceptable, it needs to cover at least this fraction of the examples (and not more than 1 minus this fraction).</span>
+		}
+
+		// The next line overrides the one immediately above this comment.
+		// Need to be careful here, since data might be quite skewed.  Should really be something like 10% of the majority category.
+<span class="fc" id="L482">		getInnerLooper().setMinPosCoverage(3);</span>
+
+<span class="fc bfc" id="L484" title="All 2 branches covered.">		if (!cmdArgs.isLearnRegression()) {</span>
+			// And cannot cover too many of the examples.
+<span class="fc" id="L486">			getOuterLooper().setMaxRecallOfAcceptableClause(1 - minFractionOnBranches);</span>
+		}
+<span class="fc bfc" id="L488" title="All 2 branches covered.">		if (cmdArgs.isLearnMLN()) {</span>
+<span class="fc" id="L489">			getOuterLooper().setLearnMLNTheory(true);</span>
+		}
+
+		// Since WILL focuses on seeds to filter out candidate clauses, we need a good number here because some seeds will go on the &quot;false&quot; branch.  Want to have enough so that on average can find the maximally acceptable skew for the true/false branches.  Or maybe OK to miss these to save time by having a smaller set of seeds?
+<span class="fc" id="L493">		getOuterLooper().numberPosSeedsToUse = (int) Math.ceil(5 * negToPosRatio);</span>
+		// Only require ONE to be covered (other constraints will filter clauses).
+<span class="fc" id="L495">		getInnerLooper().clausesMustCoverFractPosSeeds = 0.999999 / getOuterLooper().numberPosSeedsToUse;</span>
+		// Need to cover at least 1% of the examples, even if the root.
+<span class="fc" id="L497">		getOuterLooper().setMinPrecisionOfAcceptableClause(0.001);</span>
+<span class="fc" id="L498">		getOuterLooper().setMaxNumberOfLiteralsAtAnInteriorNode(1);</span>
+
+		// Counting is from 0 (i.e., this is really &quot;max number of ancestor nodes&quot;).  maxNumberOfClauses might 'dominate' this setting.
+<span class="fc" id="L501">		getOuterLooper().setMaxTreeDepth(2);</span>
+
+		// This is the body of ONE node.  By allowing more bridgers that literals we can, say, create comparators between two extracted values.
+<span class="fc" id="L504">		getOuterLooper().innerLoopTask.maxFreeBridgersInBody = 0;</span>
+		// Add 1 here since the root has literals but is at depth 0.
+		// We don't want the individual trees to get too complicated, so limit to 4 literals (so if 2 lits per nodes and depth is 2, instead of a max of 6 literals, the limit of 4 will be used).
+		// Recall there could be some bridgers at each interior node, so this is allowing some bridgers.
+<span class="fc" id="L508">		getOuterLooper().setMaxTreeDepthInLiterals(Math.max(3, (getOuterLooper().getMaxTreeDepth() + 1) * (getOuterLooper().innerLoopTask.maxFreeBridgersInBody + getOuterLooper().getMaxNumberOfLiteralsAtAnInteriorNode())));</span>
+
+		// Reminder: &quot;consider&quot; means &quot;expand&quot; (i.e., remove from the OPEN list and generate its children);  &quot;create&quot; is a counter on children.
+<span class="fc" id="L511">		int matLitsAtNode = 1 + getOuterLooper().innerLoopTask.maxFreeBridgersInBody;</span>
+		// For reasons of time, don't want to expand too many nodes (does this setting matter if maxLits=1?).  Eg, expand the root, pick the best child, expand it, then pick the overall best unexpanded child, and repeat a few more times.
+<span class="pc bpc" id="L513" title="1 of 2 branches missed.">		getInnerLooper().setMaxNodesToConsider(matLitsAtNode &gt; 1 ?     10 :     50);</span>
+		// This can be high since we want the # of expansions to be the limiting factor.
+<span class="pc bpc" id="L515" title="1 of 2 branches missed.">		getInnerLooper().setMaxNodesToCreate(  matLitsAtNode &gt; 1 ?  10000 :  50000);</span>
+		// This is the maximum number of non-leaf nodes (tree building is via BEST-FIRST search).  MaxTreeDepth might 'dominate' this setting.
+<span class="pc bpc" id="L517" title="1 of 2 branches missed.">		getOuterLooper().maxNumberOfClauses =  matLitsAtNode &gt; 1 ?     12 :     16 ;</span>
+<span class="fc" id="L518">		getOuterLooper().maxNumberOfCycles  =     2 * getOuterLooper().maxNumberOfClauses;</span>
+
+<span class="fc bfc" id="L520" title="All 2 branches covered.">		if (cmdArgs.isLearnRegression()) {</span>
+			// This should be zero since we really don't have any negatives here (we instead are doing regression).
+<span class="fc" id="L522">			getInnerLooper().minNumberOfNegExamples = 0;</span>
+		} else {
+			// TVK : This SHOULDN'T be zero here, it is set later in morph. This is used to create negative examples.
+<span class="fc" id="L525">			getInnerLooper().minNumberOfNegExamples = 10;</span>
+		}
+
+		// Other constraints say that at least half the examples must be covered, and sometimes we need to use the negation to do that.
+
+		// TODO(?): is this time PER TREE?  I think so ...
+		// TODO(?): determine if when time runs out, a reasonable model results. JWS: I think that sometimes timing out makes a NOT_* seem better than it should.
+<span class="fc" id="L532">		double maxHoursToRunPerTree = getOuterLooper().getMaxTreeDepth() * 4.0;</span>
+		// TODO - should also have a maxTime for learning ALL N trees.  Maybe write the remaining trees as adding zero to the wgt'ed sum, since other code looks for maxTrees.
+<span class="fc" id="L534">		getOuterLooper().setMaximumClockTimeInMillisec((long) (maxHoursToRunPerTree * 60 * 60 * 1000));</span>
+<span class="fc" id="L535">	}</span>
+
+	void getListOfPredicateAritiesForNeighboringFacts() {
+<span class="pc bpc" id="L538" title="1 of 2 branches missed.">		if (neighboringFactFilterList == null) {</span>
+<span class="fc" id="L539">			Set&lt;PredicateNameAndArity&gt; pars = new HashSet&lt;&gt;(BoostingUtils.convertBodyModesToPNameAndArity(getInnerLooper().getBodyModes()));</span>
+<span class="fc" id="L540">			neighboringFactFilterList = new ArrayList&lt;&gt;(pars);</span>
+		}
+<span class="fc" id="L542">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

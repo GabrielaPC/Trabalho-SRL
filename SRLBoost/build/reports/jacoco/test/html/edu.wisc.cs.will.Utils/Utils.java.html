@@ -1,0 +1,1312 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Utils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Utils</a> &gt; <span class="el_source">Utils.java</span></div><h1>Utils.java</h1><pre class="source lang-java linenums">/*
+ * General-purpose utilities, basically a collection of functions.
+ * http://www.eclipse.org/articles/Article-TPTP-Profiling-Tool/tptpProfilingArticle.html
+ * http://www.eclipse.org/tptp/home/downloads/drops/TPTP-4.2.0.html#tptp-plugins
+ * http://www.ibm.com/developerworks/offers/lp/demos/summary/javaprofile.html
+ */
+
+// TODO(@hayesall): `getPrecision`, `getRecall`, `getFBeta`, `getF1`, `getAccuracy` belong in a &quot;metrics&quot; class
+// TODO(@hayesall): Many of these are FileSystem methods. Abstracting the file system as a class would help.
+
+package edu.wisc.cs.will.Utils;
+
+import edu.wisc.cs.will.FOPC.HandleFOPCstrings;
+import edu.wisc.cs.will.Utils.condor.*;
+
+import java.io.*;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.Pattern;
+
+/*
+ * Some general-purpose utilities. This class is basically a collection of
+ * functions intended to be accessible to and used by many classes. In keeping
+ * with the spirit of functions, all the fields and methods of this class are
+ * static.
+ * 
+ * @author shavlik
+ */
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">public class Utils {</span>
+	
+	// For large-scale runs we do not want to create dribble (nor 'debug') files. 
+<span class="fc" id="L33">	public static final Boolean doNotCreateDribbleFiles  = false;</span>
+<span class="fc" id="L34">	private static Boolean doNotPrintToSystemDotOut = false;</span>
+
+    /* Stores whether verbose output should be used.
+     *
+     * This should null initially.  The getter/setter will initialize it
+     * appropriately the first time it is accessed.  Please do not use it
+     * directly, as that will probably result in a null exception somewhere
+     * along the line.
+     */
+<span class="fc" id="L43">    private static Boolean verbose = null; // Should be null.  See comment.</span>
+
+    /* Stores whether waitHereEnabled output should be used.
+     *
+     * This should null initially.  The getter/setter will initialize it
+     * appropriately the first time it is accessed.  Please do not use it
+     * directly, as that will probably result in a null exception somewhere
+     * along the line.
+     */
+<span class="fc" id="L52">    private static Boolean waitHereEnabled = null; // Should be null.  See comment.</span>
+
+    /* Stores whether severeErrorThrowsEnabled output should be used.
+     *
+     * This should null initially.  The getter/setter will initialize it
+     * appropriately the first time it is accessed.  Please do not use it
+     * directly, as that will probably result in a null exception somewhere
+     * along the line.
+     */
+<span class="fc" id="L61">    private static Boolean severeErrorThrowsEnabled = null; // Should be null.  See comment.</span>
+
+<span class="fc" id="L63">    private static final Set&lt;MessageType&gt; filteredMessageTypes = EnumSet.noneOf(MessageType.class);</span>
+
+    /* Some Standard verbosity levels.
+     * 
+     * The verbosity level can be set via the setVerbosity method.  That actually updates
+     * the verbose, extraVerbose, waitHereEnabled, and severeErrorThrowsEnabled settings.
+     * 
+     * These are just suggested levels.  All of the four controlling factors can be overridden by setting
+     * the appropriate value through the setter.
+     */
+<span class="fc" id="L73">    public enum Verbosity {</span>
+        // Print everything, waitHeres don't wait, severeError cause a throw.
+<span class="fc" id="L75">        Medium()   // Print everything, waitHeres don't wait, severeError just print error</span>
+        ;
+
+        final boolean print;
+        final boolean waitHere;
+        final boolean severeWarningThrowsError;
+
+<span class="fc" id="L82">        Verbosity() {</span>
+<span class="fc" id="L83">            this.print    = true;</span>
+<span class="fc" id="L84">            this.waitHere = false;</span>
+<span class="fc" id="L85">            this.severeWarningThrowsError = false;</span>
+<span class="fc" id="L86">        }</span>
+    }
+
+    /* Sets the verbose, extraVerbose, waitHereEnabled, and severeErrorThrowsEnabled according to the indicated verbosity.
+     *
+     * These are just standard settings.  You can override these with the appropriate setters
+     * for the specific settings.
+     */
+    public static void setVerbosity(Verbosity verbosity) {
+        /* Stores whether this is a developer run.
+         *
+         * This should null initially.  The getter/setter will initialize it
+         * appropriately the first time it is accessed.  Please do not use it
+         * directly, as that will probably result in a null exception somewhere
+         * along the line.
+         */
+        // Should be null.  See comment.
+<span class="fc" id="L103">        verbose                  = verbosity.print;</span>
+<span class="fc" id="L104">        waitHereEnabled          = verbosity.waitHere;</span>
+<span class="fc" id="L105">        severeErrorThrowsEnabled = verbosity.severeWarningThrowsError;</span>
+<span class="fc" id="L106">    }</span>
+
+    /* The Default file extension to add to &quot;normal&quot; files.
+     *
+     * This does not (and should not) include a . prior to the extension.
+     */
+    public static final String defaultFileExtensionWithPeriod = &quot;.txt&quot;;
+
+    /*
+     * How much two numbers (outside of (-1, 1) can differ before they are no longer considered
+     * equivalent.
+     */
+    private static final double EQUIVALENCE_TOLERANCE = 0.0000001; 
+    // FOr numbers in [-1, 1] use this (probably could simply use Double.MIN_NORMAL).
+    private static final double EQUIVALENCE_TOLERANCE_SMALL_NUMBERS = 8 * Double.MIN_NORMAL;
+
+    /*
+     * If non-null, copy all printing to this stream as well.
+     */
+<span class="fc" id="L125">    private static PrintStream dribbleStream       = null;  // &lt;----- 'state' being held in this static.  BUGGY if multiple threads running.</span>
+
+    /* The random instance for all the random utility functions. */
+<span class="fc" id="L128">    private static final Random randomInstance = new Random(112957);</span>
+
+    private static BufferedReader inBufferedReader;
+
+	private static final int maxStringLength = 25000;
+
+    /*
+     * Displays a string to the standard output stream and the dribble stream if
+     * applicable. Ends with a newline.
+     *
+     */
+    private static void println(String strRaw, boolean printRegardless) {
+<span class="pc bpc" id="L140" title="1 of 4 branches missed.">    	if (printRegardless || isVerbose() ) {</span>
+<span class="pc bpc" id="L141" title="2 of 4 branches missed.">    		String str = (strRaw == null || strRaw.length() &lt;= maxStringLength ? strRaw : strRaw.substring(0, maxStringLength) + &quot; ... [string too long]&quot;);</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">    		if (!doNotPrintToSystemDotOut) { System.out.println(str); }</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">    		if (dribbleStream != null) { dribbleStream.println(str); }  // No need to flush since println already does so</span>
+    	}
+<span class="fc" id="L145">    }</span>
+
+    public static void printlnErr(String strRaw) {
+<span class="nc bnc" id="L148" title="All 2 branches missed.">    	if ( isVerbose() ) {</span>
+<span class="nc bnc" id="L149" title="All 4 branches missed.">    		String str = (strRaw == null || strRaw.length() &lt;= maxStringLength ? strRaw : strRaw.substring(0, maxStringLength) + &quot; ... [string too long]&quot;);</span>
+<span class="nc" id="L150">    		boolean hold = doNotPrintToSystemDotOut;</span>
+<span class="nc" id="L151">    		doNotPrintToSystemDotOut = false; // If these printout become too much, we can add a 3rd flag to override these ...</span>
+<span class="nc" id="L152">            System.err.println(str);</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            if (dribbleStream != null) { dribbleStream.println(str); }  // No need to flush since println already does so.</span>
+<span class="nc" id="L154">            doNotPrintToSystemDotOut = hold;</span>
+    	}
+<span class="nc" id="L156">    }</span>
+    public static void println(String str) {
+<span class="fc" id="L158">    	println(str, false);</span>
+<span class="fc" id="L159">    }</span>
+    public static void println(MessageType type, String str) {
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">    	if ( isMessageTypeEnabled(type)) println(str, false);</span>
+<span class="fc" id="L162">    }</span>
+
+    /*
+     * Displays a string to the standard output stream and the dribble stream if
+     * applicable. No newline at the end.
+     */
+    private static void print(String strRaw, boolean printRegardless) {
+<span class="pc bpc" id="L169" title="2 of 4 branches missed.">    	if (printRegardless || isVerbose()) {</span>
+<span class="pc bpc" id="L170" title="2 of 4 branches missed.">    		String str = (strRaw == null || strRaw.length() &lt;= maxStringLength ? strRaw : strRaw.substring(0, maxStringLength) + &quot; ...&quot;);</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">    		if (!doNotPrintToSystemDotOut) {System.out.print(str); }</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">    		if (dribbleStream != null) { dribbleStream.print(str); }</span>
+    	}
+<span class="fc" id="L174">    }</span>
+    public static void print(String str) {
+<span class="fc" id="L176">    	print(str, false);</span>
+<span class="fc" id="L177">    }</span>
+
+    public static String comma(int value) { // Always use separators (e.g., &quot;100,000&quot;).
+<span class="fc" id="L180">    	return String.format(&quot;%,d&quot;, value);    	</span>
+    }    
+    private static String comma(long value) { // Always use separators (e.g., &quot;100,000&quot;).
+<span class="fc" id="L183">    	return String.format(&quot;%,d&quot;, value);    	</span>
+    }
+
+    public static String comma(Collection&lt;?&gt; collection) {
+<span class="fc" id="L187">    	return comma(getSizeSafely(collection));</span>
+    }
+    public static String comma(Map&lt;?,?&gt; map) {
+<span class="fc" id="L190">    	return comma(getSizeSafely(map));</span>
+    }
+	
+	public static String[] chopCommentFromArgs(String[] args) {
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">	  if (args == null) { return null; } // Written with help from Trevor Walker.</span>
+<span class="fc" id="L195">	  int commentStart = -1;</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">	  for (int i = 0; i &lt; args.length; i++) {</span>
+<span class="pc bpc" id="L197" title="2 of 4 branches missed.">		  if (args[i] != null &amp;&amp; args[i].startsWith(&quot;//&quot;) ) {</span>
+<span class="nc" id="L198">			  commentStart = i;</span>
+<span class="nc" id="L199">			  break;</span>
+		  }
+	  }
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">	  if (commentStart &lt; 0) { return args; }</span>
+<span class="nc" id="L203">      String[] newArgs = new String[commentStart];</span>
+<span class="nc" id="L204">	  System.arraycopy(args, 0, newArgs, 0, commentStart);</span>
+<span class="nc" id="L205">	  return newArgs;</span>
+	}
+
+    /*
+     * Converts a collection to a string that shows at most maxSize elements.
+     * 
+     * @param collection The collection to print.
+     * @param maxItems How many elements to print, at most.
+     * @return A string representing at most the first maxSize elements of the given
+     *         collection, or null if the given collection is null.
+     */
+	   public static String limitLengthOfPrintedList(Collection&lt;?&gt; collection, int maxItems) {
+<span class="nc bnc" id="L217" title="All 2 branches missed.">        if (collection == null) {</span>
+<span class="nc" id="L218">            return null;</span>
+        }
+<span class="nc" id="L220">        int size = getSizeSafely(collection);</span>
+<span class="nc bnc" id="L221" title="All 2 branches missed.">        if (size &lt;= maxItems) {</span>
+<span class="nc" id="L222">            return collection.toString();</span>
+        }
+<span class="nc" id="L224">        Iterator&lt;?&gt; iter = collection.iterator();</span>
+<span class="nc" id="L225">        StringBuilder result = new StringBuilder(&quot;[&quot; + iter.next());</span>
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (size &gt; 1) {</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            for (int i = 1; i &lt; maxItems; i++) {</span>
+<span class="nc" id="L228">                result.append(&quot;, &quot;).append(iter.next());</span>
+            }
+        }
+<span class="nc" id="L231">        return result + &quot;, ..., plus &quot; + comma(size - maxItems) + &quot; more items]&quot;;</span>
+    }
+	   
+    /*
+     * Converts a map to a string that shows at most maxSize elements.
+     * 
+     * @param map The map to print.
+     * @param maxItems How many set elements to print, at most.
+     * @return A string representing the first maxSize elements of the given
+     *         map, or null if the given map is null.
+     */
+	public static String limitLengthOfPrintedList(Map&lt;?, ?&gt; map) {
+<span class="nc bnc" id="L243" title="All 2 branches missed.">		if (map == null) { return null; }</span>
+<span class="nc" id="L244">		return limitLengthOfPrintedList(map.entrySet(), 100);</span>
+	}
+
+    /*
+	 * Save some typing when throwing generic errors.
+     */
+	public static void error(String msg) {
+<span class="nc" id="L251">        throw new WILLthrownError(&quot;\n &quot; + msg);</span>
+	}
+	public static void error() {
+<span class="nc" id="L254">		throw new WILLthrownError(&quot;\n Should not happen ...&quot;);</span>
+	}
+
+    /*
+     * &quot;Safely&quot; returns the size of a collection.
+     *
+     * @return The size of the given collection, or zero if the collection is null.
+     */
+    public static int getSizeSafely(Collection&lt;?&gt; collection) {
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        if (collection == null) { return 0; }</span>
+<span class="fc" id="L264">        return collection.size();</span>
+    }
+    public static int getSizeSafely(Map&lt;?,?&gt; map) {
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">        if (map == null) { return 0; }</span>
+<span class="fc" id="L268">        return map.size();</span>
+    }
+
+    // Should we cache?  If we do, cache needs to be cleared whenever any of these keywords are changed.
+<span class="fc" id="L272">    private static final Map&lt;String,String&gt; environmentVariableResolutionCache = new HashMap&lt;&gt;(4);</span>
+    public static String replaceWildCards(String original) {
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">    	if (original == null) { return null; }</span>
+<span class="fc" id="L275">    	String lookup = environmentVariableResolutionCache.get(original);</span>
+<span class="fc bfc" id="L276" title="All 2 branches covered.">    	if (lookup != null) { return lookup; }</span>
+
+<span class="fc" id="L278">        lookup = original;</span>
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">    	lookup = !lookup.contains(&quot;MYPATHPREFIX&quot;) ? lookup : lookup.replaceAll(&quot;MYPATHPREFIX&quot;,     &quot;MYPATHPREFIXisUnset&quot;);</span>
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">    	lookup = !lookup.contains(&quot;SHAREDPATHPREFIX&quot;) ? lookup : lookup.replaceAll(&quot;SHAREDPATHPREFIX&quot;, &quot;SHAREDPATHPREFIXisUnset&quot;);</span>
+<span class="fc" id="L281">    	environmentVariableResolutionCache.put(original, lookup);</span>
+<span class="fc" id="L282">    	return lookup;</span>
+    }	
+	public static String replaceWildCardsAndCheckForExistingGZip(String fileNameRaw) {
+<span class="fc" id="L285">		String fileName = replaceWildCards(fileNameRaw);</span>
+<span class="pc bpc" id="L286" title="1 of 2 branches missed.">		if (fileName.endsWith(&quot;.gz&quot;)) { return fileName; } // If already a gzip'ed file, simply return.</span>
+		
+		// Otherwise see if BOTH versions exist.
+<span class="fc" id="L289">		File regular = new CondorFile(fileName);</span>
+<span class="fc" id="L290">		File gZipped = new CondorFile(fileName + &quot;.gz&quot;);</span>
+<span class="fc" id="L291">		boolean regExists = regular.exists();</span>
+<span class="fc" id="L292">		boolean zipExists = gZipped.exists();</span>
+<span class="pc bpc" id="L293" title="2 of 4 branches missed.">		if (regExists &amp;&amp; zipExists) {</span>
+<span class="nc" id="L294">			long dateReg = regular.lastModified();</span>
+<span class="nc" id="L295">			long dateZip = gZipped.lastModified();</span>
+			
+<span class="nc bnc" id="L297" title="All 2 branches missed.">			if  (dateZip &gt;= dateReg) { </span>
+<span class="nc" id="L298">				warning(&quot;Both regular and gzip'ed versions of this file exist; will use NEWER one:\n &quot; + fileName + &quot;.gz&quot;);</span>
+<span class="nc" id="L299">				return fileName + &quot;.gz&quot;;  // Use the NEWER file.</span>
+			}
+<span class="nc" id="L301">			warning(    &quot;Both regular and gzip'ed versions of this file exist; will use NEWER one:\n &quot; + fileName );</span>
+<span class="nc" id="L302">			return fileName;</span>
+		}
+<span class="pc bpc" id="L304" title="1 of 2 branches missed.">		if (gZipped.exists()) {</span>
+<span class="nc" id="L305">			return fileName + &quot;.gz&quot;;</span>
+		}
+<span class="fc" id="L307">		return fileName;</span>
+	}
+
+    /*
+     * Waits for input on standard input after displaying &quot;Waiting for user input&quot;.
+     */
+    public static void waitHere() {
+<span class="nc" id="L314">        waitHere(&quot;&quot;);</span>
+<span class="nc" id="L315">    }</span>
+
+    public static void waitHereErr(String msg) {
+<span class="nc bnc" id="L318" title="All 4 branches missed.">    	if ( msg != null &amp;&amp; !msg.isEmpty()) {</span>
+<span class="nc" id="L319">    		printlnErr(msg);</span>
+<span class="nc" id="L320">            waitHere(msg);</span>
+<span class="nc" id="L321">            return;</span>
+    	}
+<span class="nc" id="L323">        waitHere(msg);</span>
+<span class="nc" id="L324">    }</span>
+
+    /* Prints out the message msg, possibly waiting for user input prior to continuing.
+     *
+     * waitHere prints out the message msg and then, based on the verbosity setting,
+     * possibly waits for user input prior to continuing.
+     * &lt;p&gt;
+     * If waitHereRegardless is true,this method will always wait for user input.
+     * &lt;p&gt;
+     * If skipWaitString is non-null,
+     * that string will be used to cache the number of times waitHere was called for that
+     * specific skipWaitString and subsequent waitHere's will the same skipWaitString will
+     * not wait, regardless of the verbosity.
+     *
+     * @return False if an exception occurs while reading input from the user, true otherwise.
+     */
+    public static void waitHere(String msg) {
+<span class="nc bnc" id="L341" title="All 2 branches missed.">        if (!isWaitHereEnabled()) {</span>
+<span class="nc bnc" id="L342" title="All 4 branches missed.">            if ( msg != null &amp;&amp; !msg.isEmpty()) {</span>
+<span class="nc" id="L343">                print(&quot;\n% Skipping over this 'waitHere': &quot; + msg + &quot;\n&quot;, true);</span>
+            }
+<span class="nc" id="L345">    		return;</span>
+        }
+
+<span class="nc" id="L348">        boolean hold = doNotPrintToSystemDotOut;</span>
+<span class="nc" id="L349">		doNotPrintToSystemDotOut = false; // If these printout become too much, we can add a 3rd flag to override these ...</span>
+<span class="nc" id="L350">        print(&quot;\n% WaitHere: &quot; + msg + &quot;\n%  ...  Hit ENTER to continue or 'e' to interrupt. &quot;, false);</span>
+<span class="nc" id="L351">        doNotPrintToSystemDotOut = hold;</span>
+
+        try {
+<span class="nc bnc" id="L354" title="All 2 branches missed.">        	if (inBufferedReader == null) { inBufferedReader = new BufferedReader(new InputStreamReader(System.in)); }</span>
+<span class="nc" id="L355">        	String readThis = inBufferedReader.readLine();</span>
+<span class="nc bnc" id="L356" title="All 4 branches missed.">        	if (readThis != null &amp;&amp; readThis.startsWith(&quot;e&quot;)) { // This had been 'interrupt' instead of 'error' but then these might not be immediately caught, and doing just that is the intent of an 'e' being pressed.</span>
+        		try {
+<span class="nc" id="L358">        			error(&quot;You requested the current run be interrupted by returning something that starts with 'e' (for 'esc' or 'error' or 'elmo' or 'ebola').&quot;);</span>
+<span class="nc" id="L359">        		} catch (WILLthrownError e) {</span>
+<span class="nc" id="L360">        			reportStackTrace(e);</span>
+<span class="nc" id="L361">        			println(&quot;Hit the Enter key to continue if you wish.&quot;);</span>
+<span class="nc" id="L362">        			inBufferedReader.readLine();</span>
+<span class="nc" id="L363">        		}</span>
+        	}
+<span class="nc" id="L365">        } catch (IOException e) {</span>
+            // Ignore any errors here.
+<span class="nc" id="L367">        	inBufferedReader = null;  // If something went wrong, reset the reader. </span>
+<span class="nc" id="L368">        }</span>
+<span class="nc" id="L369">    }</span>
+
+    /* Prints a warning header on standard output that includes the given message.
+     *
+     * @param str A message describing the warning.
+     */
+    public static void warning(String str) {
+<span class="fc" id="L376">        warning(str, null);</span>
+<span class="fc" id="L377">    }</span>
+    public static void warning(MessageType type, String str) {
+<span class="nc bnc" id="L379" title="All 2 branches missed.">        if ( isMessageTypeEnabled(type) ) warning(str, null);</span>
+<span class="nc" id="L380">    }</span>
+
+    /* Prints a warning header on standard output that includes the given message.
+     *
+     * If skipWarningString is non-null, the warning associated with that string will only be
+     * printed the first time the warning occurs.
+     */
+    private static void warning(String str, String skipWarningString) {
+<span class="fc" id="L388">        println(&quot;\n***** Warning: &quot; + str + &quot; *****\n&quot;);</span>
+<span class="fc" id="L389">    }</span>
+
+    /*
+     * Prints a warning header on standard output that includes the given message and waits sleepInSeconds.
+     */
+    public static void warning(String str, int sleepInSeconds) {
+<span class="fc" id="L395">        warning(str, sleepInSeconds, null);</span>
+<span class="fc" id="L396">    }</span>
+    public static void warning(MessageType type, String str, int sleepInSeconds) {
+<span class="pc bpc" id="L398" title="1 of 2 branches missed.">        if ( isMessageTypeEnabled(type) ) warning(str, sleepInSeconds);</span>
+<span class="fc" id="L399">    }</span>
+
+    /*
+     * Prints a warning header on standard output that includes the given message and waits sleepInSeconds.
+     *
+     * If skipWarningString is non-null, the warning associated with that string will only be
+     * printed the first time the warning occurs.
+     *
+     */
+    private static void warning(String str, int sleepInSeconds, String skipWarningString) {
+        // Make sure we only wait if the user is at a verbosity level where it
+        // makes sense to wait.
+<span class="pc bpc" id="L411" title="1 of 2 branches missed.">        if ( isWaitHereEnabled() ) {</span>
+<span class="nc" id="L412">            println(&quot;\n***** Warning: &quot; + str + &quot; (Waiting &quot; + sleepInSeconds + &quot; seconds.) *****\n&quot;);</span>
+<span class="nc" id="L413">            sleep(sleepInSeconds);</span>
+        } else {
+<span class="fc" id="L415">            println(&quot;\n***** Warning: &quot; + str + &quot; *****\n&quot;);</span>
+        }
+<span class="fc" id="L417">    }</span>
+    public static void severeWarning(String str) {
+<span class="pc bpc" id="L419" title="1 of 2 branches missed.">    	if (isSevereErrorThrowsEnabled()) { error(str); }</span>
+<span class="fc" id="L420">    	else { println(&quot;\n% ***** Severe Warning: &quot; + str + &quot; *****\n&quot;, true); }</span>
+<span class="fc" id="L421">    }</span>
+    
+    private static void sleep(int sleepInSeconds) {
+<span class="nc bnc" id="L424" title="All 2 branches missed.">        if (sleepInSeconds &gt; 0) {</span>
+            try {
+<span class="nc" id="L426">                Thread.sleep(1000 * sleepInSeconds);</span>
+<span class="nc" id="L427">            } catch (InterruptedException e) {</span>
+<span class="nc" id="L428">                e.getStackTrace();</span>
+<span class="nc" id="L429">            }</span>
+        }
+<span class="nc" id="L431">    }</span>
+
+    /*
+     * @return A copy of the given string with the case of the first character
+     *         changed (e.g., &quot;xyz&quot; becomes &quot;Xyz&quot;).
+     */
+    public static String changeCaseFirstChar(String old) {
+        // Seems String.replace can't be used to simply replace the FIRST occurrence of a char, so brute-force this.
+<span class="pc bpc" id="L439" title="2 of 4 branches missed.">        if (old == null || old.equals(&quot;&quot;)) {</span>
+<span class="nc" id="L440">            return old;</span>
+        }
+<span class="fc" id="L442">        char    firstChar          = old.charAt(0);</span>
+<span class="fc" id="L443">        boolean firstCharLowerCase = Character.isLowerCase(firstChar);</span>
+<span class="fc" id="L444">        String oldFirstChar = Character.toString(firstChar);</span>
+<span class="pc bpc" id="L445" title="1 of 2 branches missed.">        String newFirstChar = (firstCharLowerCase ? oldFirstChar.toUpperCase(): oldFirstChar.toLowerCase());</span>
+        // old is at least 1 character long, so taking the substring is guaranteed to work
+        // If old is only 1 character long 'old.substring(1)' returns the empty string
+<span class="fc" id="L448">        return newFirstChar + old.substring(1);</span>
+    }
+
+    /*
+     * Creates a dribble file with the given name in the current working
+     * directory.
+     *
+     * @param fileNameRaw The name of the dribble file.
+     */
+    public static void createDribbleFile(String fileNameRaw) {
+        // TODO(@hayesall): The `createDribbleFile` is always called, so I'm using it for debugging.
+
+<span class="fc bfc" id="L460" title="All 2 branches covered.">        if (dribbleStream != null) {</span>
+<span class="fc" id="L461">            dribbleStream.println(&quot;\n\n// Closed by a createDribble call with file = &quot; + fileNameRaw);</span>
+        }
+
+<span class="pc bpc" id="L464" title="1 of 2 branches missed.">    	if (doNotCreateDribbleFiles) { return; }</span>
+<span class="pc bpc" id="L465" title="1 of 2 branches missed.">    	if (!isVerbose()) { return; }</span>
+<span class="fc" id="L466">    	closeDribbleFile();</span>
+<span class="fc" id="L467">        String fileName = replaceWildCards(fileNameRaw);</span>
+        try {
+<span class="fc" id="L469">        	ensureDirExists(fileName);</span>
+<span class="fc" id="L470">            CondorFileOutputStream outStream = new CondorFileOutputStream(fileName);</span>
+<span class="fc" id="L471">            dribbleStream = new PrintStream(outStream, false); // No auto-flush (can slow down code).</span>
+
+<span class="nc" id="L473">        } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L474">        	reportStackTrace(e);</span>
+<span class="nc" id="L475">            error(&quot;Unable to successfully open this file for writing:\n &quot; + fileName + &quot;.\nError message: &quot; + e.getMessage());</span>
+<span class="fc" id="L476">        }</span>
+<span class="fc" id="L477">    }</span>
+
+    private static void closeDribbleFile() {
+<span class="fc bfc" id="L480" title="All 2 branches covered.">        if (dribbleStream == null) { return; }</span>
+<span class="fc" id="L481">    	dribbleStream.close();</span>
+<span class="fc" id="L482">    	dribbleStream = null;</span>
+<span class="fc" id="L483">    }</span>
+
+    /*
+     * Sets the seed on the random instance.
+     * @param seed The random seed.
+     */
+    public static void seedRandom(long seed) {
+<span class="fc" id="L490">        randomInstance.setSeed(seed);</span>
+<span class="fc" id="L491">    }</span>
+
+    /*
+     * @return The next random double.
+     */
+    public static double random() {
+<span class="fc" id="L497">        return randomInstance.nextDouble();</span>
+    }
+
+    /*
+     * @param upper The upper bound on the interval.
+     * @return A random number in the interval [1, upper).
+     */
+    public static int random1toN(int upper) {
+<span class="nc" id="L505">        return randomInInterval(1, upper);</span>
+    }
+
+    /*
+     * @param upper The upper bound on the interval.
+     * @return A random number in the interval [0, upper).
+     */
+    public static int random0toNminus1(int upper) {
+<span class="nc" id="L513">        return randomInInterval(0, upper);</span>
+    }
+
+    /*
+     * @param lower The lower end of the interval.
+     * @param upper The upper end of the interval. It is not possible for the
+     *              returned random number to equal this number.
+     * @return Returns a random integer in the given interval [lower, upper).
+     */
+    private static int randomInInterval(int lower, int upper) {
+<span class="nc" id="L523">        return lower + (int) Math.floor(random() * (upper - lower));</span>
+    }
+
+    /*
+     * Shorten this list to maxLength by removing elements IN PLACE. Elements
+     * are randomly discarded until the list is short enough. If the list is
+     * already short enough, it is unchanged.
+     * 
+     * @param &lt;E&gt;
+     *            The element type of the list.
+     * @param items
+     *            The list.
+     * @param maxLength
+     *            The maximum length the list should be.
+     * @return The given list with maxLength or fewer elements.
+     */
+    public static &lt;E&gt; List&lt;E&gt; reduceToThisSizeByRandomlyDiscardingItemsInPlace(List&lt;E&gt; items, int maxLength) {
+<span class="nc bnc" id="L540" title="All 2 branches missed.">    	if (items == null) { return null; }</span>
+<span class="nc" id="L541">        int size = items.size();</span>
+<span class="nc bnc" id="L542" title="All 2 branches missed.">        if (size &lt;= maxLength) { return items; }</span>
+
+<span class="nc" id="L544">        int numberToDiscard = size - maxLength;</span>
+<span class="nc bnc" id="L545" title="All 2 branches missed.">        for (int i = 0; i &lt; numberToDiscard; i++) {</span>
+<span class="nc" id="L546">            int index = randomInInterval(0, size);</span>
+<span class="nc" id="L547">            items.remove(index);</span>
+<span class="nc" id="L548">            size--;</span>
+        }
+<span class="nc" id="L550">        return items; // Probably no need to return this, since caller knows, but might as well do so (for one thing, this allows the caller to use a functional programming style).</span>
+    }
+
+    /*
+     * Variant of getIthItemInCollection() that works with any collection.
+     */
+    public static &lt;E&gt; E getIthItemInCollectionUnsafe(Collection&lt;E&gt; items, int index) {
+<span class="nc" id="L557">    	int counter = 0;</span>
+        // Need to do the next() else will not advance in the iterator.
+<span class="nc bnc" id="L559" title="All 2 branches missed.">        for (E next : items) {</span>
+<span class="nc bnc" id="L560" title="All 2 branches missed.">            if (counter++ == index) {</span>
+<span class="nc" id="L561">                return next;</span>
+            }
+<span class="nc" id="L563">        }</span>
+<span class="nc" id="L564">		error(&quot;Could not find the &quot; + index + &quot;th item in a collection of size &quot; + items.size());</span>
+<span class="nc" id="L565">		return null;</span>
+    }
+
+    /*
+     * @param d A number (double).
+     * @return Whether the given double is a number (not not a number). (Note
+     *         that by this definition infinity is included as a number.)
+     */
+    public static boolean isaNumber(double d) {
+<span class="fc bfc" id="L574" title="All 2 branches covered.">        return !Double.isNaN(d);</span>
+    }
+
+    /*
+     * Compares two numbers to see if they are different.
+     * 
+     * @param a A number.
+     * @param b A number.
+     * @return True if the two given numbers differ by more than a certain
+     *         tolerance.
+     * @see #EQUIVALENCE_TOLERANCE
+     */
+    private static boolean diffDoubles(double a, double b, double toleranceSmallNumbers) {
+<span class="fc" id="L587">    	double  diff        = Math.abs(a - b);</span>
+<span class="fc bfc" id="L588" title="All 2 branches covered.">        boolean firstResult = diff &gt; Utils.EQUIVALENCE_TOLERANCE;</span>
+<span class="fc bfc" id="L589" title="All 2 branches covered.">        if (firstResult) { return true; }</span>
+        // See if we're dealing with small numbers.
+<span class="pc bpc" id="L591" title="3 of 8 branches missed.">        if (a &gt; -1 &amp;&amp; a &lt; 1 &amp;&amp; b &gt; -1 &amp;&amp; b &lt; 1) {</span>
+<span class="pc bpc" id="L592" title="1 of 2 branches missed.">        	return diff &gt; toleranceSmallNumbers;</span>
+        }
+<span class="fc" id="L594">        return false;</span>
+    }
+    public static boolean diffDoubles(double a, double b) {
+<span class="fc" id="L597">    	return diffDoubles(a, b, EQUIVALENCE_TOLERANCE_SMALL_NUMBERS);</span>
+    }
+
+    /*
+     * Formats the given floating point number by truncating it to one decimal
+     * place.
+     * 
+     * @param d A number.
+     * @return A string containing the given number formatted to one decimal place.
+     */
+    public static String truncate(double d) {
+<span class="fc" id="L608">        return truncate(d, 1);</span>
+    }
+
+    /*
+     * Format the given floating point number by truncating it to the specified
+     * number of decimal places.
+     * 
+     * @param d
+     *            A number.
+     * @param decimals
+     *            How many decimal places the number should have when displayed.
+     * @return A string containing the given number formatted to the specified
+     *         number of decimal places.
+     */
+    public static String truncate(double d, int decimals) {
+<span class="fc" id="L623">    	double abs = Math.abs(d);</span>
+<span class="fc bfc" id="L624" title="All 2 branches covered.">    	if (abs &gt; 1e13)             { </span>
+<span class="fc" id="L625">    		return String.format(&quot;%.&quot;  + (decimals + 4) + &quot;g&quot;, d);</span>
+<span class="fc bfc" id="L626" title="All 4 branches covered.">    	} else if (abs &gt; 0 &amp;&amp; abs &lt; Math.pow(10, -decimals))  { </span>
+<span class="fc" id="L627">    		return String.format(&quot;%.&quot;  +  decimals      + &quot;g&quot;, d);</span>
+    	}
+<span class="fc" id="L629">        return     String.format(&quot;%,.&quot; +  decimals      + &quot;f&quot;, d);</span>
+    }
+
+    /*
+     * Creae the cross product of a list of list. I.e., { {a,b}, {c, d} -&amp;gt; {
+     * {a,c}, {a,d}, {b,c}, {b,d} }. Since this is general-purpose utility, it
+     * has been placed here. If this causes memory-usage problems, convert to an
+     * iterative version.
+     * 
+     * @param &lt;E&gt; The element type of the inner lists.
+     * @param allArgPossibilities A list of lists containing the elements for the cross product.
+     * @param maximumSize The maximum size of the result. Items will be randomly deleted.
+     * @return A list containing the cross product of the given lists.
+     */
+    public static &lt;E&gt; List&lt;List&lt;E&gt;&gt; computeCrossProduct(List&lt;? extends Collection&lt;E&gt;&gt; allArgPossibilities, int maximumSize) {
+	    // NOTE: do not use Set&lt;List&lt;E&gt;&gt; since DUPLICATES will be removed.
+	    // Here are some calculations for reducing the size of the cross-product set &quot;as we go&quot; (rather than during post-processing).
+	    //   Li is the number of items that are expected to be produced after set i is recursively merged in.
+	    //   L1 = maximumSize
+	    //   Pi is the probability that an item in set i is added.
+	    // 		L1 = P1 x S1 x L2 // L2 is the reduced set that comes from the first recursive call.
+	    // 		L2 = P2 x S2 x L3 // L3                                        second
+	    // 		...
+	    // 		Ln = Pn x Sn      // The bottoming-out of the recursion.
+	    //   After some algebra:
+	    // 		P1 x P2 x ... x Pn = L1 / (S1 x S2 x ... Sn)
+	    // 	 If we let Pi = Q / Si, where Q is the Nth root of L1, then we get what we want.
+	    //	Note: we ignore SINGLETON sets in the calculation (i.e., of 'n'), since they don't impact size.
+<span class="pc bpc" id="L657" title="1 of 2 branches missed.">    	if (maximumSize &lt; 1) { return null; }</span>
+<span class="fc" id="L658">    	double Q = -1.0;</span>
+<span class="pc bpc" id="L659" title="1 of 2 branches missed.">        if (maximumSize &lt; Integer.MAX_VALUE) {</span>
+<span class="fc" id="L660">        	int size    = 1; </span>
+<span class="fc" id="L661">			int counter = 0;</span>
+<span class="fc bfc" id="L662" title="All 2 branches covered.">			for (Collection&lt;E&gt; possibilities : allArgPossibilities) {</span>
+<span class="fc" id="L663">				size *= possibilities.size();</span>
+<span class="fc bfc" id="L664" title="All 2 branches covered.">				if (possibilities.size() &gt; 1) { counter++; }</span>
+<span class="fc" id="L665">			}</span>
+<span class="pc bpc" id="L666" title="1 of 2 branches missed.">			if (size &gt; maximumSize) { Q = Math.pow(maximumSize, 1.0/counter); }</span>
+        }
+<span class="fc" id="L668">    	return computeCrossProduct(allArgPossibilities, Q);</span>
+    }
+
+    /*
+     * See computeCrossProduct(List&lt;Collection&lt;E&gt;&gt; allArgPossibilities, int maximumSize)
+     * In this version, maximumSize defaults to infinity.
+     */
+    public  static &lt;E&gt; List&lt;List&lt;E&gt;&gt; computeCrossProduct(List&lt;? extends Collection&lt;E&gt;&gt; allArgPossibilities) {
+<span class="nc" id="L676">    	return computeCrossProduct(allArgPossibilities, Integer.MAX_VALUE);</span>
+    }
+    private static &lt;E&gt; List&lt;List&lt;E&gt;&gt; computeCrossProduct(List&lt;? extends Collection&lt;E&gt;&gt; allArgPossibilities, double Q) {
+<span class="pc bpc" id="L679" title="1 of 2 branches missed.">        if (allArgPossibilities == null) { return null; }</span>
+<span class="fc" id="L680">        int length = allArgPossibilities.size();</span>
+<span class="pc bpc" id="L681" title="1 of 2 branches missed.">        if (length &lt; 1) { return null; }</span>
+<span class="fc" id="L682">        List&lt;List&lt;E&gt;&gt; allArgPossibilitiesForRest = null;</span>
+<span class="fc" id="L683">        Collection&lt;E&gt; firstCollection = allArgPossibilities.get(0);</span>
+
+<span class="fc" id="L685">        int sizeOfFirstCollection = firstCollection.size();</span>
+
+<span class="fc bfc" id="L687" title="All 2 branches covered.">        if (length &gt; 1) {</span>
+            //  Of the results of the recursion, about probOfRandomlyDiscarding * sizeOfFirstList
+<span class="fc" id="L689">            allArgPossibilitiesForRest = computeCrossProduct(allArgPossibilities.subList(1, length), Q);</span>
+        }
+<span class="fc" id="L691">        List&lt;List&lt;E&gt;&gt; results = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L692">        double prob =  Q / sizeOfFirstCollection;</span>
+
+        // For each choice for the first argument, ...
+<span class="fc bfc" id="L695" title="All 2 branches covered.">        for (E term : firstCollection) {</span>
+<span class="fc bfc" id="L696" title="All 2 branches covered.">            if (allArgPossibilitiesForRest != null) {</span>
+                // ... combine with each possible choice for the rest of the args.
+<span class="fc bfc" id="L698" title="All 2 branches covered.">                for (List&lt;E&gt; restArgs : allArgPossibilitiesForRest) {</span>
+<span class="fc" id="L699">                	List&lt;E&gt; args = new ArrayList&lt;&gt;(1 + restArgs.size());</span>
+<span class="fc" id="L700">                    args.add(term);</span>
+<span class="fc" id="L701">                    args.addAll(restArgs);</span>
+<span class="pc bpc" id="L702" title="5 of 6 branches missed.">                    if (Q &lt; 0.0 || sizeOfFirstCollection &lt;= 1 || random() &lt; prob) { results.add(args); }</span>
+<span class="fc" id="L703">                }</span>
+            } else {
+                // No choices for the rest of the list, so wrap each choice for the first of the list (could save some new'ing if the first list is of length one, but that would make this code more complicated).
+<span class="fc" id="L706">            	List&lt;E&gt; args = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L707">                args.add(term);</span>
+<span class="fc" id="L708">                results.add(args);</span>
+            }
+<span class="fc" id="L710">        }</span>
+<span class="fc" id="L711">        return results;</span>
+    }
+
+    /*
+	 * Reads file &lt;filePath&gt; into a string.
+	 * 
+	 * Works for gzipped files as well.  
+	 * 
+	 * @return  file as a string
+	 * 
+	 * This code taken directly from http://snippets.dzone.com/posts/show/1335
+	 * (andrewspencer post on July 21, 2010)
+	 */
+	private static String readFileAsString(String fileNameRaw) throws IOException {
+<span class="nc" id="L725">		String fileName = replaceWildCards(fileNameRaw);</span>
+<span class="nc bnc" id="L726" title="All 2 branches missed.">		if (fileName.endsWith(&quot;.gz&quot;)) { // BUGGY if caller asks for *.gz file but really wanted the newer one if both * and *.gz exist.</span>
+<span class="nc" id="L727">			return readFromGzippedFile(fileName);</span>
+<span class="nc bnc" id="L728" title="All 2 branches missed.">		} else if (fileExists(fileName + &quot;.gz&quot;)) {</span>
+<span class="nc bnc" id="L729" title="All 2 branches missed.">			if (!fileExists(fileName)) {</span>
+<span class="nc" id="L730">				return readFromGzippedFile(fileName + &quot;.gz&quot;);</span>
+			}
+<span class="nc" id="L732">			File regular = new CondorFile(fileName);</span>
+<span class="nc" id="L733">			File gZipped = new CondorFile(fileName + &quot;.gz&quot;);</span>
+<span class="nc" id="L734">			boolean regExists = regular.exists();</span>
+<span class="nc" id="L735">			boolean zipExists = gZipped.exists();</span>
+<span class="nc bnc" id="L736" title="All 4 branches missed.">			if (regExists &amp;&amp; zipExists) {</span>
+<span class="nc" id="L737">				long dateReg = regular.lastModified();</span>
+<span class="nc" id="L738">				long dateZip = gZipped.lastModified();</span>
+				
+<span class="nc bnc" id="L740" title="All 2 branches missed.">				if  (dateZip &gt;= dateReg) { </span>
+<span class="nc" id="L741">					warning(&quot;Both regular and gzip'ed versions of this file exist; will read NEWER one:\n &quot; + fileName + &quot;.gz&quot;);</span>
+<span class="nc" id="L742">					return readFromGzippedFile(fileName + &quot;.gz&quot;);  // Use the NEWER file.</span>
+				}
+<span class="nc" id="L744">				warning(&quot;Both regular and gzip'ed versions of this file exist; will read NEWER one:\n &quot; + fileName);</span>
+<span class="nc" id="L745">				return readFileAsString(new CondorFile(fileName));</span>
+			}
+		}
+<span class="nc" id="L748">	    return readFileAsString(new CondorFile(fileName));</span>
+	}
+
+	private static String readFileAsString(File file) throws IOException {
+<span class="nc" id="L752">	    byte[] buffer = new byte[(int) file.length()];</span>
+<span class="nc" id="L753">	    BufferedInputStream f = null;</span>
+	    try {
+<span class="nc" id="L755">	        f = new BufferedInputStream(new FileInputStream(file));</span>
+<span class="nc" id="L756">	        f.read(buffer);</span>
+	    } finally {
+<span class="nc bnc" id="L758" title="All 2 branches missed.">	        if (f != null) try { f.close(); } catch (IOException ignored) { }</span>
+	    }
+<span class="nc" id="L760">	    return new String(buffer);</span>
+	}
+
+    public static void writeStringToFile(String stringToPrint, File file) {
+        try {
+<span class="fc" id="L765">        	ensureDirExists(file);</span>
+<span class="fc" id="L766">            CondorFileOutputStream outStream = new CondorFileOutputStream(file);</span>
+<span class="fc" id="L767">            PrintStream               stream = new PrintStream(outStream);</span>
+<span class="fc" id="L768">            stream.println(stringToPrint);</span>
+<span class="fc" id="L769">            stream.close();</span>
+<span class="nc" id="L770">        } catch (FileNotFoundException e) {</span>
+<span class="nc" id="L771">        	reportStackTrace(e);</span>
+            // TODO replace this error with an exception
+<span class="nc" id="L773">            error(&quot;Unable to successfully open this file for writing:\n &quot; + file.getName() + &quot;.\nError message:\n &quot; + e.getMessage());</span>
+<span class="fc" id="L774">        }</span>
+<span class="fc" id="L775">    }  </span>
+    public static void touchFile(String fileName) {
+<span class="fc" id="L777">    	touchFile(ensureDirExists(fileName));</span>
+<span class="fc" id="L778">    }</span>
+
+    private static void touchFile(File file) {
+<span class="fc" id="L781">    	ensureDirExists(file);</span>
+<span class="fc" id="L782">    }</span>
+
+	public static String setFirstCharToRequestedCase(String str, boolean uppercaseFirstChar) {
+<span class="fc" id="L785">		String result = str;</span>
+
+<span class="pc bpc" id="L787" title="1 of 2 branches missed.">        if (str != null) {</span>
+<span class="fc bfc" id="L788" title="All 2 branches covered.">            if (str.length() == 1) {</span>
+<span class="fc" id="L789">                char f = str.charAt(0);</span>
+<span class="pc bpc" id="L790" title="2 of 4 branches missed.">                if (Character.isLetter(f) &amp;&amp; Character.isUpperCase(f) != uppercaseFirstChar) {</span>
+<span class="fc bfc" id="L791" title="All 2 branches covered.">                    if (uppercaseFirstChar) {</span>
+<span class="fc" id="L792">                        result = str.toUpperCase();</span>
+                    } else {
+<span class="fc" id="L794">                        result = str.toLowerCase();</span>
+                    }
+                }
+<span class="fc" id="L797">            }</span>
+<span class="pc bpc" id="L798" title="1 of 2 branches missed.">            else if (str.length() &gt; 1) {</span>
+<span class="fc" id="L799">                char f = str.charAt(0);</span>
+<span class="pc bpc" id="L800" title="1 of 4 branches missed.">                if (Character.isLetter(f) &amp;&amp; Character.isUpperCase(f) != uppercaseFirstChar) {</span>
+                    String firstLetter;
+<span class="fc bfc" id="L802" title="All 2 branches covered.">                    if (uppercaseFirstChar) {</span>
+<span class="fc" id="L803">                        firstLetter = str.substring(0, 1).toUpperCase();</span>
+                    } else {
+<span class="fc" id="L805">                        firstLetter = str.substring(0, 1).toLowerCase();</span>
+                    }
+<span class="fc" id="L807">                    String rest = str.substring(1);</span>
+<span class="fc" id="L808">                    result = firstLetter + rest;</span>
+                }
+            }
+        }
+<span class="fc" id="L812">        return result;</span>
+	}
+
+    /* Returns the maximum of a list of doubles */
+    public static double max(double ... values) {
+<span class="nc" id="L817">        double max = Double.NEGATIVE_INFINITY;</span>
+
+<span class="nc bnc" id="L819" title="All 2 branches missed.">        if ( values != null ) {</span>
+<span class="nc bnc" id="L820" title="All 2 branches missed.">            for (double value : values) {</span>
+<span class="nc bnc" id="L821" title="All 2 branches missed.">                if (value &gt; max) {</span>
+<span class="nc" id="L822">                    max = value;</span>
+                }
+            }
+        }
+
+<span class="nc" id="L827">        return max;</span>
+    }
+
+    public static double getPrecision(double truePositives, double falsePositives) {
+
+<span class="fc" id="L832">        double denominator = truePositives + falsePositives;</span>
+
+<span class="fc bfc" id="L834" title="All 2 branches covered.">        if ( denominator &gt; 0 ) {</span>
+<span class="fc" id="L835">            return truePositives / denominator;</span>
+        }
+        else {
+<span class="fc" id="L838">            return Double.NaN;</span>
+        }
+    }
+
+    public static double getRecall(double truePositives, double falseNegatives) {
+
+<span class="fc" id="L844">        double denominator = truePositives + falseNegatives;</span>
+
+<span class="pc bpc" id="L846" title="1 of 2 branches missed.">        if ( denominator &gt; 0 ) {</span>
+<span class="fc" id="L847">            return truePositives / denominator;</span>
+        }
+        else {
+<span class="nc" id="L850">            return Double.NaN;</span>
+        }
+    }
+
+    private static double getFBeta(double beta, double truePositives, double falsePositives, double falseNegatives) {
+
+<span class="fc" id="L856">        double p = getPrecision(truePositives, falsePositives);</span>
+<span class="fc" id="L857">        double r = getRecall(truePositives, falseNegatives);</span>
+
+<span class="fc" id="L859">        return getFBeta(beta,p,r);</span>
+    }
+
+    private static double getFBeta(double beta, double precision, double recall) {
+
+<span class="pc bpc" id="L864" title="1 of 4 branches missed.">        if ( Double.isNaN(precision) || Double.isNaN(recall) ) {</span>
+<span class="fc" id="L865">           return Double.NaN;</span>
+        } else {
+<span class="fc" id="L867">           return (1 + beta * beta) * precision * recall / ( beta * precision + recall);</span>
+        }
+    }
+
+    public static double getF1(double truePositives, double falsePositives, double falseNegatives) {
+<span class="fc" id="L872">        return getFBeta(1, truePositives, falsePositives, falseNegatives);</span>
+    }
+
+    public static double getAccuracy(double truePositives, double falsePositives, double trueNegatives, double falseNegatives) {
+
+<span class="nc" id="L877">        double numerator   = truePositives                  + trueNegatives;</span>
+<span class="nc" id="L878">        double denominator = truePositives + falsePositives + trueNegatives + falseNegatives;</span>
+
+<span class="nc bnc" id="L880" title="All 2 branches missed.">        if ( denominator &gt; 0 ) {</span>
+<span class="nc" id="L881">            return numerator / denominator;</span>
+        }
+        else {
+<span class="nc" id="L884">            return Double.NaN;</span>
+        }
+    }
+
+<span class="fc" id="L888">    private static final Pattern numberPattern = Pattern.compile(&quot;-?[0-9]+(\\.[0-9]+)?([eE]-?[0-9]+)?&quot;);</span>
+
+    /*
+    * Replace all problematic characters with underscores.
+    * @param string  The string to convert. 
+    * */
+    private static String changeMarkedCharsToUnderscores(String string) {
+<span class="pc bpc" id="L895" title="1 of 2 branches missed.">		if (string == null) { return null; }</span>
+
+<span class="fc" id="L897">        StringBuilder sb = null;</span>
+<span class="fc" id="L898">        int length = string.length();</span>
+<span class="fc" id="L899">        boolean nonDigitFound = false;</span>
+<span class="fc bfc" id="L900" title="All 2 branches covered.">        for(int index = 0; index &lt; length; index++) {</span>
+
+<span class="fc" id="L902">            char c = string.charAt(index);</span>
+<span class="fc bfc" id="L903" title="All 2 branches covered.">            if (!nonDigitFound) { nonDigitFound = Character.isLetter(c); } // BUGGY if scientific notation.</span>
+<span class="pc bpc" id="L904" title="2 of 4 branches missed.">            if (Character.isWhitespace(c) || c == '=') { nonDigitFound = false; }</span>
+
+<span class="pc bpc" id="L906" title="3 of 4 branches missed.">            switch(c) {</span>
+            	case '.': // JWS: we want this to persist (to handle doubles).  BUGGY on a string like &quot;123.4abc&quot;
+<span class="nc bnc" id="L908" title="All 4 branches missed.">            		if ( !nonDigitFound &amp;&amp;</span>
+<span class="nc bnc" id="L909" title="All 4 branches missed.">            			 index    &gt; 0      &amp;&amp; Character.isDigit(string.charAt(index - 1)) &amp;&amp; </span>
+<span class="nc bnc" id="L910" title="All 2 branches missed.">            			(index+1) &lt; length &amp;&amp; Character.isDigit(string.charAt(index + 1))) {</span>
+<span class="nc" id="L911">            			break;</span>
+            		}
+            	case '-':
+<span class="nc bnc" id="L914" title="All 2 branches missed.">            		if (index == 0) { break; } // Leading minus sign OK.</span>
+<span class="nc bnc" id="L915" title="All 6 branches missed.">            		if (index &gt; 1 &amp;&amp; index &lt; length - 2 &amp;&amp; Character.isDigit(string.charAt(index - 2)) &amp;&amp;</span>
+<span class="nc bnc" id="L916" title="All 4 branches missed.">            			(string.charAt(index - 1) == 'E' || string.charAt(index - 1) == 'e') &amp;&amp;</span>
+<span class="nc bnc" id="L917" title="All 2 branches missed.">            			Character.isDigit(string.charAt(index + 1))) {</span>
+            			// Looks like scientific notation.
+<span class="nc" id="L919">            			break;</span>
+            		}
+                case '?':
+                case '!':
+                case '#':
+                case '$':
+                case '%':
+                case '&amp;':
+                case '(':
+                case ')':
+                case '{':
+                case '}':
+                case '[':
+                case ']':
+                case '|':
+                case '*':
+                case '+':
+                case ',':
+                case '/':
+                case ':':
+                case ';':
+                case '&lt;':
+                case '=':
+                case '&gt;':
+                case '@':
+                case '^':
+                case '`':
+                case '~':
+                case ' ':
+                case '&quot;':
+                case '\t':
+                case '\'':
+                case '\\':
+<span class="nc bnc" id="L952" title="All 2 branches missed.">                    if ( sb == null ) {</span>
+<span class="nc" id="L953">                        sb = new StringBuilder(string);</span>
+                    }
+<span class="nc" id="L955">                    sb.setCharAt(index, '_');</span>
+<span class="nc bnc" id="L956" title="All 6 branches missed.">                    if (!nonDigitFound) { nonDigitFound = ((c != '-') &amp;&amp; (c != '+')); }</span>
+                    break;
+                default:
+                    break;
+            }
+        }
+
+<span class="pc bpc" id="L963" title="1 of 2 branches missed.">        return sb == null ? string : sb.toString();</span>
+    }
+    private static String cleanString(String str, HandleFOPCstrings stringHandler) {
+<span class="nc" id="L966">    	return cleanString(str, stringHandler, false);</span>
+    }
+	public static String cleanString(String str, HandleFOPCstrings stringHandler, boolean hadQuotesOriginally) { // TODO - do a better job when there is a leading '-' (ie, it might not be a minus sign).
+<span class="pc bpc" id="L969" title="3 of 6 branches missed.">		if (str == null || str.isEmpty() || str.charAt(0) == '-') { return str; } // An exception to this rule.  The last disjunct (too crudely?) tests for negative numbers.</span>
+<span class="pc bpc" id="L970" title="1 of 2 branches missed.">        if ( numberPattern.matcher(str).matches()) return str;</span>
+<span class="fc" id="L971">		String trimmed = str.trim();</span>
+<span class="pc bpc" id="L972" title="2 of 4 branches missed.">		if (stringHandler != null &amp;&amp; stringHandler.doVariablesStartWithQuestionMarks() </span>
+<span class="nc bnc" id="L973" title="All 2 branches missed.">				&amp;&amp; trimmed.length() &gt; 1 // This line added by caden, internal block assumes length of at least 2</span>
+<span class="nc bnc" id="L974" title="All 2 branches missed.">				&amp;&amp; trimmed.charAt(0) == '?') {</span>
+<span class="nc" id="L975">			String subStr = trimmed.substring(1);</span>
+<span class="nc bnc" id="L976" title="All 2 branches missed.">			if (subStr.charAt(0) == '?') { // Had multiple question marks (which DO mean something in IL but we are not exploiting that).</span>
+<span class="nc" id="L977">				return cleanString(subStr, stringHandler);</span>
+			}
+<span class="nc" id="L979">			return &quot;?&quot; + cleanString(trimmed.substring(1), stringHandler);</span>
+		}
+<span class="pc bpc" id="L981" title="1 of 2 branches missed.">		String result = (hadQuotesOriginally ? str : changeMarkedCharsToUnderscores(str.trim()));</span>
+<span class="pc bpc" id="L982" title="4 of 8 branches missed.">		if (!hadQuotesOriginally &amp;&amp; result != null &amp;&amp; result.length() &gt; 0 &amp;&amp; result.charAt(0) == '_') {</span>
+			// waitHere(&quot;Starts with underscore: '&quot; + str + &quot;' -&gt; '&quot; + result + &quot;'.&quot;);
+<span class="nc bnc" id="L984" title="All 2 branches missed.">			if (Objects.requireNonNull(stringHandler).usingStdLogicNotation()) {</span>
+<span class="nc" id="L985">				result = &quot;U&quot; + result;</span>
+			} else {
+<span class="nc" id="L987">				result = &quot;u&quot; + result;  // Leading underscores have special semantics, so don't let them survive cleaning.</span>
+			}
+		}
+<span class="fc" id="L990">		return result;</span>
+	}
+
+    public static Boolean fileExists(String fileName) {
+<span class="fc" id="L994">		return ((new CondorFile(fileName)).exists());</span>
+	}
+
+    public static void appendString(File file, String str) {
+<span class="nc" id="L998">    	appendString(file, str, true);</span>
+<span class="nc" id="L999">    }</span>
+
+    public static void appendString(File file, String str, boolean useLock) {
+<span class="pc bpc" id="L1002" title="2 of 4 branches missed.">        if (str != null &amp;&amp; !str.isEmpty()) {</span>
+<span class="fc" id="L1003">    		ensureDirExists(file);</span>
+<span class="fc" id="L1004">            CondorFileWriter writer = null;</span>
+<span class="fc" id="L1005">            boolean lockObtained = false;</span>
+            try { // Open the file.
+<span class="pc bpc" id="L1007" title="2 of 4 branches missed.">                lockObtained = !useLock || obtainLock(file);</span>
+
+<span class="fc" id="L1009">                writer = new CondorFileWriter(file, true);</span>
+<span class="fc" id="L1010">                writer.append(str);</span>
+<span class="fc bfc" id="L1011" title="All 2 branches covered.">                if (!str.endsWith(&quot;\n&quot;)) {</span>
+<span class="fc" id="L1012">                    writer.append(&quot;\n&quot;);</span>
+                }
+
+<span class="nc" id="L1015">            } catch (IOException e) {</span>
+<span class="nc" id="L1016">            	reportStackTrace(e);</span>
+<span class="nc" id="L1017">                error(e.toString());</span>
+            } finally {
+<span class="pc bpc" id="L1019" title="1 of 2 branches missed.">                if (writer != null) {</span>
+                    try {
+<span class="fc" id="L1021">                        writer.close();</span>
+<span class="nc" id="L1022">                    } catch (IOException ignored) {</span>
+<span class="fc" id="L1023">                    }</span>
+                }
+
+<span class="pc bpc" id="L1026" title="2 of 4 branches missed.">                if (lockObtained &amp;&amp; useLock) {</span>
+<span class="fc" id="L1027">                    releaseLock(file);</span>
+                }
+            }
+        }
+<span class="fc" id="L1031">    }</span>
+
+    public static boolean obtainLock(File fileToLock) throws IOException {
+<span class="fc" id="L1034">		ensureDirExists(fileToLock);</span>
+<span class="fc" id="L1035">        File lockFile = new CondorFile(fileToLock.getParentFile(), &quot;.&quot; + fileToLock.getName() + &quot;.lock&quot;);</span>
+
+<span class="fc" id="L1037">        long wait = 0; // Since starting at 1 second might be too long, start at 0 and add 1 after multiplying by 1000.</span>
+<span class="pc bpc" id="L1038" title="1 of 2 branches missed.">        while( !lockFile.createNewFile() ) {</span>
+<span class="nc" id="L1039">        	long waitToUse = wait * 1000 + 1;</span>
+        	// Use this one so that the info on locking appears even when filtering (eg, via grep) the output.
+            // TODO(?): do we care this isn't in the dribble file? In case we might, print twice.
+<span class="nc" id="L1042">            System.err.println(&quot;Lock file &quot; + lockFile + &quot; already exists.  Waiting &quot; + convertMillisecondsToTimeSpan(waitToUse) + &quot; to obtain lock.&quot;);</span>
+<span class="nc" id="L1043">            println(           &quot;Lock file &quot; + lockFile + &quot; already exists.  Waiting &quot; + convertMillisecondsToTimeSpan(waitToUse) + &quot; to obtain lock.&quot;);</span>
+        	try {
+<span class="nc" id="L1045">                Thread.sleep(waitToUse);</span>
+<span class="nc" id="L1046">            } catch (InterruptedException ignored) {</span>
+<span class="nc" id="L1047">            }</span>
+<span class="nc" id="L1048">            wait = Math.min(55 + random1toN(11), Math.max(1, 2 * wait)); // Never wait more than 60 seconds, but add some randomness in case two waits are in synch.</span>
+<span class="nc" id="L1049">        }</span>
+<span class="fc" id="L1050">        return true;</span>
+    }
+
+    public static void releaseLock(File fileToLock) {
+<span class="fc" id="L1054">        File lockFile = new CondorFile(fileToLock.getParentFile(), &quot;.&quot; + fileToLock.getName() + &quot;.lock&quot;);</span>
+<span class="fc" id="L1055">        ensureDirExists(lockFile);</span>
+<span class="pc bpc" id="L1056" title="1 of 2 branches missed.">        if (!lockFile.delete()) { error(&quot;Could not delete: &quot; + lockFile); }</span>
+<span class="fc" id="L1057">    }</span>
+
+    // OK if this is global because we're simply making and never deleting directories (unless the user does so manually).
+<span class="fc" id="L1060">    private static final Set&lt;String&gt; ensured = new HashSet&lt;&gt;(4);</span>
+    public static void ensureDirExists(File file) {
+<span class="pc bpc" id="L1062" title="1 of 2 branches missed.">    	if (file == null) { return; }</span>
+<span class="fc" id="L1063">        ensureDirExists(file.getAbsolutePath());</span>
+<span class="fc" id="L1064">    }</span>
+    public static File ensureDirExists(String file) {
+<span class="pc bpc" id="L1066" title="1 of 2 branches missed.">    	if (file == null) { return null; }</span>
+<span class="pc bpc" id="L1067" title="2 of 4 branches missed.">    	if (file.endsWith(&quot;/&quot;) || file.endsWith(&quot;\\&quot;)) { file += &quot;dummy.txt&quot;; } // A hack to deal with directories being passed in.</span>
+<span class="fc" id="L1068">		File f = new CondorFile(file);</span>
+
+<span class="fc" id="L1070">    	String parentName = f.getParent();</span>
+<span class="pc bpc" id="L1071" title="1 of 2 branches missed.">    	File   parentDir  = (parentName == null ? null : f.getParentFile());</span>
+<span class="pc bpc" id="L1072" title="1 of 6 branches missed.">		if (parentDir != null &amp;&amp; !ensured.contains(parentName) &amp;&amp; !parentDir.exists()) { </span>
+<span class="pc bpc" id="L1073" title="1 of 2 branches missed.">			if (!parentDir.mkdirs()) { // Be careful to not make the file into a directory.</span>
+<span class="nc" id="L1074">				waitHere(&quot;Unable to create (sometimes these are intermittent; will try again)\n   file      = &quot; + file +</span>
+																						    &quot;\n   parentDir = &quot; + parentDir);
+<span class="nc" id="L1076">				parentDir.mkdirs();</span>
+			}
+<span class="fc" id="L1078">			ensured.add(parentName); </span>
+		}
+<span class="fc" id="L1080">		return f;</span>
+	}
+
+	public static String getDateTime() {
+<span class="fc" id="L1084">        DateFormat dateFormat = new SimpleDateFormat(&quot;H:mm:ss M/d/yy&quot;); //&quot;yyyy/MM/dd HH:mm:ss&quot;</span>
+<span class="fc" id="L1085">        Date       date       = new Date();</span>
+<span class="fc" id="L1086">        return dateFormat.format(date);</span>
+    }
+	
+	private static final long millisecInMinute = 60000;
+	private static final long millisecInHour   = 60 * millisecInMinute;
+	private static final long millisecInDay    = 24 * millisecInHour;
+	public static String convertMillisecondsToTimeSpan(long millisec) {
+<span class="fc" id="L1093">		return convertMillisecondsToTimeSpan(millisec, 0);</span>
+	}
+	public static String convertMillisecondsToTimeSpan(long millisec, int digits) {
+<span class="fc bfc" id="L1096" title="All 2 branches covered.">		if (millisec ==    0) { return &quot;0 seconds&quot;; } // Handle these cases this way rather than saying &quot;0 milliseconds.&quot;</span>
+<span class="fc bfc" id="L1097" title="All 2 branches covered.">		if (millisec &lt;  1000) { return comma(millisec) + &quot; milliseconds&quot;; } // Or just comment out these two lines?</span>
+<span class="pc bpc" id="L1098" title="1 of 2 branches missed.">		if (millisec &gt; millisecInDay)    { return comma(millisec / millisecInDay)    + &quot; days and &quot;    + convertMillisecondsToTimeSpan(millisec % millisecInDay,    digits); }</span>
+<span class="pc bpc" id="L1099" title="1 of 2 branches missed.">		if (millisec &gt; millisecInHour)   { return comma(millisec / millisecInHour)   + &quot; hours and &quot;   + convertMillisecondsToTimeSpan(millisec % millisecInHour,   digits); }</span>
+<span class="pc bpc" id="L1100" title="1 of 2 branches missed.">		if (millisec &gt; millisecInMinute) { return comma(millisec / millisecInMinute) + &quot; minutes and &quot; + convertMillisecondsToTimeSpan(millisec % millisecInMinute, digits); }</span>
+		
+<span class="fc" id="L1102">		return truncate(millisec / 1000.0, digits) + &quot; seconds&quot;; </span>
+	}
+
+    /*
+	 * Recursive remove an existing directory.
+     */
+    private static boolean delete(File file) { // Also see deleteDirectory [I think I (JWS) wrote deleteDirectory and Trevor wrote this one.]
+<span class="pc bpc" id="L1109" title="1 of 2 branches missed.">        if (file.isDirectory()) {</span>
+<span class="nc" id="L1110">            File[] files = file.listFiles();</span>
+<span class="nc bnc" id="L1111" title="All 4 branches missed.">            assert files != null;</span>
+<span class="nc bnc" id="L1112" title="All 2 branches missed.">            for (File file1 : files) {</span>
+<span class="nc bnc" id="L1113" title="All 2 branches missed.">                if (!delete(file1)) {</span>
+<span class="nc" id="L1114">                    return false;</span>
+                }
+            }
+        }
+<span class="fc" id="L1118">        return file.delete();</span>
+    }
+
+   public static void delete(String fileName) {
+<span class="fc" id="L1122">       delete(new CondorFile(fileName));</span>
+<span class="fc" id="L1123">   }</span>
+
+    private static boolean isSevereErrorThrowsEnabled() {
+<span class="pc bpc" id="L1126" title="1 of 2 branches missed.">        if ( severeErrorThrowsEnabled == null ) {</span>
+<span class="nc" id="L1127">            setupVerbosity();</span>
+        }
+
+<span class="fc" id="L1130">        return severeErrorThrowsEnabled;</span>
+    }
+
+    private static boolean isVerbose() {
+<span class="fc bfc" id="L1134" title="All 2 branches covered.">        if ( verbose == null ) {</span>
+<span class="fc" id="L1135">            setupVerbosity();</span>
+        }
+
+<span class="fc" id="L1138">        return verbose;</span>
+    }
+
+    private static boolean isWaitHereEnabled() {
+<span class="pc bpc" id="L1142" title="1 of 2 branches missed.">        if ( waitHereEnabled == null ) {</span>
+<span class="nc" id="L1143">            setupVerbosity();</span>
+        }
+
+<span class="fc" id="L1146">        return waitHereEnabled;</span>
+    }
+
+    private static void setupVerbosity() {
+<span class="fc" id="L1150">        setVerbosity(Verbosity.Medium);</span>
+<span class="fc" id="L1151">    }</span>
+    
+	public static void reportStackTrace(Throwable e) {
+<span class="nc" id="L1154">        e.printStackTrace();</span>
+<span class="nc" id="L1155">    }</span>
+
+    public static &lt;T&gt; String toString(Collection&lt;T&gt; collection, String divider) {
+<span class="fc" id="L1158">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="fc" id="L1160">        boolean first = true;</span>
+
+<span class="fc bfc" id="L1162" title="All 2 branches covered.">        for (T object : collection) {</span>
+<span class="fc bfc" id="L1163" title="All 2 branches covered.">            if (!first) {</span>
+<span class="fc" id="L1164">                sb.append(divider);</span>
+            }
+<span class="fc" id="L1166">            first = false;</span>
+<span class="fc" id="L1167">            sb.append(toString(object, divider));</span>
+<span class="fc" id="L1168">        }</span>
+<span class="fc" id="L1169">        return sb.toString();</span>
+    }
+
+    private static &lt;T,S&gt; String toString(Map&lt;T, S&gt; map, String divider) {
+<span class="nc" id="L1173">        StringBuilder sb = new StringBuilder();</span>
+
+<span class="nc" id="L1175">        boolean first = true;</span>
+
+<span class="nc bnc" id="L1177" title="All 2 branches missed.">        for (Map.Entry&lt;T, S&gt; entry : map.entrySet()) {</span>
+<span class="nc bnc" id="L1178" title="All 2 branches missed.">            if (!first) {</span>
+<span class="nc" id="L1179">                sb.append(divider);</span>
+            }
+<span class="nc" id="L1181">            first = false;</span>
+<span class="nc" id="L1182">            sb.append(toString(entry.getKey(),divider)).append(&quot; =&gt; &quot;).append(toString(entry.getValue(), divider));</span>
+<span class="nc" id="L1183">        }</span>
+
+<span class="nc" id="L1185">        return sb.toString();</span>
+    }
+
+    private static String toString(Object object, String divider) {
+<span class="pc bpc" id="L1189" title="1 of 2 branches missed.">        if ( object == null ) {</span>
+<span class="nc" id="L1190">            return null;</span>
+        }
+<span class="pc bpc" id="L1192" title="1 of 2 branches missed.">        else if (object instanceof Collection) {</span>
+<span class="nc" id="L1193">            Collection collection = (Collection) object;</span>
+<span class="nc" id="L1194">            return toString(collection, divider);</span>
+        }
+<span class="pc bpc" id="L1196" title="1 of 2 branches missed.">        else if (object instanceof Map) {</span>
+<span class="nc" id="L1197">            Map map = (Map) object;</span>
+<span class="nc" id="L1198">            return toString(map, divider);</span>
+        }
+        else {
+<span class="fc" id="L1201">            return object.toString();</span>
+        }
+    }
+
+    public static boolean isMessageTypeEnabled(MessageType type) {
+<span class="pc bpc" id="L1206" title="1 of 2 branches missed.">        return !filteredMessageTypes.contains(type);</span>
+    }
+
+	public static Boolean parseBoolean(String bool) {
+<span class="nc bnc" id="L1210" title="All 2 branches missed.">		return bool.equalsIgnoreCase(&quot;true&quot;) ||</span>
+<span class="nc bnc" id="L1211" title="All 2 branches missed.">				bool.equalsIgnoreCase(&quot;1&quot;) ||</span>
+<span class="nc bnc" id="L1212" title="All 2 branches missed.">				bool.equalsIgnoreCase(&quot;t&quot;) ||</span>
+<span class="nc bnc" id="L1213" title="All 2 branches missed.">				bool.equalsIgnoreCase(&quot;y&quot;) ||</span>
+<span class="nc bnc" id="L1214" title="All 2 branches missed.">				bool.equalsIgnoreCase(&quot;yes&quot;);</span>
+	}
+
+    public static void compressFile(String fileNameRaw) {
+<span class="pc bpc" id="L1218" title="1 of 2 branches missed.">        if (fileNameRaw == null) { return; }</span>
+<span class="fc" id="L1219">        String fileName = replaceWildCardsAndCheckForExistingGZip(fileNameRaw);</span>
+<span class="pc bpc" id="L1220" title="1 of 2 branches missed.">        if (fileNameRaw.endsWith(&quot;.gz&quot;)) {</span>
+<span class="nc" id="L1221">            println(&quot;%    No need to compress since already in 'gz' format: &quot; + fileName);</span>
+        }
+<span class="fc" id="L1223">    }</span>
+
+    private static void copyCompressedFile(String fileName1, String fileName2) {
+<span class="nc" id="L1226">		String renamed1 = replaceWildCards(fileName1);</span>
+<span class="nc" id="L1227">		String renamed2 = replaceWildCards(fileName2);	</span>
+<span class="nc bnc" id="L1228" title="All 2 branches missed.">		if (renamed1.equals(renamed2)) {</span>
+<span class="nc" id="L1229">			Utils.waitHere(&quot;You are requesting a file be copied to itself: &quot; + renamed1);</span>
+<span class="nc" id="L1230">			return;</span>
+		}
+		try {
+<span class="nc" id="L1233">			writeToGzippedFile(renamed2, readFromGzippedFile(renamed1)); // Probably a better way to do this (maybe use copyDirectory below?), but simply reading-writing line-by-line failed (at least between Windows and Linux).</span>
+<span class="nc" id="L1234">		} catch (IOException e) {</span>
+<span class="nc" id="L1235">			reportStackTrace(e);</span>
+<span class="nc" id="L1236">			error(&quot;Problem in copyCompressedFile: &quot; + e);</span>
+<span class="nc" id="L1237">		}</span>
+<span class="nc" id="L1238">	}	</span>
+
+	private static boolean copyAndGzip(String fileName1, String fileName2, boolean removeUnzippedVersionOfFileName2) {
+		// It is ok to have fileName1 = fileName2 since &quot;.gz&quot; might be added to fileName2.
+		try {
+<span class="nc" id="L1243">			String  renamed1   = replaceWildCards(fileName1);</span>
+<span class="nc" id="L1244">			String  renamed2   = replaceWildCards(fileName2);</span>
+			boolean compressed;
+
+            // See if a compressed version exists if the regular version doesn't.
+<span class="nc bnc" id="L1248" title="All 4 branches missed.">			if (!Utils.fileExists(renamed1) &amp;&amp; Utils.fileExists(renamed1 + &quot;.gz&quot;)) {</span>
+<span class="nc" id="L1249">				copyCompressedFile(renamed1, renamed2);</span>
+<span class="nc" id="L1250">				compressed = true;</span>
+			} else {
+<span class="nc" id="L1252">				compressed = writeToGzippedFile(renamed2, readFileAsString(renamed1));</span>
+			}
+<span class="nc bnc" id="L1254" title="All 4 branches missed.">			if (compressed &amp;&amp; removeUnzippedVersionOfFileName2) {</span>
+<span class="nc" id="L1255">				File renamed2AsFile = new CondorFile(renamed2);</span>
+<span class="nc bnc" id="L1256" title="All 2 branches missed.">				if ( renamed2AsFile.exists()) { renamed2AsFile.delete(); } </span>
+			}
+<span class="nc" id="L1258">			return compressed;</span>
+<span class="nc" id="L1259">		} catch (IOException e) {</span>
+<span class="nc" id="L1260">			reportStackTrace(e);</span>
+<span class="nc" id="L1261">			error(&quot;Problem in copyAndGzip:\n   &quot; + e);</span>
+<span class="nc" id="L1262">			return false;</span>
+		}
+	}
+	
+	public static void moveAndGzip(String fileName1raw, String fileName2raw, boolean removeUnzippedVersionOfFileName2) {
+<span class="fc" id="L1267">		String fileName1 = replaceWildCards(fileName1raw);</span>
+<span class="fc" id="L1268">		String fileName2 = replaceWildCards(fileName2raw);</span>
+<span class="pc bpc" id="L1269" title="1 of 2 branches missed.">		if (fileName1.equals(fileName2)) {</span>
+<span class="fc" id="L1270">			compressFile(fileName1);</span>
+<span class="fc" id="L1271">			return;</span>
+		}
+<span class="nc bnc" id="L1273" title="All 2 branches missed.">		if (!copyAndGzip(fileName1, fileName2, removeUnzippedVersionOfFileName2)) {</span>
+<span class="nc" id="L1274">			Utils.waitHere(&quot;Something went wrong: moveAndGzip\n   &quot; + fileName1raw + &quot;\n   &quot; + fileName2raw);</span>
+		}
+<span class="nc" id="L1276">		(new CondorFile(fileName1)).delete();</span>
+<span class="nc" id="L1277">	}</span>
+
+    private static String readFromGzippedFile(String fileNameRaw) throws IOException {
+<span class="nc" id="L1280">		String fileName = replaceWildCards(fileNameRaw);</span>
+        StringBuilder stringBuilder;
+<span class="nc" id="L1282">        BufferedReader reader = null;</span>
+        try {
+<span class="nc" id="L1284">            reader = new BufferedReader(new InputStreamReader(new CompressedInputStream(new CondorFile(fileName))));</span>
+<span class="nc" id="L1285">            stringBuilder = new StringBuilder();</span>
+
+            String s;
+
+<span class="nc bnc" id="L1289" title="All 2 branches missed.">            while ((s = reader.readLine()) != null) {</span>
+<span class="nc" id="L1290">                stringBuilder.append(s).append(&quot;\n&quot;);</span>
+            }
+
+        } finally {
+<span class="nc bnc" id="L1294" title="All 2 branches missed.">            if ( reader != null ) try {</span>
+<span class="nc" id="L1295">                reader.close();</span>
+<span class="nc" id="L1296">            } catch (IOException ignored) {</span>
+<span class="nc" id="L1297">            }</span>
+        }
+<span class="nc" id="L1299">        return stringBuilder.toString();</span>
+    }
+
+    private static boolean writeToGzippedFile(String fileNameRaw, String stringToWrite) throws IOException {
+<span class="nc" id="L1303">		String       fileName = replaceWildCards(fileNameRaw);   </span>
+<span class="nc" id="L1304">		ensureDirExists(fileName);</span>
+<span class="nc" id="L1305">        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new CompressedOutputStream(fileName, true)))) { // Assume the caller knows that this file is big enough to warrant compression.</span>
+
+<span class="nc" id="L1307">            writer.append(stringToWrite);</span>
+        }
+<span class="nc" id="L1309">        return true;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

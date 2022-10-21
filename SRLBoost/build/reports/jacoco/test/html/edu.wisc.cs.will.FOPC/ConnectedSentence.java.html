@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConnectedSentence.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">ConnectedSentence.java</span></div><h1>ConnectedSentence.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC.visitors.SentenceVisitor;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.Serializable;
+import java.util.*;
+
+/*
+ * @author shavlik
+ *
+ */
+public class ConnectedSentence extends Sentence implements Serializable {
+
+	private Sentence       sentenceA;
+	final Sentence       sentenceB; // If the connective = NOT, this first sentence is ignored (and should be set to null).
+	ConnectiveName connective;  // Should be one of &quot;AND, OR, NOT, =&gt;, &lt;=&gt;, etc&quot; (case is ignored).
+	
+	/*
+	 * A connected sentence is the combination of 
+	 *    (a) two sentences combined by a connective
+	 * or (b) a negated sentence.
+     *
+     * @param stringHandler
+     * @param connective
+     * @param B 
+     */
+<span class="fc" id="L28">	ConnectedSentence(HandleFOPCstrings stringHandler, ConnectiveName connective, Sentence B) {</span>
+<span class="fc" id="L29">		this.stringHandler = stringHandler;</span>
+<span class="fc" id="L30">		sentenceA = null;</span>
+<span class="fc" id="L31">		sentenceB = B;</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">		if (ConnectiveName.isaNOT(connective.name)) {</span>
+<span class="fc" id="L33">			this.connective = connective;</span>
+		}
+		else {
+<span class="nc" id="L36">			Utils.error(&quot;Unknown unary connective: &quot; + connective);</span>
+		}
+<span class="fc" id="L38">	}</span>
+<span class="fc" id="L39">	ConnectedSentence(HandleFOPCstrings stringHandler, Sentence A, ConnectiveName connective, Sentence B) {</span>
+<span class="fc" id="L40">		this.stringHandler = stringHandler;</span>
+<span class="fc" id="L41">		sentenceA = A;</span>
+<span class="fc" id="L42">		sentenceB = B;</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">		if (ConnectiveName.isaNOT(connective.name)) { // For ease of use, allow this here as well.</span>
+<span class="fc" id="L44">			this.connective = connective;</span>
+<span class="fc" id="L45">			sentenceA = null;</span>
+		}
+		else {
+<span class="fc" id="L48">			this.connective = connective;</span>
+		}
+<span class="fc" id="L50">	}</span>
+	
+	public Sentence getSentenceA() {
+<span class="fc" id="L53">		return sentenceA;</span>
+	}	
+	public Sentence getSentenceB() {
+<span class="fc" id="L56">		return sentenceB;</span>
+	}	
+	public ConnectiveName getConnective() {
+<span class="fc" id="L59">		return connective;</span>
+	}
+	
+    @Override
+	public ConnectedSentence copy(boolean recursiveCopy) {
+<span class="nc" id="L64">		Sentence newA = sentenceA;</span>
+<span class="nc" id="L65">		Sentence newB = sentenceB;</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">		if (recursiveCopy) {</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">			newA = (sentenceA == null ? null : sentenceA.copy(true));</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">			newB = (sentenceB == null ? null : sentenceB.copy(true));</span>
+		}
+<span class="nc" id="L70">		return (ConnectedSentence) stringHandler.getConnectedSentence(newA, connective, newB).setWeightOnSentence(wgtSentence);</span>
+	}
+
+    @Override
+	public ConnectedSentence copy2(boolean recursiveCopy, BindingList bindingList) {
+<span class="nc" id="L75">		Sentence newA = sentenceA;</span>
+<span class="nc" id="L76">		Sentence newB = sentenceB;</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">		if (recursiveCopy) {</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">			newA = (sentenceA == null ? null : sentenceA.copy2(true, bindingList));</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">			newB = (sentenceB == null ? null : sentenceB.copy2(true, bindingList));</span>
+		}
+<span class="nc" id="L81">		return (ConnectedSentence) stringHandler.getConnectedSentence(newA, connective, newB).setWeightOnSentence(wgtSentence);</span>
+	}
+
+    @Override
+	public Collection&lt;Variable&gt; collectAllVariables() {
+<span class="nc" id="L86">		return collectFreeVariables(null);</span>
+	}
+    @Override
+	public Collection&lt;Variable&gt; collectFreeVariables(Collection&lt;Variable&gt; boundVariables) {
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">		Collection&lt;Variable&gt; freeA = (sentenceA == null ? null : sentenceA.collectFreeVariables(boundVariables));</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">		Collection&lt;Variable&gt; freeB = (sentenceB == null ? null : sentenceB.collectFreeVariables(boundVariables));</span>
+						
+<span class="fc" id="L93">		return Variable.combineSetsOfVariables(freeA, freeB);</span>
+	}
+	
+    @Override
+	public boolean containsTermAsSentence() {
+<span class="pc bpc" id="L98" title="3 of 4 branches missed.">		if (sentenceA == null &amp;&amp; sentenceB == null) { Utils.error(&quot;Have a connected sentence where both A and B are null! &quot; + this); }</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">		if (sentenceA == null) { return sentenceB.containsTermAsSentence(); }</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">		if (sentenceB == null) { return sentenceA.containsTermAsSentence(); }</span>
+<span class="pc bpc" id="L101" title="2 of 4 branches missed.">		return sentenceA.containsTermAsSentence() || sentenceB.containsTermAsSentence();</span>
+	}
+
+    @Override
+	public boolean containsFreeVariablesAfterSubstitution(BindingList theta) {
+<span class="nc bnc" id="L106" title="All 2 branches missed.">		if (theta == null) { return false; }</span>
+<span class="nc bnc" id="L107" title="All 6 branches missed.">		return ((sentenceA != null &amp;&amp; sentenceA.containsFreeVariablesAfterSubstitution(theta)) ||</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">				(sentenceB != null &amp;&amp; sentenceB.containsFreeVariablesAfterSubstitution(theta)));</span>
+	}
+
+    @Override
+	public ConnectedSentence applyTheta(Map&lt;Variable,Term&gt; bindings) {
+<span class="nc bnc" id="L113" title="All 2 branches missed.">		Sentence newA = (sentenceA == null ? null : sentenceA.applyTheta(bindings));</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">		Sentence newB = (sentenceB == null ? null : sentenceB.applyTheta(bindings));</span>
+
+<span class="nc" id="L116">		return stringHandler.getConnectedSentence(newA, connective, newB);</span>
+	}
+
+	@Override
+	public int hashCode() { // Need to have equal objects produce the same hash code.
+<span class="nc" id="L121">		final int prime = 31;</span>
+<span class="nc" id="L122">		int result = 1;</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">		result = prime * result + ((sentenceA == null) ? 0 : sentenceA.hashCode());</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">		result = prime * result + ((sentenceB == null) ? 0 : sentenceB.hashCode());</span>
+<span class="nc" id="L125">		return result;</span>
+	}
+    @Override
+	public boolean equals(Object other) { // Note: symmetric cases, eg &quot;A and B&quot; = &quot;B and A&quot;, are handled by variants().
+<span class="nc bnc" id="L129" title="All 2 branches missed.">		if (!(other instanceof ConnectedSentence)) { return false; }</span>
+		
+<span class="nc" id="L131">		ConnectedSentence otherCsent = (ConnectedSentence) other;</span>
+<span class="nc" id="L132">		boolean equivA = (Objects.equals(sentenceA, otherCsent.sentenceA));</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">		if (!equivA) { return false; }</span>
+<span class="nc" id="L134">		return (Objects.equals(sentenceB, otherCsent.sentenceB));</span>
+	}
+	
+    @Override
+	public BindingList variants(Sentence other, BindingList bindings) { // TODO handle symmetric cases, e.g. &quot;A and B&quot; = &quot;B and A&quot;.
+<span class="nc bnc" id="L139" title="All 2 branches missed.">		if (!(other instanceof ConnectedSentence)) { return null; }</span>
+
+
+		
+<span class="nc" id="L143">		ConnectedSentence otherConnectedSentence = (ConnectedSentence) other;</span>
+
+<span class="nc" id="L145">        ConnectiveName thisConnective = connective;</span>
+<span class="nc" id="L146">        ConnectiveName thatConnective = otherConnectedSentence.connective;</span>
+
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (!thisConnective.isSameConnective(thatConnective)) {</span>
+<span class="nc" id="L149">            return null;</span>
+        }
+
+<span class="nc bnc" id="L152" title="All 4 branches missed.">		BindingList binds2 = (sentenceA == null ? (otherConnectedSentence.sentenceA == null ? bindings : null)</span>
+<span class="nc" id="L153">											    : sentenceA.variants(otherConnectedSentence.sentenceA, bindings));</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">		if (binds2 == null) { return null; }</span>
+<span class="nc bnc" id="L155" title="All 4 branches missed.">		return (sentenceB == null ? (otherConnectedSentence.sentenceB == null ? binds2 : null)</span>
+<span class="nc" id="L156">				                  : sentenceB.variants(otherConnectedSentence.sentenceB, binds2));</span>
+	}
+
+    @Override
+    public BindingList isEquivalentUptoVariableRenaming(Sentence that, BindingList bindings) {
+
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (!(that instanceof ConnectedSentence)) return null;</span>
+
+<span class="nc" id="L164">        ConnectedSentence thatSentence = (ConnectedSentence) that;</span>
+
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        if (!this.connective.isSameConnective(thatSentence.connective)) return null;</span>
+
+<span class="nc bnc" id="L168" title="All 8 branches missed.">        if ( (this.sentenceA == null &amp;&amp; thatSentence.sentenceA != null) || (this.sentenceA != null &amp;&amp; thatSentence.sentenceA == null) ) return null;</span>
+<span class="nc bnc" id="L169" title="All 8 branches missed.">        if ( (this.sentenceB == null &amp;&amp; thatSentence.sentenceB != null) || (this.sentenceB != null &amp;&amp; thatSentence.sentenceB == null) ) return null;</span>
+
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if ( this.sentenceA != null ) {</span>
+<span class="nc" id="L172">            bindings = this.sentenceA.isEquivalentUptoVariableRenaming(thatSentence.sentenceA, bindings);</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            if ( bindings == null ) return null;</span>
+        }
+
+<span class="nc bnc" id="L176" title="All 2 branches missed.">        if ( this.sentenceB != null ) {</span>
+<span class="nc" id="L177">            bindings = this.sentenceB.isEquivalentUptoVariableRenaming(thatSentence.sentenceB, bindings);</span>
+		}
+
+<span class="nc" id="L180">        return bindings;</span>
+    }
+
+    @Override
+	public boolean containsVariables() {		
+<span class="nc bnc" id="L185" title="All 4 branches missed.">		boolean gndA = (sentenceA != null &amp;&amp; sentenceA.containsVariables());</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">		if (gndA) { return true; }</span>
+<span class="nc bnc" id="L187" title="All 4 branches missed.">		return (sentenceB != null &amp;&amp; sentenceB.containsVariables());</span>
+	}
+
+	// Clausal-form converter stuff.
+    @Override
+	protected boolean containsThisFOPCtype(String marker) {
+<span class="pc bpc" id="L193" title="3 of 4 branches missed.">		if (ConnectiveName.isaAND(       marker) &amp;&amp; ConnectiveName.isaAND(       connective.name)) {</span>
+<span class="nc" id="L194">			return true;</span>
+		}
+<span class="pc bpc" id="L196" title="1 of 4 branches missed.">		if (ConnectiveName.isaOR(        marker) &amp;&amp; ConnectiveName.isaOR(        connective.name)) {</span>
+<span class="fc" id="L197">			return true;</span>
+		}
+<span class="fc bfc" id="L199" title="All 4 branches covered.">		if (ConnectiveName.isaNOT(       marker) &amp;&amp; ConnectiveName.isaNOT(       connective.name)) {</span>
+<span class="fc" id="L200">			return true;</span>
+		}
+<span class="pc bpc" id="L202" title="1 of 4 branches missed.">		if (ConnectiveName.isaIMPLIES(   marker) &amp;&amp; ConnectiveName.isaIMPLIES(   connective.name)) {</span>
+<span class="fc" id="L203">			return true;</span>
+		}
+<span class="pc bpc" id="L205" title="1 of 4 branches missed.">		if (ConnectiveName.isaEQUIVALENT(marker) &amp;&amp; ConnectiveName.isaEQUIVALENT(connective.name)) {</span>
+<span class="nc" id="L206">			return true;</span>
+		}
+<span class="fc bfc" id="L208" title="All 4 branches covered.">		if (sentenceA != null &amp;&amp; sentenceA.containsThisFOPCtype(marker)) {</span>
+<span class="fc" id="L209">			return true;</span>
+		}
+<span class="fc" id="L211">		return sentenceB.containsThisFOPCtype(marker);</span>
+	}
+
+    @Override
+	protected ConnectedSentence convertEquivalenceToImplication() {
+		// Convert p &lt;=&gt; q into p =&gt; q and q =&gt; p.
+<span class="nc bnc" id="L217" title="All 2 branches missed.">		Sentence newA = (sentenceA == null ? null : sentenceA.convertEquivalenceToImplication()); // Handle NOT.</span>
+<span class="nc" id="L218">		Sentence newB =                             sentenceB.convertEquivalenceToImplication();</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">		if (ConnectiveName.isaEQUIVALENT(connective.name)) {	</span>
+<span class="nc" id="L220">			ConnectiveName impliesConnective = stringHandler.getConnectiveName(&quot;=&gt;&quot;);</span>
+<span class="nc" id="L221">			ConnectiveName andConnective     = stringHandler.getConnectiveName(&quot;^&quot;);</span>
+		
+<span class="nc" id="L223">			Sentence resultAimpliesB = stringHandler.getConnectedSentence(newA, impliesConnective, newB).divideWeightByN(wgtSentence, 2); // According to the original MLN paper in MLj (page 8), split weights evenly when converting one weighted sentence into N.</span>
+<span class="nc" id="L224">			Sentence resultBimpliesA = stringHandler.getConnectedSentence(newB, impliesConnective, newA).divideWeightByN(wgtSentence, 2); // Need to have fresh variables for one of the two, but that'll be handled elsewhere.</span>
+<span class="nc" id="L225">			return stringHandler.getConnectedSentence(resultAimpliesB, andConnective, resultBimpliesA); // Don't put any weight on the AND.</span>
+		}
+<span class="nc" id="L227">		return (ConnectedSentence) stringHandler.getConnectedSentence(newA, connective, newB).setWeightOnSentence(wgtSentence);</span>
+	}
+
+    @Override
+	protected ConnectedSentence eliminateImplications() {
+		// Convert p =&gt; q into  ~p or q.
+<span class="pc bpc" id="L233" title="1 of 2 branches missed.">		Sentence newA = (sentenceA == null ? null : sentenceA.eliminateImplications()); // Handle NOT, which has only one argument.</span>
+<span class="fc" id="L234">		Sentence newB = sentenceB.eliminateImplications();</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">		if (ConnectiveName.isaBackwardsIMPLIES(connective.name)) {</span>
+<span class="fc" id="L236">			ConnectiveName orConnective = stringHandler.getConnectiveName(&quot;v&quot;);</span>
+<span class="fc" id="L237">			return (ConnectedSentence) stringHandler.getConnectedSentence(newA, orConnective, newB.negate()).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">		if (ConnectiveName.isaIMPLIES(connective.name)) {</span>
+<span class="nc" id="L240">			ConnectiveName orConnective = stringHandler.getConnectiveName(&quot;v&quot;);</span>
+<span class="nc" id="L241">			return (ConnectedSentence) stringHandler.getConnectedSentence(newA.negate(), orConnective, newB).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="fc" id="L243">		return (ConnectedSentence) stringHandler.getConnectedSentence(newA, connective, newB).setWeightOnSentence(wgtSentence);</span>
+	}
+    @Override
+	protected Sentence negate() {
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">		if (ConnectiveName.isaNOT(connective.name)) { return sentenceB; }</span>
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">		if (ConnectiveName.isaAND(connective.name)) {</span>
+			// 'not(p and q)' becomes '~p or ~q' by DeMorgan's rule.
+<span class="fc" id="L250">			Sentence negatedA = sentenceA.negate();</span>
+<span class="fc" id="L251">			Sentence negatedB = sentenceB.negate();</span>
+<span class="fc" id="L252">			ConnectiveName orConnective = stringHandler.getConnectiveName(&quot;v&quot;);</span>
+<span class="fc" id="L253">			return stringHandler.getConnectedSentence(negatedA, orConnective, negatedB).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="nc bnc" id="L255" title="All 2 branches missed.">		if (ConnectiveName.isaOR(connective.name)) {</span>
+			// 'not(p or q)' becomes '~p and ~q' by DeMorgan's rule.
+<span class="nc" id="L257">			Sentence negatedA = sentenceA.negate();</span>
+<span class="nc" id="L258">			Sentence negatedB = sentenceB.negate();</span>
+<span class="nc" id="L259">			ConnectiveName andConnective = stringHandler.getConnectiveName(&quot;^&quot;);</span>
+<span class="nc" id="L260">			return stringHandler.getConnectedSentence(negatedA, andConnective, negatedB).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="nc" id="L262">		Utils.error(&quot;Should not be negating connected sentences except those containing AND, OR, or NOT: &quot; + this); // If negate needed more broadly, then make a new version or pass in a flag.</span>
+<span class="nc" id="L263">		return null;</span>
+	}
+    @Override
+	protected Sentence moveNegationInwards() {
+<span class="fc bfc" id="L267" title="All 2 branches covered.">		if (ConnectiveName.isaNOT(connective.name)) { return sentenceB.negate(); }</span>
+<span class="fc" id="L268">		Sentence newA = sentenceA.moveNegationInwards();</span>
+<span class="fc" id="L269">		Sentence newB = sentenceB.moveNegationInwards();</span>
+<span class="fc" id="L270">		return stringHandler.getConnectedSentence(newA, connective, newB).setWeightOnSentence(wgtSentence);</span>
+		
+	}
+    @Override
+	protected ConnectedSentence skolemize(List&lt;Variable&gt; outerUniversalVars) {
+<span class="fc bfc" id="L275" title="All 2 branches covered.">		Sentence newA = (sentenceA == null ? null : sentenceA.skolemize(outerUniversalVars)); // Handle NOT.</span>
+<span class="fc" id="L276">		Sentence newB =                             sentenceB.skolemize(outerUniversalVars);</span>
+<span class="fc" id="L277">		return (ConnectedSentence) stringHandler.getConnectedSentence(newA, connective, newB).setWeightOnSentence(wgtSentence);</span>
+	}
+    @Override
+	protected ConnectedSentence distributeDisjunctionOverConjunction() {
+<span class="fc bfc" id="L281" title="All 2 branches covered.">		Sentence newL = (sentenceA == null ? null : sentenceA.distributeDisjunctionOverConjunction());</span>
+<span class="fc" id="L282">		Sentence newR =                             sentenceB.distributeDisjunctionOverConjunction();</span>
+<span class="fc bfc" id="L283" title="All 2 branches covered.">		if (ConnectiveName.isaOR(connective.name)) {</span>
+<span class="pc bpc" id="L284" title="1 of 4 branches missed.">			boolean sentLeftIsaAND  = (newL instanceof ConnectedSentence &amp;&amp; ConnectiveName.isaAND(((ConnectedSentence) newL).connective.name));</span>
+<span class="pc bpc" id="L285" title="2 of 4 branches missed.">			boolean sentRightIsaAND = (newR instanceof ConnectedSentence &amp;&amp; ConnectiveName.isaAND(((ConnectedSentence) newR).connective.name));</span>
+			 
+			// According to the original MLN paper in MLj (page 8), split weights evenly when converting one weighted sentence into N.
+
+<span class="pc bpc" id="L289" title="3 of 4 branches missed.">			if (sentLeftIsaAND &amp;&amp; sentRightIsaAND) {</span>
+				// (a ^ b) v (c ^ d) &lt;==&gt; ((a ^ b) v c) ^ ((a ^ b) v d) &lt;==&gt; (a v c) ^ (b v c) ^ (a v d) ^ (b v d)
+<span class="nc" id="L291">				throw new RuntimeException(&quot;Deprecated.&quot;);</span>
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">			} else if (sentLeftIsaAND) {</span>
+				// (a ^ b) v c  &lt;==&gt; (a v c) ^ (b v c)
+<span class="nc" id="L294">				throw new RuntimeException(&quot;Deprecated.&quot;);</span>
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">			} else if (sentRightIsaAND) {</span>
+				//  a v (b ^ c) &lt;==&gt; (a v b) ^ (a v c)
+<span class="nc" id="L297">				throw new RuntimeException(&quot;Deprecated.&quot;);</span>
+			} else {
+<span class="fc" id="L299">				return (ConnectedSentence) stringHandler.getConnectedSentence(newL, connective, newR).setWeightOnSentence(wgtSentence);</span>
+			}
+		}
+<span class="pc bpc" id="L302" title="1 of 2 branches missed.">		if (ConnectiveName.isaNOT(connective.name)) {</span>
+<span class="fc" id="L303">			return (ConnectedSentence) stringHandler.getConnectedSentence(newL, connective, newR).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="nc bnc" id="L305" title="All 2 branches missed.">		if (ConnectiveName.isaAND(connective.name)) {</span>
+<span class="nc" id="L306">			return (ConnectedSentence) stringHandler.getConnectedSentence(newL, connective, newR).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="nc" id="L308">		Utils.error(&quot;Should not be distributing connected sentences except those containing AND, OR, or NOT: &quot; + this); // If negate needed more broadly, then make a new version or pass in a flag.</span>
+<span class="nc" id="L309">		return null;</span>
+	}
+
+    @Override
+	protected ConnectedSentence distributeConjunctionOverDisjunction() {
+<span class="nc bnc" id="L314" title="All 2 branches missed.">		Sentence newL = (sentenceA == null ? null : sentenceA.distributeConjunctionOverDisjunction());</span>
+<span class="nc" id="L315">		Sentence newR =                             sentenceB.distributeConjunctionOverDisjunction();</span>
+<span class="nc bnc" id="L316" title="All 2 branches missed.">		if (ConnectiveName.isaAND(connective.name)) {</span>
+<span class="nc bnc" id="L317" title="All 4 branches missed.">			boolean sentLeftIsaOR  = (newL instanceof ConnectedSentence &amp;&amp; ConnectiveName.isaOR(((ConnectedSentence) newL).connective.name));</span>
+<span class="nc bnc" id="L318" title="All 4 branches missed.">			boolean sentRightIsaOR = (newR instanceof ConnectedSentence &amp;&amp; ConnectiveName.isaOR(((ConnectedSentence) newR).connective.name));</span>
+
+			// (a v b) ^ (c v d) &lt;==&gt; ((a v b) ^ c) v ((a v b) ^ d) &lt;==&gt; (a ^ c) v (b ^ c) v (a ^ d) v (b ^ d)
+<span class="nc bnc" id="L321" title="All 4 branches missed.">			if (sentLeftIsaOR &amp;&amp; sentRightIsaOR) {</span>
+<span class="nc" id="L322">				ConnectiveName andConnective = stringHandler.getConnectiveName(&quot;^&quot;);</span>
+<span class="nc" id="L323">				ConnectiveName  orConnective = stringHandler.getConnectiveName(&quot;v&quot;);</span>
+<span class="nc" id="L324">				Sentence               leftA = ((ConnectedSentence) newL).sentenceA;</span>
+<span class="nc" id="L325">				Sentence               leftB = ((ConnectedSentence) newL).sentenceB;</span>
+<span class="nc" id="L326">				Sentence              rightA = ((ConnectedSentence) newR).sentenceA;</span>
+<span class="nc" id="L327">				Sentence              rightB = ((ConnectedSentence) newR).sentenceB;</span>
+<span class="nc" id="L328">				ConnectedSentence        and1 = stringHandler.getConnectedSentence(leftA, andConnective, rightA);</span>
+<span class="nc" id="L329">				ConnectedSentence        and2 = stringHandler.getConnectedSentence(leftA, andConnective, rightB);</span>
+<span class="nc" id="L330">				ConnectedSentence        and3 = stringHandler.getConnectedSentence(leftB, andConnective, rightA);</span>
+<span class="nc" id="L331">				ConnectedSentence        and4 = stringHandler.getConnectedSentence(leftB, andConnective, rightB);</span>
+<span class="nc" id="L332">				Sentence              newOr1 = and1.distributeConjunctionOverDisjunction(); // Need to handle conjuncts with more than two items.</span>
+<span class="nc" id="L333">				Sentence              newOr2 = and2.distributeConjunctionOverDisjunction();</span>
+<span class="nc" id="L334">				Sentence              newOr3 = and3.distributeConjunctionOverDisjunction(); // Need to handle conjuncts with more than two items.</span>
+<span class="nc" id="L335">				Sentence              newOr4 = and4.distributeConjunctionOverDisjunction();</span>
+<span class="nc" id="L336">				ConnectedSentence       or1 = stringHandler.getConnectedSentence(newOr1,  orConnective, newOr2);            // Use infinite weight here.</span>
+<span class="nc" id="L337">				ConnectedSentence       or2 = stringHandler.getConnectedSentence(newOr3,  orConnective, newOr4);            // Use infinite weight here.</span>
+<span class="nc" id="L338">				return stringHandler.getConnectedSentence(or1, orConnective, or2);</span>
+			}
+			// (a ^ b) v c  &lt;==&gt; (a v c) ^ (b v c)
+<span class="nc bnc" id="L341" title="All 2 branches missed.">			else if (sentLeftIsaOR) {</span>
+<span class="nc" id="L342">				ConnectiveName andConnective = stringHandler.getConnectiveName(&quot;^&quot;);</span>
+<span class="nc" id="L343">				ConnectiveName  orConnective = stringHandler.getConnectiveName(&quot;v&quot;);</span>
+<span class="nc" id="L344">				Sentence               leftA = ((ConnectedSentence) newL).sentenceA;</span>
+<span class="nc" id="L345">				Sentence               leftB = ((ConnectedSentence) newL).sentenceB;</span>
+<span class="nc" id="L346">				ConnectedSentence       left = (ConnectedSentence) stringHandler.getConnectedSentence(leftA, andConnective, newR).divideWeightByN(wgtSentence, 2);</span>
+<span class="nc" id="L347">				ConnectedSentence      right = (ConnectedSentence) stringHandler.getConnectedSentence(leftB, andConnective, newR).divideWeightByN(wgtSentence, 2);</span>
+<span class="nc" id="L348">				Sentence             newLeft =  left.distributeConjunctionOverDisjunction(); // Need to handle conjuncts with more than two items.</span>
+<span class="nc" id="L349">				Sentence            newRight = right.distributeConjunctionOverDisjunction();</span>
+<span class="nc" id="L350">				return stringHandler.getConnectedSentence(newLeft, orConnective, newRight);</span>
+			}
+			//  a v (b ^ c) &lt;==&gt; (a v b) ^ (a v c)
+<span class="nc bnc" id="L353" title="All 2 branches missed.">			else if (sentRightIsaOR) {</span>
+<span class="nc" id="L354">				ConnectiveName andConnective = stringHandler.getConnectiveName(&quot;^&quot;);</span>
+<span class="nc" id="L355">				ConnectiveName  orConnective = stringHandler.getConnectiveName(&quot;v&quot;);</span>
+<span class="nc" id="L356">				Sentence              rightA = ((ConnectedSentence) newR).sentenceA;</span>
+<span class="nc" id="L357">				Sentence              rightB = ((ConnectedSentence) newR).sentenceB;</span>
+<span class="nc" id="L358">				ConnectedSentence       left = (ConnectedSentence) stringHandler.getConnectedSentence(newL, andConnective, rightA).divideWeightByN(wgtSentence, 2);</span>
+<span class="nc" id="L359">				ConnectedSentence      right = (ConnectedSentence) stringHandler.getConnectedSentence(newL, andConnective, rightB).divideWeightByN(wgtSentence, 2);</span>
+<span class="nc" id="L360">				Sentence             newLeft =  left.distributeConjunctionOverDisjunction(); // Need to handle conjuncts with more than two items.</span>
+<span class="nc" id="L361">				Sentence            newRight = right.distributeConjunctionOverDisjunction();</span>
+<span class="nc" id="L362">				return stringHandler.getConnectedSentence(newLeft, orConnective, newRight);</span>
+			}
+			else {
+<span class="nc" id="L365">				return (ConnectedSentence) stringHandler.getConnectedSentence(newL, connective, newR).setWeightOnSentence(wgtSentence);</span>
+			}
+		}
+<span class="nc bnc" id="L368" title="All 2 branches missed.">		if (ConnectiveName.isaNOT(connective.name)) {</span>
+<span class="nc" id="L369">			return (ConnectedSentence) stringHandler.getConnectedSentence(newL, connective, newR).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="nc bnc" id="L371" title="All 2 branches missed.">		if (ConnectiveName.isaOR(connective.name)) {</span>
+<span class="nc" id="L372">			return (ConnectedSentence) stringHandler.getConnectedSentence(newL, connective, newR).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="nc" id="L374">		Utils.error(&quot;Should not be distributing connected sentences except those containing AND, OR, or NOT: &quot; + this); // If negate needed more broadly, then make a new version or pass in a flag.</span>
+<span class="nc" id="L375">		return null;</span>
+	}
+
+	// When this is called the sentence should be in conjunctive normal form.
+    @Override
+	protected List&lt;Clause&gt; convertToListOfClauses() {
+<span class="pc bpc" id="L381" title="1 of 2 branches missed.">		if (ConnectiveName.isaAND(connective.name)) {</span>
+<span class="nc" id="L382">			List&lt;Clause&gt; newL = sentenceA.convertToListOfClauses();</span>
+<span class="nc" id="L383">			List&lt;Clause&gt; newR = sentenceB.convertToListOfClauses();</span>
+<span class="nc" id="L384">			newL.addAll(newR);</span>
+<span class="nc bnc" id="L385" title="All 6 branches missed.">			if (wgtSentence &lt;= Sentence.minWeight || wgtSentence &gt;= Sentence.maxWeight) { for (Clause c : newL) { c.setWeightOnSentence(wgtSentence);     } }</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">			else { int n = newL.size(); for (Clause c : newL) { c.setWeightOnSentence(wgtSentence / n); } }</span>
+<span class="nc" id="L387">			return newL;</span>
+		}
+<span class="pc bpc" id="L389" title="1 of 2 branches missed.">		if (ConnectiveName.isaOR(connective.name)) {</span>
+<span class="fc" id="L390">			Clause clause = convertToClause();</span>
+<span class="fc" id="L391">			clause.setWeightOnSentence(wgtSentence);</span>
+<span class="fc" id="L392">			List&lt;Clause&gt; result = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L393">			result.add(clause);</span>
+<span class="fc" id="L394">			return result;						</span>
+		}
+<span class="nc bnc" id="L396" title="All 4 branches missed.">		if (ConnectiveName.isaNOT(connective.name) &amp;&amp; sentenceB instanceof Literal) {</span>
+<span class="nc" id="L397">			Clause clause = convertToClause();</span>
+<span class="nc" id="L398">			clause.setWeightOnSentence(wgtSentence);</span>
+<span class="nc" id="L399">			List&lt;Clause&gt; result = new ArrayList&lt;&gt;(1);</span>
+<span class="nc" id="L400">			result.add(clause);</span>
+<span class="nc" id="L401">			return result;						</span>
+		}
+<span class="nc" id="L403">		Utils.error(&quot;Should not be convertToListOfClauses connected sentences except those containing AND, OR, or NOT(literal): &quot; + this);</span>
+<span class="nc" id="L404">		return null;</span>
+	}	
+    @Override
+	Clause convertToClause() {
+<span class="fc bfc" id="L408" title="All 2 branches covered.">		if (ConnectiveName.isaOR(connective.name)) {</span>
+<span class="fc" id="L409">			Clause left  = sentenceA.convertToClause();</span>
+<span class="fc" id="L410">			Clause right = sentenceB.convertToClause();</span>
+<span class="fc bfc" id="L411" title="All 2 branches covered.">			if      ( left.posLiterals == null) { left.posLiterals = right.posLiterals; }</span>
+<span class="pc bpc" id="L412" title="1 of 2 branches missed.">			else if (right.posLiterals != null) { left.posLiterals.addAll(right.posLiterals); }</span>
+<span class="fc bfc" id="L413" title="All 2 branches covered.">			if      ( left.negLiterals == null) { left.negLiterals = right.negLiterals; }</span>
+<span class="pc bpc" id="L414" title="1 of 2 branches missed.">			else if (right.negLiterals != null) { left.negLiterals.addAll(right.negLiterals); }</span>
+<span class="fc" id="L415">			left.setWeightOnSentence(wgtSentence);</span>
+<span class="fc" id="L416">			return left;</span>
+<span class="pc bpc" id="L417" title="2 of 4 branches missed.">		} else if (ConnectiveName.isaNOT(connective.name) &amp;&amp;  sentenceB instanceof Literal) {</span>
+<span class="fc" id="L418">			return ((Literal) sentenceB).convertToClause(false);</span>
+		}
+<span class="nc" id="L420">		Utils.error(&quot;Should not be calling convertToClause on connected sentences except those containing OR or NOT(literal) - have '&quot; + connective.name + &quot;': &quot; + this);</span>
+<span class="nc" id="L421">		return null;</span>
+	}
+    @Override
+	public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L425">		String  result = returnWeightString();</span>
+<span class="nc" id="L426">		int precedence = HandleFOPCstrings.getConnectivePrecedence_static(connective);</span>
+		
+<span class="nc bnc" id="L428" title="All 2 branches missed.">		if (ConnectiveName.isaNOT(connective.name)) {</span>
+<span class="nc bnc" id="L429" title="All 2 branches missed.">			if (precedence &lt; precedenceOfCaller) { return result + connective + &quot;(&quot; + sentenceB.toPrettyString(newLineStarter, precedence, bindingList) + &quot;)&quot;; }</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">			if (connective.name.equalsIgnoreCase(&quot;not&quot;)) { return result + connective + &quot; &quot; + sentenceB.toPrettyString(newLineStarter, precedence, bindingList); }</span>
+<span class="nc" id="L431">			return result + connective + sentenceB.toPrettyString(newLineStarter, precedence, bindingList);</span>
+		}
+<span class="nc bnc" id="L433" title="All 2 branches missed.">		String firstSpacer = (connective.name.equals(&quot;,&quot;) ? &quot;&quot; : &quot; &quot;);</span>
+<span class="nc bnc" id="L434" title="All 2 branches missed.">		if (precedence &gt; precedenceOfCaller) { return result + &quot;(&quot; + sentenceA.toPrettyString(newLineStarter, precedence, bindingList) + firstSpacer + connective + &quot; &quot; + sentenceB.toPrettyString(newLineStarter, precedence, bindingList) + &quot;)&quot;; }</span>
+<span class="nc" id="L435">		return result + sentenceA.toPrettyString(newLineStarter, precedence, bindingList) + firstSpacer + connective + &quot; &quot; + sentenceB.toPrettyString(newLineStarter, precedence, bindingList);</span>
+	}
+    @Override
+	public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L439">		String  result = returnWeightString();</span>
+<span class="nc" id="L440">		int precedence = HandleFOPCstrings.getConnectivePrecedence_static(connective);</span>
+		
+		//Utils.println(&quot;precedenceOfCaller=&quot; + precedenceOfCaller + &quot; and precedence=&quot; + precedence + &quot; for &quot; + precedence + &quot;.&quot;);
+<span class="nc bnc" id="L443" title="All 2 branches missed.">		if (ConnectiveName.isaNOT(connective.name)) {</span>
+<span class="nc bnc" id="L444" title="All 2 branches missed.">			if (precedence &lt; precedenceOfCaller) { return result + connective + &quot;(&quot; + sentenceB.toString(precedence, bindingList) + &quot;)&quot;; }</span>
+<span class="nc bnc" id="L445" title="All 4 branches missed.">			if (connective.name.equalsIgnoreCase(&quot;not&quot;) || connective.name.equalsIgnoreCase(&quot;\\+&quot;)) { return result + connective + &quot; &quot; + sentenceB; }</span>
+<span class="nc" id="L446">			return result + connective + sentenceB;</span>
+		}
+<span class="nc bnc" id="L448" title="All 2 branches missed.">		String firstSpacer = (connective.name.equals(&quot;,&quot;) ? &quot;&quot; : &quot; &quot;);</span>
+<span class="nc bnc" id="L449" title="All 2 branches missed.">		if (precedence &gt; precedenceOfCaller) { return result + &quot;(&quot; + sentenceA.toString(precedence, bindingList) + firstSpacer + connective + &quot; &quot; + sentenceB.toString(precedence, bindingList) + &quot;)&quot;; }</span>
+<span class="nc" id="L450">		return result + sentenceA.toString(precedence, bindingList) + firstSpacer + connective + &quot; &quot; + sentenceB.toString(precedence, bindingList);</span>
+	}
+
+    @Override
+    public &lt;Return,Data&gt; Return accept(SentenceVisitor&lt;Return,Data&gt; visitor, Data data) {
+<span class="fc" id="L455">        return visitor.visitConnectedSentence(this, data);</span>
+    }
+	@Override
+	public int countVarOccurrencesInFOPC(Variable v) {
+<span class="nc" id="L459">		int total = 0;</span>
+<span class="nc bnc" id="L460" title="All 2 branches missed.">		if (sentenceA != null) { total += sentenceA.countVarOccurrencesInFOPC(v); }</span>
+<span class="nc bnc" id="L461" title="All 2 branches missed.">		if (sentenceB != null) { total += sentenceB.countVarOccurrencesInFOPC(v); } </span>
+<span class="nc" id="L462">		return total;</span>
+	}
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

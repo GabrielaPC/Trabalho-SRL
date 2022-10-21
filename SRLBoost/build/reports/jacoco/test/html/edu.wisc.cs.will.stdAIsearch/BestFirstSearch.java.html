@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BestFirstSearch.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.stdAIsearch</a> &gt; <span class="el_source">BestFirstSearch.java</span></div><h1>BestFirstSearch.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.stdAIsearch;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.List;
+
+/*
+ * Implements a best-first search where the next node that is examined is the
+ * one with the best score.
+ * 
+ * @author shavlik
+ */
+public class BestFirstSearch extends SearchStrategy {
+    /*
+     * Default constructor. Does nothing.
+     */
+<span class="fc" id="L17">    public BestFirstSearch() {</span>
+<span class="fc" id="L18">    }</span>
+
+    /*
+     * @see edu.wisc.cs.will.stdAIsearch.SearchStrategy#addChildrenToOpenList(edu.wisc.cs.will.stdAIsearch.OpenList, java.util.List)
+     */
+    @Override
+    public &lt;T extends SearchNode&gt; void addChildrenToOpenList(OpenList&lt;T&gt; open, List&lt;T&gt; children) throws SearchInterrupted {
+<span class="fc" id="L25">        int counter = 0;</span>
+<span class="fc" id="L26">        int number  = 0;</span>
+        
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">        if (children != null) {</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">            if (task.verbosity &gt; 2) {</span>
+<span class="nc" id="L30">            	number = children.size();</span>
+<span class="nc" id="L31">                Utils.println(&quot;  Adding &quot; + number + &quot; children to OPEN.&quot;);</span>
+            }
+<span class="fc bfc" id="L33" title="All 2 branches covered.">            for (T node : children) {</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">                if (task.verbosity &gt; 2) {</span>
+<span class="nc" id="L35">                    Utils.println(&quot;    |OPEN|= &quot; + open.size() + &quot;  Score and insert (&quot; + (counter++) + &quot; of &quot; + number + &quot;): '&quot; + node + &quot;'.&quot;);</span>
+                }
+                // For best-first search, insert according to score.  (HIGHER scores are better, and ties go to the &quot;older&quot; node, ie the one already in OPEN.)
+<span class="fc" id="L38">                open.insertByScoreIntoOpenList(node);</span>
+<span class="fc" id="L39">            }</span>
+        }
+<span class="fc" id="L41">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

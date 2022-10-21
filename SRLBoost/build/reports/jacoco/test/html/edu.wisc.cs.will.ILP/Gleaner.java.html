@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Gleaner.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">Gleaner.java</span></div><h1>Gleaner.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.FOPC.FOPCInputStream;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+import edu.wisc.cs.will.stdAIsearch.SearchMonitor;
+import edu.wisc.cs.will.stdAIsearch.SearchNode;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+/*
+ * Gleaner maintains the best clause (per 'marker') in each bin of recall ranges.
+ * See M. Goadrich, L. Oliphant, &amp; J. Shavlik (2006), 
+ * Gleaner: Creating Ensembles of First-Order Clauses to Improve Recall-Precision Curves. 
+ * Machine Learning, 64, pp. 231-262.
+ * http://pages.cs.wisc.edu/~shavlik/abstracts/goadrich.mlj06.abstract.html
+ * 
+ * @author shavlik
+ */
+public class Gleaner extends SearchMonitor implements Serializable {
+<span class="fc" id="L24">	private             boolean useStructuredOutput = false; // This flag, if true, causes the output to be structured rather than freeform human-readable text</span>
+    // Structured output is readable by RuleSetVisualizer (edu.wisc.cs.will.rulesetvisualizer pkg in MachineReading) - cth
+    
+<span class="fc" id="L27">	SingleClauseNode bestNode  = null;  // Also keep track of the best node.  (Maybe this should be a subclass of MonitorILPsearch?  For now, let these evolve separately.</span>
+<span class="fc" id="L28">	private double           bestScore = Double.NEGATIVE_INFINITY;</span>
+<span class="fc" id="L29">	SingleClauseNode bestNodeRegardless  = null;</span>
+<span class="fc" id="L30">	double           bestScoreRegardless = Double.NEGATIVE_INFINITY;</span>
+
+	private ILPouterLoop            ilpOuterLooper; // Trevor - I (JWS) didnt know if this should be transient.  TODO
+
+
+<span class="fc" id="L35">	private final String defaultMarker = &quot;allPossibleMarkers&quot;;</span>
+	private Map&lt;String,Map&lt;Integer,SavedClause&gt;&gt;        gleaners; // The first argument is the marker, the second is an integer marking the recall bin, and the inner Map contains the highest-scoring clause in that bin.
+	private Map&lt;Integer,SavedClause&gt;              currentGleaner;
+	private Map&lt;Integer,SavedClause&gt;              defaultGleaner;
+<span class="fc" id="L39">	private final double[] recallBinUpperBounds = {0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.01};  // Leave a little extra at the end (could be +inf, actually).</span>
+<span class="fc" id="L40">	private boolean  addedAnItem = false; // Indicates that something is in some Gleaner and hence cannot change recallBinUpperBounds.</span>
+
+<span class="fc" id="L42">	public Gleaner() {</span>
+<span class="fc" id="L43">      resetAllMarkers();</span>
+<span class="fc" id="L44">		this.setTaskBeingMonitored(null);</span>
+<span class="fc" id="L45">	}</span>
+
+	void clearBestNode() { // Might want to clear this, e.g., each ILP outer loop clears this so that the bestNode PER inner loop can be found.
+<span class="fc" id="L48">		bestNode              = null;</span>
+<span class="fc" id="L49">		bestScore             = Double.NEGATIVE_INFINITY;</span>
+<span class="fc" id="L50">		bestScoreRegardless   = Double.NEGATIVE_INFINITY;</span>
+<span class="fc" id="L51">		bestNodeRegardless    = null;</span>
+<span class="fc" id="L52">	}</span>
+		
+	// The general-purpose search code calls this when each node is scored.
+	// Return FALSE if this node should NOT be added to OPEN, otherwise return true.
+	public boolean recordNodeBeingScored(SearchNode nodeBeingCreated, double score) throws SearchInterrupted {
+<span class="fc" id="L57">		SingleClauseNode clause = (SingleClauseNode) nodeBeingCreated;</span>
+<span class="fc" id="L58">		LearnOneClause     task = (LearnOneClause)   getTaskBeingMonitored();</span>
+
+		// Keep track of the best score, even if it isn't acceptable (e.g., we can then see the closest acceptable score ...).
+<span class="fc bfc" id="L61" title="All 2 branches covered.">		if (score &gt; bestScoreRegardless) {</span>
+<span class="fc" id="L62">			bestScoreRegardless = score;</span>
+<span class="fc" id="L63">			bestNodeRegardless  = clause;</span>
+		}
+
+		// Previously this was done when scoring a node timed out in computeCoverage(); we didn't want to report anything in such cases.
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">		if (clause.timedOut) { // Incompletely scored nodes should be ignored.</span>
+<span class="nc" id="L68">			return false;</span>
+		}
+		
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">		if (clause.getPosCoverage() &lt; 0 || clause.negCoverage &lt; 0) { Utils.error(&quot;% Should not reach here with an unevaluated node: '&quot; + nodeBeingCreated + &quot;'.&quot;); }</span>
+
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">		if (!clause.acceptableClauseExtraFilter()) {</span>
+<span class="nc" id="L74">			return false; // Unacceptable according to user-provided acceptability test.</span>
+		}
+<span class="pc bpc" id="L76" title="1 of 4 branches missed.">		if (task.getMinPosCoverage() &gt; 0 &amp;&amp; clause.getPosCoverage() &lt; task.getMinPosCoverage()) {</span>
+<span class="fc" id="L77">			return false;  // Unacceptable recall.</span>
+		}
+<span class="pc bpc" id="L79" title="2 of 4 branches missed.">		if (task.getMaxNegCoverage() &gt;= 0 &amp;&amp; clause.negCoverage &gt; task.getMaxNegCoverage()) {</span>
+<span class="nc" id="L80">			return false;  // Unacceptable coverage of negative examples (as a raw total).</span>
+		}
+<span class="pc bpc" id="L82" title="2 of 4 branches missed.">		if (task.getMinPrecision() &gt; 0.0 &amp;&amp; clause.precision() &lt; task.getMinPrecision()) {</span>
+<span class="nc" id="L83">			return false;  // Unacceptable min precision.</span>
+		}
+<span class="fc bfc" id="L85" title="All 4 branches covered.">		if (task.maxRecall &lt; 1.0 &amp;&amp; clause.recall() &gt; task.maxRecall) {</span>
+<span class="fc" id="L86">			return false;  // Unacceptable max precision.</span>
+		}
+<span class="pc bpc" id="L88" title="1 of 4 branches missed.">		if (task.regressionTask &amp;&amp; clause == clause.getRootNode()) {</span>
+<span class="fc" id="L89">			Utils.println(&quot;% Unacceptable due to being the root node.&quot;);</span>
+<span class="fc" id="L90">			return false;  // Unacceptable max precision.</span>
+		}
+
+		// Add to current Gleaner and default Gleaner (if different), even if unacceptable (to do: separate thresholds for Gleaner and for the best overall?  Or too many parameters?).
+<span class="fc" id="L94">		SavedClause saver = new SavedClause(clause);</span>
+<span class="fc" id="L95">		addToGleaner(defaultGleaner, saver);</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">		if (currentGleaner != defaultGleaner) { </span>
+<span class="fc" id="L97">			addToGleaner(currentGleaner, saver);</span>
+		}
+		
+		// Keep track of the best clause overall, assuming it meets the acceptability criteria.
+<span class="fc bfc" id="L101" title="All 2 branches covered.">		if (score &gt; bestScore) {</span>
+<span class="fc" id="L102">			bestScore = score;</span>
+<span class="fc" id="L103">			bestNode  = clause;</span>
+<span class="fc" id="L104">			Utils.println(&quot;% Gleaner: New best node found (score = &quot; + Utils.truncate(score, 6) + &quot;): &quot; + nodeBeingCreated);</span>
+		}
+
+<span class="fc" id="L107">		return true;</span>
+	}
+
+	void setCurrentMarker(String markerRaw) {
+<span class="fc" id="L111">		String marker = markerRaw;</span>
+
+		// Set to false to reduce the number of gleaners.
+<span class="pc bpc" id="L114" title="1 of 4 branches missed.">		if (!markerRaw.equals(defaultMarker) &amp;&amp; ilpOuterLooper != null) {</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">			if (!marker.trim().equals(&quot;&quot;)) { marker += &quot;, &quot;; }</span>
+
+			// TODO(@hayesall): After refactoring, the statement simplified to `marker += null`. This is likely wrong.
+<span class="fc" id="L118">			marker += null;</span>
+		}
+<span class="fc" id="L120">		currentGleaner = gleaners.computeIfAbsent(marker, k -&gt; new HashMap&lt;&gt;(8));</span>
+<span class="fc" id="L121">	}</span>
+	
+	private void resetAllMarkers() { // Be careful using this.  Might NOT want to clear between different &quot;ILP outer loop&quot; runs - instead, just use a new marker.
+<span class="fc" id="L124">		currentGleaner = null;</span>
+<span class="fc" id="L125">		defaultGleaner = null;</span>
+<span class="fc" id="L126">		gleaners       = new HashMap&lt;&gt;(8);</span>
+<span class="fc" id="L127">		setCurrentMarker(defaultMarker); // Create the default Gleaner.</span>
+<span class="fc" id="L128">		defaultGleaner = currentGleaner; // Hold on to the default - we keep the best of all clauses per bin in here.</span>
+<span class="fc" id="L129">		addedAnItem    = false;</span>
+<span class="fc" id="L130">	}</span>
+
+	private void addToGleaner(Map&lt;Integer, SavedClause&gt; gleaner, SavedClause saver) {
+<span class="fc" id="L133">		double  recall = saver.recall;</span>
+<span class="fc" id="L134">		double  F1     = saver.F1; // Use the F1 score for defining best within a bin.</span>
+<span class="fc" id="L135">		LearnOneClause  task = (LearnOneClause) getTaskBeingMonitored();</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">		if (task.regressionTask) { F1 = saver.score; } // Except when doing regression, then use the score.</span>
+		
+<span class="fc" id="L138">		Integer index  = convertRecallToBinIndex(recall);</span>
+<span class="fc" id="L139">		SavedClause currentBestSaverInBin = gleaner.get(index);</span>
+		
+<span class="fc bfc" id="L141" title="All 2 branches covered.">		if (currentBestSaverInBin == null) { // Nothing there, so add.</span>
+<span class="fc" id="L142">			gleaner.put(index, saver);</span>
+		}
+		else {  // Otherwise, see if a new best has been found for this bin.
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">			double F1current = (task.regressionTask ? currentBestSaverInBin.score : currentBestSaverInBin.F1);</span>
+			
+<span class="fc bfc" id="L147" title="All 2 branches covered.">			if (F1 &gt; F1current) { // Update since better clause found.</span>
+<span class="fc" id="L148">				gleaner.remove(currentBestSaverInBin);</span>
+<span class="fc" id="L149">				gleaner.put(index, saver);</span>
+			}
+		}
+<span class="fc bfc" id="L152" title="All 2 branches covered.">		if (!addedAnItem) { addedAnItem = true; }</span>
+<span class="fc" id="L153">	}</span>
+
+	private int convertRecallToBinIndex(double recall) {
+<span class="fc" id="L156">		int counter = 0;</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">		for (double upper : recallBinUpperBounds) { </span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">			if (recall &lt;= upper) { return counter; }</span>
+<span class="fc" id="L159">			counter++;</span>
+		}
+<span class="nc" id="L161">		return counter; // If not found, return the last bin index plus 1.</span>
+	}
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (!(in instanceof FOPCInputStream)) {</span>
+<span class="nc" id="L166">            throw new IllegalArgumentException(getClass().getCanonicalName() + &quot;.readObject input stream must support FOPCObjectInputStream interface&quot;);</span>
+        }
+
+<span class="nc" id="L169">        in.defaultReadObject();</span>
+
+<span class="nc" id="L171">	}</span>
+
+	void setILPouterLooper(ILPouterLoop ilpOuterLooper) {
+<span class="fc" id="L174">		this.ilpOuterLooper = ilpOuterLooper;</span>
+<span class="fc" id="L175">	}</span>
+
+
+	void setUseStructuredOutput(boolean useStructuredOutput) {
+<span class="fc" id="L179">		this.useStructuredOutput = useStructuredOutput;</span>
+<span class="fc" id="L180">	}</span>
+	boolean getUseStructuredOutput() {
+<span class="fc" id="L182">		return useStructuredOutput;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

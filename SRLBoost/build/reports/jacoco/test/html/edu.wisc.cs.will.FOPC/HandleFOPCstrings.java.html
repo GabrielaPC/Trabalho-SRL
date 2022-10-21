@@ -1,0 +1,1174 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HandleFOPCstrings.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">HandleFOPCstrings.java</span></div><h1>HandleFOPCstrings.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC_MLN_ILP_Parser.FileParser;
+import edu.wisc.cs.will.ILP.ClauseOptimiser;
+import edu.wisc.cs.will.ResThmProver.VariantClauseAction;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.*;
+
+import static edu.wisc.cs.will.ResThmProver.VariantClauseAction.WARN_AND_REMOVE_VARIANTS;
+import static edu.wisc.cs.will.Utils.MessageType.STRING_HANDLER_CREATION;
+import static edu.wisc.cs.will.Utils.MessageType.STRING_HANDLER_VARIABLE_INDICATOR;
+
+
+/*
+ * @author shavlik
+ *
+ * The class handles converting from strings to instances.
+ * It also handles the 'isa' hierarchy (hetrarchy, really) of types and the specification of ranges of variables.
+ *
+ */
+<span class="pc bpc" id="L22" title="1 of 2 branches missed.">public final class HandleFOPCstrings {</span>
+
+    public final StandardPredicateNames standardPredicateNames;
+<span class="fc" id="L25">	int warningCount =   1;</span>
+	final static int maxWarnings  = 100;
+<span class="fc" id="L27">	public                 int exceptionCount     =   1; // These should be used when something is caught, and we don't want to print</span>
+	public    final static int exceptionCountMax  = 100; // the warning an excessive number of times.
+
+<span class="fc" id="L30">	private         static int countOfStringHandlers = 0;</span>
+
+<span class="fc" id="L32">	private boolean ignoreCaseOfStringsOtherThanFirstChar = false; // If this is ever set, strange bugs can occur.</span>
+<span class="fc" id="L33">	public  boolean cleanFunctionAndPredicateNames        = false; // Check for hyphens and spaces.  DO NOT SET UNTIL AFTER LIBRARIES ARE LOADED.</span>
+<span class="fc" id="L34">	public  boolean keepQuoteMarks                        = false; // Set to true if quote marks on string constants should be preserved.  NOTE: if true, then strings with quote marks will NOT be cleaned regardless of any other setting.</span>
+
+<span class="fc" id="L36">	public boolean printVariableCounters = false; // If set to true, then variables will have their counters printed.</span>
+
+<span class="fc" id="L38">	int     numberOfLiteralsPerRowInPrintouts = Clause.defaultNumberOfLiteralsPerRowInPrintouts; // Store this here once, rather than in every clause.</span>
+
+	public final IsaHetrarchy                isaHandler;
+	private   List&lt;PredicateNameAndArity&gt; knownModes; // Hold all the predicates with known modes.
+	private final List&lt;PredicateNameAndArity&gt; disallowedModes;
+
+
+<span class="fc" id="L45">	public    enum VarIndicator { questionMarks, lowercase, uppercase }</span>
+<span class="fc" id="L46">	private        VarIndicator           variableIndicator = null; // Usually when read inside a file the former setting is reverted to once file reading is over.  But if null when file reading starts, that setting persists after the file is closed (ie., the first setting defines the default).</span>
+<span class="fc" id="L47">	private final VarIndicator           defaultVariableIndicator = VarIndicator.uppercase; // This will be set very early by the constructor since it needs to create some strings and needs to choose a notation (but after that it is again set to null).</span>
+	// NOTE: if variableIndicator=lowercase, then standard FOPC notation is used when printing.  Otherwise Prolog notation is used.  TODO - allow a separate variable to decide how to print?
+
+<span class="fc" id="L50">	public    boolean                     prettyPrintClauses     = true;</span>
+
+	private final Map&lt;String,PredicateName&gt;   predicateNameHash; // These map a given string to one and only one instance.
+	private final Map&lt;String,FunctionName&gt;    functionNameHash;
+	private final Map&lt;String,ConnectiveName&gt;  connectiveNameHash;
+	private Map&lt;String,Stack&lt;Variable&gt;&gt; variableHash;
+	private final Set&lt;String&gt;                 variableNamesSeen;
+	private final Stack&lt;Map&lt;String,Stack&lt;Variable&gt;&gt;&gt; stackOfVariableHashes;
+	private final Map&lt;String,StringConstant&gt;  stringConstantHash;
+	private final Map&lt;String,NumericConstant&gt; numericConstantHash;
+
+	private final Map&lt;ConnectiveName,Integer&gt; precedenceTableForConnectives;
+	public final Map&lt;Term,List&lt;Type&gt;&gt;    constantToTypesMap;       // A given constant can have multiple types.  Record them here.  TODO 'wrap' this variable?
+	private final Map&lt;Type,Set&lt;Term&gt;&gt;     knownConstantsOfThisType; // Collection all constants of a given type.  Use a hash map for efficiency.
+<span class="fc" id="L64">	private   long varCounter             = 0; // Used to create new variable names that start with 'a', 'b', 'c', etc.</span>
+<span class="fc" id="L65">	private   long overallCounter         = 0;</span>
+<span class="fc" id="L66">	private   int  countOfSkolemFunctions = 0;</span>
+
+	final Constant  trueIndicator;
+	final Constant falseIndicator;
+	public final Literal   trueLiteral;
+	public final Literal cutLiteral;
+
+<span class="fc" id="L73">	private boolean useStrictEqualsForFunctions = false; // Ditto for functions.</span>
+
+<span class="fc" id="L75">	private   static Map&lt;String,Integer&gt; precedenceTableForOperators_static   = null; // To avoid the need to pass around a stringHandler, there is also a static version that uses String.equals instead of '=='.</span>
+<span class="fc" id="L76">	private   static Map&lt;String,Integer&gt; precedenceTableForConnectives_static = null;</span>
+<span class="fc" id="L77">	private static final String[] alphabet2 = {</span>
+        &quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;,&quot;E&quot;,&quot;F&quot;,&quot;G&quot;,&quot;H&quot;,&quot;I&quot;,&quot;J&quot;,&quot;K&quot;, // &quot;O&quot; left out since it looks like a zero.   (Cap &quot;L&quot; looks OK.)
+        &quot;L&quot;,&quot;M&quot;,&quot;N&quot;,&quot;P&quot;,&quot;Q&quot;,&quot;R&quot;,&quot;S&quot;,&quot;T&quot;,&quot;U&quot;,&quot;W&quot;,&quot;X&quot;,&quot;Y&quot;,&quot;Z&quot; }; // I DROPPED &quot;V&quot; since it means &quot;OR&quot;
+<span class="fc" id="L80">    private static final int alphabet2Size = alphabet2.length;</span>
+
+	// This group records information used by the MLN code.
+    private ClauseOptimiser   clauseOptimizer;
+
+
+<span class="fc" id="L86">    public boolean underscoredAnonymousVariables = false;</span>
+
+	/* Clausebase handling for facts added to the clausebase. */
+<span class="fc" id="L89">    public VariantClauseAction variantFactHandling = WARN_AND_REMOVE_VARIANTS;</span>
+
+    /* Clausebase handling for facts added to the clausebase. */
+<span class="fc" id="L92">    public VariantClauseAction variantRuleHandling = WARN_AND_REMOVE_VARIANTS;</span>
+
+	public HandleFOPCstrings() {
+<span class="nc" id="L95">		this(false);</span>
+<span class="nc" id="L96">	}</span>
+
+<span class="fc" id="L98">	public HandleFOPCstrings(boolean okToBeSecondStringHandler) {</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">		if (!okToBeSecondStringHandler) { Utils.println(STRING_HANDLER_CREATION, &quot;\n% Creating string handler #&quot; + Utils.comma(++countOfStringHandlers) + &quot;.\n&quot;); }</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">		if (countOfStringHandlers &gt; 1)  { Utils.warning(STRING_HANDLER_CREATION, &quot;Do you really want to make string handler #&quot; + Utils.comma(countOfStringHandlers) + &quot;?&quot;); }</span>
+<span class="fc" id="L101">		boolean hold = cleanFunctionAndPredicateNames;</span>
+<span class="fc" id="L102">		cleanFunctionAndPredicateNames = false;</span>
+
+<span class="fc" id="L104">		knownConstantsOfThisType = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L105">		knownModes          = new ArrayList&lt;&gt;(16);</span>
+<span class="fc" id="L106">		disallowedModes     = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L107">		predicateNameHash   = new HashMap&lt;&gt;(64);</span>
+<span class="fc" id="L108">		functionNameHash    = new HashMap&lt;&gt;(16);</span>
+<span class="fc" id="L109">		connectiveNameHash  = new HashMap&lt;&gt;(16);</span>
+<span class="fc" id="L110">		variableHash        = new HashMap&lt;&gt;(1024);  // Need some cleanup (garbage collection) mechanism ..  TODO</span>
+<span class="fc" id="L111">		variableNamesSeen         = new HashSet&lt;&gt;(1024);</span>
+<span class="fc" id="L112">		stackOfVariableHashes     = new Stack&lt;&gt;();</span>
+<span class="fc" id="L113">		stringConstantHash  = new HashMap&lt;&gt;(32);</span>
+<span class="fc" id="L114">		numericConstantHash = new HashMap&lt;&gt;(32);</span>
+<span class="fc" id="L115">		constantToTypesMap  = new HashMap&lt;&gt;(256); // Likely to be a lot of these, and of not, the testbed is a small one and space unimportant</span>
+
+
+<span class="fc" id="L118">        standardPredicateNames = new StandardPredicateNames(this);</span>
+
+<span class="fc" id="L120">		isaHandler          = new IsaHetrarchy(this);</span>
+<span class="fc" id="L121">		trueIndicator       = this.getStringConstant(&quot;true&quot;);</span>
+<span class="fc" id="L122">		falseIndicator      = this.getStringConstant(&quot;false&quot;);</span>
+<span class="fc" id="L123">		trueLiteral         = this.getLiteral(standardPredicateNames.trueName);</span>
+<span class="fc" id="L124">		cutLiteral          = this.getLiteral(standardPredicateNames.cut);</span>
+<span class="fc" id="L125">		Clause trueClause = this.getClause(trueLiteral, true);</span>
+<span class="fc" id="L126">		Map&lt;FunctionName, Integer&gt; precedenceTableForOperators = new HashMap&lt;&gt;(8);</span>
+<span class="fc" id="L127">		precedenceTableForConnectives = new HashMap&lt;&gt;(24);</span>
+<span class="fc" id="L128">		initPrecedences(precedenceTableForOperators, precedenceTableForConnectives);</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">		if (precedenceTableForOperators_static == null) {</span>
+<span class="fc" id="L130">			precedenceTableForOperators_static   = new HashMap&lt;&gt;( 8);</span>
+<span class="fc" id="L131">			precedenceTableForConnectives_static = new HashMap&lt;&gt;(24);</span>
+<span class="fc" id="L132">			initPrecedences_static(precedenceTableForOperators_static, precedenceTableForConnectives_static);</span>
+		}
+
+<span class="fc" id="L135">		cleanFunctionAndPredicateNames = hold;</span>
+
+<span class="fc" id="L137">		setVariableIndicator(null); // Wait for the first user file to set things, and keep that as the default.</span>
+<span class="fc" id="L138">	}</span>
+
+	private void initPrecedences(Map&lt;FunctionName,  Integer&gt; precedenceTableForOperators,
+								 Map&lt;ConnectiveName,Integer&gt; precedenceTableForConnectives) {
+<span class="fc" id="L142">		precedenceTableForOperators.put(getFunctionName(&quot;+&quot;),   500); // These precedence numbers are those of YAP Prolog.</span>
+<span class="fc" id="L143">		precedenceTableForOperators.put(getFunctionName(&quot;-&quot;),   500);</span>
+<span class="fc" id="L144">		precedenceTableForOperators.put(getFunctionName(&quot;*&quot;),   400);</span>
+<span class="fc" id="L145">		precedenceTableForOperators.put(getFunctionName(&quot;/&quot;),   400);</span>
+<span class="fc" id="L146">		precedenceTableForOperators.put(getFunctionName(&quot;mod&quot;), 300);</span>
+<span class="fc" id="L147">		precedenceTableForOperators.put(getFunctionName(&quot;**&quot;),  200); // This is exponentation.</span>
+<span class="fc" id="L148">		precedenceTableForOperators.put(getFunctionName(&quot;=:=&quot;),1200); // Use these in case equality predicates get reified.</span>
+<span class="fc" id="L149">		precedenceTableForOperators.put(getFunctionName(&quot;==&quot;), 1200);</span>
+<span class="fc" id="L150">		precedenceTableForOperators.put(getFunctionName(&quot;=&quot;),  1200);</span>
+<span class="fc" id="L151">        precedenceTableForOperators.put(getFunctionName(&quot;is&quot;), 1200);</span>
+
+<span class="fc" id="L153">		precedenceTableForConnectives.put(getConnectiveName(&quot;not&quot;),         900);</span>
+<span class="fc" id="L154">		precedenceTableForConnectives.put(getConnectiveName(&quot;LogicalNot&quot;),  900);</span>
+<span class="fc" id="L155">		precedenceTableForConnectives.put(getConnectiveName(&quot;~&quot;),           900);</span>
+<span class="fc" id="L156">		precedenceTableForConnectives.put(getConnectiveName(&quot;\\+&quot;),         900);</span>
+<span class="fc" id="L157">		precedenceTableForConnectives.put(getConnectiveName(&quot;LogicalAnd&quot;), 1000);</span>
+<span class="fc" id="L158">		precedenceTableForConnectives.put(getConnectiveName(&quot;and&quot;),        1000);</span>
+<span class="fc" id="L159">		precedenceTableForConnectives.put(getConnectiveName(&quot;^&quot;),          1000);</span>
+<span class="fc" id="L160">		precedenceTableForConnectives.put(getConnectiveName(&quot;&amp;&quot;),          1000);</span>
+<span class="fc" id="L161">		precedenceTableForConnectives.put(getConnectiveName(&quot;,&quot;),          1000);</span>
+<span class="fc" id="L162">		precedenceTableForConnectives.put(getConnectiveName(&quot;or&quot;),         1100);</span>
+<span class="fc" id="L163">		precedenceTableForConnectives.put(getConnectiveName(&quot;LogicalOr&quot;),  1100);</span>
+<span class="fc" id="L164">		precedenceTableForConnectives.put(getConnectiveName(&quot;v&quot;),          1100);</span>
+<span class="fc" id="L165">		precedenceTableForConnectives.put(getConnectiveName(&quot;else&quot;),       1100); // Used in (P then Q else R).</span>
+<span class="fc" id="L166">		precedenceTableForConnectives.put(getConnectiveName(&quot;then&quot;),       1150); // CURRENTLY THIS IS TREATED AS A LITERAL AFTER PARSING.  This is ISO Prolog's '-&gt;' (and if-then-else construct).</span>
+<span class="fc" id="L167">		precedenceTableForConnectives.put(getConnectiveName(&quot;implies&quot;),    1200); //   Note: 'then' has precedence of 1050 in YAP, but we want it to be higher than ELSE.</span>
+<span class="fc" id="L168">		precedenceTableForConnectives.put(getConnectiveName(&quot;=&gt;&quot;),         1200);</span>
+<span class="fc" id="L169">		precedenceTableForConnectives.put(getConnectiveName(&quot;-&gt;&quot;),         1200);</span>
+<span class="fc" id="L170">		precedenceTableForConnectives.put(getConnectiveName(&quot;:-&quot;),         1200);</span>
+<span class="fc" id="L171">		precedenceTableForConnectives.put(getConnectiveName(&quot;:=&quot;),         1200);</span>
+<span class="fc" id="L172">		precedenceTableForConnectives.put(getConnectiveName(&quot;if&quot;),         1200);</span>
+<span class="fc" id="L173">		precedenceTableForConnectives.put(getConnectiveName(&quot;:=&quot;),         1200);</span>
+<span class="fc" id="L174">		precedenceTableForConnectives.put(getConnectiveName(&quot;equivalent&quot;), 1200);</span>
+<span class="fc" id="L175">		precedenceTableForConnectives.put(getConnectiveName(&quot;&lt;=&gt;&quot;),        1200);</span>
+<span class="fc" id="L176">		precedenceTableForConnectives.put(getConnectiveName(&quot;&lt;-&gt;&quot;),        1200); // Also ForAll and Exists have precedence of 1500.</span>
+
+<span class="fc" id="L178">	} // TODO clean up so don't need TWO copies of all these strings ...</span>
+	private static void initPrecedences_static(Map&lt;String,Integer&gt; precedenceTableForOperators, Map&lt;String,Integer&gt; precedenceTableForConnectives) {
+<span class="fc" id="L180">		precedenceTableForOperators.put(&quot;+&quot;,   500); // These precedence numbers are those of YAP Prolog.</span>
+<span class="fc" id="L181">		precedenceTableForOperators.put(&quot;-&quot;,   500);</span>
+<span class="fc" id="L182">		precedenceTableForOperators.put(&quot;*&quot;,   400);</span>
+<span class="fc" id="L183">		precedenceTableForOperators.put(&quot;/&quot;,   400);</span>
+<span class="fc" id="L184">		precedenceTableForOperators.put(&quot;mod&quot;, 300); // All names here need to be lowercase.  TODO should create a method that does that, so mistakes here aren't a problem.</span>
+<span class="fc" id="L185">		precedenceTableForOperators.put(&quot;**&quot;,  200);</span>
+<span class="fc" id="L186">		precedenceTableForOperators.put(&quot;=:=&quot;,1200); // Use these in case equality predicates get reified.</span>
+<span class="fc" id="L187">		precedenceTableForOperators.put(&quot;==&quot;, 1200);</span>
+<span class="fc" id="L188">		precedenceTableForOperators.put(&quot;=&quot;,  1200);</span>
+
+<span class="fc" id="L190">		precedenceTableForConnectives.put(&quot;not&quot;,         900); // All names here also need to be lowercase.</span>
+<span class="fc" id="L191">		precedenceTableForConnectives.put(&quot;logicalnot&quot;,  900);</span>
+<span class="fc" id="L192">		precedenceTableForConnectives.put(&quot;~&quot;,           900);</span>
+<span class="fc" id="L193">		precedenceTableForConnectives.put(&quot;\\+&quot;,         900);</span>
+<span class="fc" id="L194">		precedenceTableForConnectives.put(&quot;and&quot;,        1000);</span>
+<span class="fc" id="L195">		precedenceTableForConnectives.put(&quot;logicaland&quot;, 1000);</span>
+<span class="fc" id="L196">		precedenceTableForConnectives.put(&quot;^&quot;,          1000);</span>
+<span class="fc" id="L197">		precedenceTableForConnectives.put(&quot;&amp;&quot;,          1000);</span>
+<span class="fc" id="L198">		precedenceTableForConnectives.put(&quot;,&quot;,          1000);</span>
+<span class="fc" id="L199">		precedenceTableForConnectives.put(&quot;or&quot;,         1100);</span>
+<span class="fc" id="L200">		precedenceTableForConnectives.put(&quot;logicalor&quot;,  1100);</span>
+<span class="fc" id="L201">		precedenceTableForConnectives.put(&quot;v&quot;,          1100);</span>
+<span class="fc" id="L202">		precedenceTableForConnectives.put(&quot;else&quot;,       1100); // Used in (P then Q else R).</span>
+<span class="fc" id="L203">		precedenceTableForConnectives.put(&quot;then&quot;,       1150); // CURRENTLY THIS IS TREATED AS A LITERAL AFTER PARSING.  This is ISO Prolog's '-&gt;' (and if-then-else construct).</span>
+<span class="fc" id="L204">		precedenceTableForConnectives.put(&quot;implies&quot;,    1200);</span>
+<span class="fc" id="L205">		precedenceTableForConnectives.put(&quot;=&gt;&quot;,         1200);</span>
+<span class="fc" id="L206">		precedenceTableForConnectives.put(&quot;-&gt;&quot;,         1200);</span>
+<span class="fc" id="L207">		precedenceTableForConnectives.put(&quot;:-&quot;,         1200);</span>
+<span class="fc" id="L208">		precedenceTableForConnectives.put(&quot;:=&quot;,         1200);</span>
+<span class="fc" id="L209">		precedenceTableForConnectives.put(&quot;if&quot;,         1200);</span>
+<span class="fc" id="L210">		precedenceTableForConnectives.put(&quot;equivalent&quot;, 1200);</span>
+<span class="fc" id="L211">		precedenceTableForConnectives.put(&quot;&lt;=&gt;&quot;,        1200);</span>
+<span class="fc" id="L212">		precedenceTableForConnectives.put(&quot;&lt;-&gt;&quot;,        1200);	 // Also ForAll and Exists have precedence of 1500.</span>
+<span class="fc" id="L213">	}</span>
+
+	static int getOperatorPrecedence_static(String fName) {
+<span class="nc" id="L216">		Integer result = precedenceTableForOperators_static.get(fName);</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">		return result == null ? 1300 : result;</span>
+	}
+
+	public        int getConnectivePrecedence(ConnectiveName cName) {
+<span class="fc" id="L221">		Integer result = precedenceTableForConnectives.get(cName);</span>
+<span class="pc bpc" id="L222" title="2 of 4 branches missed.">		assert result != null;</span>
+<span class="fc" id="L223">		return result;</span>
+	}
+	static int getConnectivePrecedence_static(ConnectiveName cName) {
+<span class="nc" id="L226">		Integer result = precedenceTableForConnectives_static.get(cName.name.toLowerCase());</span>
+<span class="nc bnc" id="L227" title="All 4 branches missed.">		assert result != null;</span>
+<span class="nc" id="L228">		return result;</span>
+	}
+
+	public boolean isVariableIndicatorSet() {
+<span class="pc bpc" id="L232" title="1 of 2 branches missed.">		return variableIndicator != null;</span>
+	}
+
+	public void usePrologNotation() {
+<span class="fc bfc" id="L236" title="All 2 branches covered.">		if (!usingPrologNotation()) {</span>
+<span class="fc" id="L237">			Utils.println(STRING_HANDLER_VARIABLE_INDICATOR, &quot;\n% Switching to Prolog notation for variables; previous setting = &quot; + variableIndicator);</span>
+		}
+<span class="fc" id="L239">		setVariableIndicator(VarIndicator.uppercase);</span>
+<span class="fc" id="L240">	}</span>
+
+	public void useStdLogicNotation() {
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">		if (!usingStdLogicNotation()) {</span>
+<span class="fc" id="L244">			Utils.println(STRING_HANDLER_VARIABLE_INDICATOR, &quot;\n% Switching to standard-logic notation for variables; previous setting = &quot; + variableIndicator);</span>
+		}
+<span class="fc" id="L246">		setVariableIndicator(VarIndicator.lowercase);</span>
+<span class="fc" id="L247">	}</span>
+
+	public boolean usingPrologNotation() {
+<span class="pc bpc" id="L250" title="1 of 2 branches missed.">		if (getVariableIndicator() == null) {</span>
+<span class="nc" id="L251">			setVariableIndicator(defaultVariableIndicator);</span>
+		}
+<span class="fc bfc" id="L253" title="All 2 branches covered.">		return variableIndicator == VarIndicator.uppercase;</span>
+	}
+
+	public boolean usingStdLogicNotation() {
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">		if (getVariableIndicator() == null) {</span>
+<span class="nc" id="L258">			setVariableIndicator(defaultVariableIndicator);</span>
+		}
+<span class="fc bfc" id="L260" title="All 2 branches covered.">		return variableIndicator == VarIndicator.lowercase;</span>
+	}
+
+
+	boolean printUsingStdLogicNotation() {
+<span class="fc" id="L265">		return usingStdLogicNotation();</span>
+	}
+
+	public boolean doVariablesStartWithQuestionMarks() {
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">		if (getVariableIndicator() == null) { setVariableIndicator(defaultVariableIndicator); }</span>
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">		return variableIndicator == VarIndicator.questionMarks;</span>
+	}
+
+	public void setVariableIndicator(VarIndicator varIndicator) {
+<span class="fc bfc" id="L274" title="All 2 branches covered.">		if (variableIndicator == varIndicator) {</span>
+<span class="fc" id="L275">			return;</span>
+		}
+<span class="fc bfc" id="L277" title="All 2 branches covered.">		Utils.println(STRING_HANDLER_VARIABLE_INDICATOR, (varIndicator == null ? &quot;\n% Unset'ing VarIndicator.&quot; : &quot;\n% Switching to VarIndicator = &quot; + varIndicator + &quot;.&quot;));</span>
+<span class="fc" id="L278">		variableIndicator = varIndicator;</span>
+<span class="fc" id="L279">	}</span>
+
+	public VarIndicator getVariableIndicator() {
+<span class="fc bfc" id="L282" title="All 2 branches covered.">		if (variableIndicator == null) { setVariableIndicator(defaultVariableIndicator); }</span>
+<span class="fc" id="L283">		return variableIndicator;</span>
+	}
+
+	public VarIndicator getVariableIndicatorNoSideEffects() {
+<span class="fc" id="L287">		return variableIndicator;</span>
+	}
+
+	public String getStringToIndicateCurrentVariableNotation() {
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">		if (doVariablesStartWithQuestionMarks()) { return &quot;useLeadingQuestionMarkVariables: true.\n&quot;;  }</span>
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">		else if (usingStdLogicNotation())        { return &quot;useStdLogicNotation: true.\n&quot;;  }</span>
+<span class="fc" id="L293">		else                                     { return &quot;usePrologVariables: true.\n&quot;;   }</span>
+	}
+
+	////////////////////////////////////////////////////////////////////////////////
+	// This next group deals with creating instances from FOPC.  By passing everything
+	// through this class, we can prevent incorrect new calls to those where 'canonical' instances are needed (e.g., PredicateName, Variable, Constant, etc).
+	// Also, we can later aim to make some/all of these canonical as well, should that make sense.
+	////////////////////////////////////////////////////////////////////////////////
+
+    public Clause getClause() {
+<span class="nc" id="L303">		return new Clause(this, null, null);</span>
+	}
+	public Clause getClause(List&lt;Literal&gt; posLiterals, List&lt;Literal&gt; negLiterals) {
+<span class="fc" id="L306">		return new Clause(this, posLiterals, negLiterals);</span>
+	}
+	public Clause getClause(List&lt;Literal&gt; posLiterals, List&lt;Literal&gt; negLiterals, String extraLabel) {
+<span class="fc" id="L309">		return new Clause(this, posLiterals, negLiterals, extraLabel);</span>
+	}
+	public Clause getClause(Literal posLiteral, Literal negLiteral, String extraLabel) {
+<span class="fc" id="L312">		List&lt;Literal&gt; posLiterals = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L313">		List&lt;Literal&gt; negLiterals = new ArrayList&lt;&gt;(1);</span>
+<span class="pc bpc" id="L314" title="1 of 2 branches missed.">		if ( posLiteral != null ) posLiterals.add(posLiteral);</span>
+<span class="pc bpc" id="L315" title="1 of 2 branches missed.">		if ( negLiteral != null ) negLiterals.add(negLiteral);</span>
+<span class="fc" id="L316">		return new Clause(this, posLiterals, negLiterals, extraLabel);</span>
+	}
+	public Clause getClause(Literal posLiteral, Literal negLiteral) {
+<span class="nc" id="L319">		return getClause(posLiteral, negLiteral, null);</span>
+	}
+
+	public Clause getClause(List&lt;Literal&gt; literals, boolean literalsAreAllPos) {
+<span class="fc" id="L323">		return new Clause(this, literals, literalsAreAllPos);	// NOTE: if literalsAreAllPos=false THEN IT IS ASSUMED ALL LITERALS ARE NEGATIVE.</span>
+	}
+	public Clause getClause(Literal literal, boolean literalIsPos) {
+<span class="fc" id="L326">		return new Clause(this, literal, literalIsPos);</span>
+	}
+	public Clause getClause(Literal literal, boolean literalIsPos, String extraLabel) {
+<span class="nc" id="L329">		return new Clause(this, literal, literalIsPos, extraLabel);</span>
+	}
+
+	public ConnectedSentence getConnectedSentence(ConnectiveName connective, Sentence B) {
+<span class="fc" id="L333">		return new ConnectedSentence(this, connective, B);</span>
+	}
+	public ConnectedSentence getConnectedSentence(Sentence A, ConnectiveName connective, Sentence B) {
+<span class="fc" id="L336">		return new ConnectedSentence(this, A, connective, B);</span>
+	}
+
+	public ExistentialSentence getExistentialSentence(Collection&lt;Variable&gt; variables, Sentence body) {
+<span class="nc" id="L340">		return new ExistentialSentence(this, variables, body);</span>
+	}
+
+	public Function getFunction(FunctionName functionName, List&lt;Term&gt; arguments, TypeSpec typeSpec) {
+<span class="fc" id="L344">		return new Function(this, functionName, arguments, typeSpec);</span>
+	}
+
+	public Function getFunction(FunctionName functionName, List&lt;Term&gt; arguments, List&lt;String&gt; argumentNames, TypeSpec typeSpec) {
+<span class="fc" id="L348">		return new Function(this, functionName, arguments, argumentNames, typeSpec);</span>
+	}
+
+    public Function getFunction(Function existingFunction, List&lt;Term&gt; newArguments) {
+
+<span class="nc bnc" id="L353" title="All 2 branches missed.">        int newArgsSize = newArguments == null ? 0 : newArguments.size();</span>
+
+<span class="nc bnc" id="L355" title="All 6 branches missed.">        if ((existingFunction.getArity() &gt; 0 &amp;&amp; newArguments == null) || (existingFunction.getArity() != newArgsSize)) {</span>
+<span class="nc" id="L356">            throw new IllegalArgumentException(&quot;newArguments.size() must match arity of &quot; + existingFunction);</span>
+        }
+
+<span class="nc" id="L359">		return getFunction(existingFunction.functionName, newArguments, existingFunction.getArgumentNames(), existingFunction.getTypeSpec());</span>
+    }
+
+	public Literal getLiteral(PredicateName pred) {
+<span class="fc" id="L363">		return new Literal(this, pred);</span>
+	}
+	public Literal getLiteral(PredicateName pred, List&lt;Term&gt; arguments) {
+<span class="fc" id="L366">		return new Literal(this, pred, arguments);</span>
+	}
+	public Literal getLiteral(PredicateName pred, List&lt;Term&gt; arguments, List&lt;String&gt; argumentNames) {
+<span class="fc" id="L369">		return new Literal(this, pred, arguments, argumentNames);</span>
+	}
+
+	public Literal getLiteral(Literal existingLiteral, List&lt;Term&gt; newArguments) {
+<span class="pc bpc" id="L373" title="1 of 2 branches missed.">        int newArgCount = newArguments == null ? 0 : newArguments.size();</span>
+<span class="pc bpc" id="L374" title="3 of 6 branches missed.">        if ((existingLiteral.getArity() &gt; 0 &amp;&amp; newArguments == null) || (existingLiteral.getArity() != newArgCount)) {</span>
+<span class="nc" id="L375">            throw new IllegalArgumentException(&quot;newArguments.size() must match arity of &quot; + existingLiteral);</span>
+        }
+
+<span class="fc" id="L378">		return getLiteral(existingLiteral.predicateName, newArguments, existingLiteral.getArgumentNames());</span>
+    }
+
+	public Literal getLiteral(String predicateName, Term... arguments) {
+<span class="fc" id="L382">        PredicateName pn = getPredicateName(predicateName);</span>
+<span class="pc bpc" id="L383" title="1 of 2 branches missed.">        if (arguments == null) {</span>
+<span class="nc" id="L384">            return getLiteral(pn);</span>
+        }
+        else {
+<span class="fc" id="L387">            List&lt;Term&gt; terms = Arrays.asList(arguments);</span>
+<span class="fc" id="L388">            return getLiteral(pn, terms);</span>
+        }
+    }
+
+	public UniversalSentence getUniversalSentence(Collection&lt;Variable&gt; variables, Sentence body) {
+<span class="fc" id="L393">		return new UniversalSentence(this, variables, body);</span>
+	}
+
+	/* Returns the contents of a negation-by-failure as a clause with all positive literals.
+     *
+     * Per the discussion in getNegativeByFailure, the clause within a negation-by-failure should
+     * contain positive literals only.  As such, getNegationByFailureContents always returns
+     * a clause with positive literals.  If the actual content clause contains negative literals,
+     * it will be rewritten to contain positive literals.
+     *
+     * @param negationByFailure A literal with predicate name of \+ and arity 1.
+     * @return Contents of a negation-by-failure as a clause with all positive literals
+     */
+	private Clause getNegationByFailureContents(LiteralOrFunction negationByFailure) {
+
+        Clause result;
+
+<span class="nc bnc" id="L410" title="All 2 branches missed.">        if ( negationByFailure.getPredicateName() == standardPredicateNames.negationByFailure ) {</span>
+
+<span class="nc bnc" id="L412" title="All 2 branches missed.">            if ( negationByFailure.getArity() == 1 ) {</span>
+
+<span class="nc" id="L414">                Term arg = negationByFailure.getArguments().get(0);</span>
+<span class="nc" id="L415">                Clause clause = arg.asClause();</span>
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                if ( clause == null ) {</span>
+<span class="nc" id="L417">                    Utils.error(&quot;Negated literal to have single argument of type Function or SentenceAsTerm.  Literal: &quot; + negationByFailure + &quot;.&quot;);</span>
+                }
+
+<span class="nc bnc" id="L420" title="All 4 branches missed.">				if ( clause.getPosLiteralCount() != 0 &amp;&amp; clause.getNegLiteralCount() != 0 ) {</span>
+<span class="nc" id="L421">                    Utils.error(&quot;Negation-by-failure content clause contains both positive and negative literals!&quot;);</span>
+                }
+
+<span class="nc bnc" id="L424" title="All 2 branches missed.">                if ( clause.getNegLiteralCount() != 0 ) {</span>
+<span class="nc" id="L425">                    clause = getClause(clause.getNegativeLiterals(), true);</span>
+                }
+
+<span class="nc" id="L428">                result = clause;</span>
+<span class="nc" id="L429">            }</span>
+            else {
+                // We have multiple arguments to the negation-by-failure.
+                // Thus the terms become the literals to the clause.
+<span class="nc" id="L433">                List&lt;Literal&gt; lits = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L434" title="All 2 branches missed.">                for (Term literal : negationByFailure.getArguments()) {</span>
+<span class="nc" id="L435">                    lits.add(literal.asLiteral());</span>
+<span class="nc" id="L436">                }</span>
+
+<span class="nc" id="L438">                result = getClause(lits, null);</span>
+<span class="nc" id="L439">            }</span>
+        }
+        else {
+<span class="nc" id="L442">            Utils.error(&quot;Literal &quot; + negationByFailure + &quot; was not a negationByFailure.&quot;);</span>
+<span class="nc" id="L443">            return null;</span>
+        }
+
+<span class="nc" id="L446">        return result;</span>
+    }
+
+    public Clause getNegationByFailureContents(Literal negationByFailure) {
+<span class="nc" id="L450">        return getNegationByFailureContents((LiteralOrFunction)negationByFailure);</span>
+    }
+
+	public void resetVarCounters() {
+		// int n = 2; // Will start with this many aa's
+<span class="fc" id="L455">		varCounter  = 0; //(int) Math.pow(24.0, n - 1.0); // Assumes that the head has fewer that 24 variables (since the variables in the target are 'a', 'b', etc.).</span>
+		// Used for variables names that start with any other string (and prepends 'v_' or 'V_' to them to avoid name clashes).
+<span class="fc" id="L457">		resetAllVariables();</span>
+<span class="fc" id="L458">	}</span>
+
+	public void recordMode(Literal typedLiteral, int maxOccurrences, int maxPerInputVars, boolean thisIsaNoMode) {
+<span class="fc" id="L461">		List&lt;TypeSpec&gt; types = new ArrayList&lt;&gt;(Utils.getSizeSafely(typedLiteral.getArguments()));</span>
+<span class="fc" id="L462">		getTypeList(typedLiteral.getArguments(), types);</span>
+<span class="fc" id="L463">		List&lt;Term&gt; signature = getSignature(typedLiteral.getArguments());</span>
+<span class="pc bpc" id="L464" title="1 of 2 branches missed.">		if (thisIsaNoMode) {</span>
+<span class="nc" id="L465">			disableModeWithTypes(typedLiteral, signature, types);</span>
+		} else {
+<span class="fc" id="L467">			recordModeWithTypes(typedLiteral, signature, types, maxOccurrences, maxPerInputVars);</span>
+		}
+<span class="fc" id="L469">	}</span>
+
+	private void recordModeWithTypes(Literal typedLiteral, List&lt;Term&gt; signature, List&lt;TypeSpec&gt; types, int maxOccurrences, int maxPerInputVars) {
+<span class="pc bpc" id="L472" title="1 of 2 branches missed.">        if (typedLiteral != null ) recordModeWithTypes(typedLiteral.getPredicateNameAndArity(), signature, types, maxOccurrences, maxPerInputVars);</span>
+<span class="fc" id="L473">	}</span>
+	private void recordModeWithTypes(PredicateNameAndArity predicate, List&lt;Term&gt; signature, List&lt;TypeSpec&gt; types, int maxOccurrences, int maxPerInputVars) {
+<span class="pc bpc" id="L475" title="1 of 2 branches missed.">        if ( predicate != null ) {</span>
+<span class="fc" id="L476">            recordPredicatesWithKnownModes(predicate);</span>
+<span class="fc" id="L477">            predicate.getPredicateName().recordMode(signature, types, maxOccurrences, maxPerInputVars);</span>
+        }
+<span class="fc" id="L479">	}</span>
+	private void disableModeWithTypes(Literal typedLiteral, List&lt;Term&gt; signature, List&lt;TypeSpec&gt; types) {
+<span class="nc bnc" id="L481" title="All 2 branches missed.">        if (typedLiteral != null ) disableModeWithTypes(typedLiteral.getPredicateNameAndArity(), signature, types);</span>
+<span class="nc" id="L482">	}</span>
+	private void disableModeWithTypes(PredicateNameAndArity predicate, List&lt;Term&gt; signature, List&lt;TypeSpec&gt; types) {
+<span class="nc bnc" id="L484" title="All 2 branches missed.">        if ( predicate != null ) {</span>
+<span class="nc" id="L485">            recordPredicatesWithDisabledModes(predicate);</span>
+<span class="nc" id="L486">            predicate.getPredicateName().disableMode(signature, types);</span>
+        }
+<span class="nc" id="L488">	}</span>
+
+	////////////////////////  TODO clean up the typeSpec stuff ////////////////////////////////////////////////
+
+	// Collect the argument types in the order they appear in a traversal of the literal's arguments ('types' are only at LEAVES).
+	// TODO: but seems functions also need to be typed for proper operation ...
+	private void getTypeList(List&lt;Term&gt; arguments, List&lt;TypeSpec&gt; typeSpecs) {
+<span class="fc bfc" id="L495" title="All 2 branches covered.">		for (Term spec : arguments) {</span>
+<span class="pc bpc" id="L496" title="1 of 2 branches missed.">			if (spec.typeSpec != null) { typeSpecs.add(spec.typeSpec); } // NOTE: we do NOT want to skip duplicates!</span>
+<span class="nc bnc" id="L497" title="All 2 branches missed.">			else if (spec instanceof Function) {</span>
+<span class="nc" id="L498">				getTypeList(((Function) spec).getArguments(), typeSpecs);</span>
+<span class="nc" id="L499">			} else { Utils.error(&quot;Need all these arguments to be typed: &quot; + arguments + &quot; typeSpecs = &quot; + typeSpecs); }</span>
+<span class="fc" id="L500">		}</span>
+<span class="fc" id="L501">	}</span>
+
+	////////////////////////////////////////////////////////////////////////
+
+<span class="fc" id="L505">	private StringConstant  stringConstantMarker  = null;</span>
+<span class="fc" id="L506">	private NumericConstant numericConstantMarker = null;</span>
+<span class="fc" id="L507">	private Variable        variableMarker        = null;</span>
+
+	public List&lt;Term&gt; getSignature(List&lt;Term&gt; arguments) {
+<span class="pc bpc" id="L510" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(arguments) &lt; 1) { return null; }</span>
+<span class="fc bfc" id="L511" title="All 2 branches covered.">		if (stringConstantMarker == null) {</span>
+<span class="fc" id="L512">			stringConstantMarker  = getStringConstant(&quot;Const&quot;);</span>
+<span class="fc" id="L513">			numericConstantMarker = getNumericConstant(0);</span>
+<span class="fc" id="L514">			variableMarker        = getExternalVariable(&quot;Var&quot;); // Need be an external variable, but seems ok to do so.</span>
+		}
+<span class="fc" id="L516">		List&lt;Term&gt; result = new ArrayList&lt;&gt;(Utils.getSizeSafely(arguments));</span>
+<span class="fc bfc" id="L517" title="All 2 branches covered.">		for (Term arg : arguments) {</span>
+<span class="pc bpc" id="L518" title="1 of 2 branches missed.">			if      (arg instanceof StringConstant)  { result.add(stringConstantMarker);  }</span>
+<span class="pc bpc" id="L519" title="1 of 2 branches missed.">			if      (arg instanceof NumericConstant) { result.add(numericConstantMarker); }</span>
+<span class="pc bpc" id="L520" title="1 of 2 branches missed.">			else if (arg instanceof Variable) {        result.add(variableMarker);        }</span>
+<span class="pc bpc" id="L521" title="1 of 2 branches missed.">			else if (arg instanceof Function) {</span>
+<span class="nc" id="L522">				Function f           = (Function) arg;</span>
+<span class="nc" id="L523">				Function functionSig = getFunction(f.functionName, getSignature(f.getArguments()), f.getTypeSpec());</span>
+<span class="nc" id="L524">				result.add(functionSig);</span>
+			}
+<span class="fc" id="L526">		}</span>
+<span class="fc" id="L527">		return result;</span>
+	}
+
+	// Keep track of the predicates for which modes are known.  For simplicity, use a list since later will want to walk through it and speed is not crucial here.
+	private void recordPredicatesWithKnownModes(PredicateNameAndArity predicateName) {
+<span class="fc bfc" id="L532" title="All 2 branches covered.">		if (!knownModes.contains(predicateName)) {</span>
+<span class="fc" id="L533">            knownModes.add(predicateName);</span>
+        }
+<span class="fc" id="L535">	}</span>
+	
+	// Keep track of the predicates for which modes are disabled.
+	private void recordPredicatesWithDisabledModes(PredicateNameAndArity predicateName) {
+<span class="nc bnc" id="L539" title="All 2 branches missed.">		if (!disallowedModes.contains(predicateName)) {</span>
+<span class="nc" id="L540">			disallowedModes.add(predicateName);</span>
+        }
+<span class="nc" id="L542">	}</span>
+
+	private String standardize(String str, boolean cleanString, boolean hadQuotesOriginally) {
+<span class="fc bfc" id="L545" title="All 2 branches covered.">		if (!cleanString) { return str; }</span>
+<span class="pc bpc" id="L546" title="3 of 4 branches missed.">		if (ignoreCaseOfStringsOtherThanFirstChar &amp;&amp; !hadQuotesOriginally) { return str.toLowerCase(); }</span>
+<span class="fc" id="L547">		return str;</span>
+	}
+	private String standardize(String str, boolean hadQuotesOriginally) {
+<span class="pc bpc" id="L550" title="3 of 4 branches missed.">		if (ignoreCaseOfStringsOtherThanFirstChar &amp;&amp; !hadQuotesOriginally) { return str.toLowerCase(); }</span>
+<span class="fc" id="L551">		return str;</span>
+	}
+	private String standardize(String str) {
+<span class="fc" id="L554">		return standardize(str, false);</span>
+	}
+
+	public PredicateName getPredicateName(String nameRaw) {
+<span class="fc" id="L558">		return getPredicateName(nameRaw, cleanFunctionAndPredicateNames);</span>
+	}
+
+    private PredicateName getPredicateName(String nameRaw, boolean cleanName) {
+<span class="pc bpc" id="L562" title="1 of 2 branches missed.">		String name    = (cleanName ? cleanString(nameRaw) : nameRaw);</span>
+<span class="fc" id="L563">		String stdName = standardize(name); // Hash case-independently.</span>
+<span class="fc" id="L564">		PredicateName hashedValue = predicateNameHash.get(stdName);</span>
+
+<span class="fc bfc" id="L566" title="All 2 branches covered.">		if (hashedValue != null) { return hashedValue; }</span>
+
+<span class="fc" id="L568">		PredicateName result = new PredicateName(name, this); // Store using the first version seen.</span>
+<span class="fc" id="L569">		predicateNameHash.put(stdName, result);</span>
+<span class="pc bpc" id="L570" title="1 of 2 branches missed.">        if (!stdName.equals(name)) {</span>
+            // TAW: This is a bit of a hack to add both the standardized name
+            // TAW: and the non-standard, but cleaned name to the predicateNameHash.
+            // TAW: This resolves an issue that occurs when the ignoreCaseOfStringsOtherThanFirstChar
+            // TAW: is changed after some of the build-in predicate names have been retrieved.
+<span class="nc" id="L575">            predicateNameHash.put(name, result);</span>
+        }
+<span class="fc" id="L577">		return result;</span>
+	}
+
+	public PredicateNameAndArity getPredicate(PredicateName pName, int arity) {
+<span class="fc" id="L581">        return new PredicateNameAndArity(pName, arity);</span>
+    }
+
+	public FunctionName getFunctionName(String nameRaw) {
+<span class="pc bpc" id="L585" title="1 of 2 branches missed.">		String name    = (cleanFunctionAndPredicateNames ? cleanString(nameRaw) : nameRaw);</span>
+<span class="fc" id="L586">		String stdName = standardize(name); // Hash case-independently.</span>
+<span class="fc" id="L587">		FunctionName hashedValue = functionNameHash.get(stdName);</span>
+
+<span class="fc bfc" id="L589" title="All 2 branches covered.">		if (hashedValue != null) { return hashedValue; }</span>
+
+<span class="fc" id="L591">		FunctionName result = new FunctionName(name); // Store using the first version seen.</span>
+<span class="fc" id="L592">		functionNameHash.put(stdName, result);</span>
+<span class="fc" id="L593">		return result;</span>
+	}
+
+	public ConnectiveName getConnectiveName(String name) {
+		// Do not call this since some dashes can appear here: cleanString(nameRaw);
+<span class="fc" id="L598">		String stdName = standardize(name); // Hash case-independently.</span>
+<span class="fc" id="L599">		ConnectiveName hashedValue = connectiveNameHash.get(stdName);</span>
+
+<span class="fc bfc" id="L601" title="All 2 branches covered.">		if (hashedValue != null) { return hashedValue; }</span>
+
+<span class="fc" id="L603">		ConnectiveName result = new ConnectiveName(name); // Store using the first version seen.</span>
+<span class="fc" id="L604">		connectiveNameHash.put(stdName, result);</span>
+<span class="fc" id="L605">		return result;</span>
+	}
+
+	// These are used when a mode only specifies the type and doesn't also include any Terms.  E.g., 'mode: p(+human)'   instead of     'mode: p(+human:x)'
+	public Constant getAnonymousTerm(TypeSpec spec)  {
+<span class="fc" id="L610">		return new StringConstant(this, null, false, spec);</span>
+	}
+
+	public Term getVariableOrConstant(TypeSpec spec, String name) {
+<span class="fc bfc" id="L614" title="All 2 branches covered.">		if (isaConstantType(name)) {</span>
+<span class="fc" id="L615">			return getStringConstant(spec, name);</span>
+		}
+<span class="fc" id="L617">		return getExternalVariable(spec, name, false);</span>
+	}
+
+	// Should this be interpreted as a Constant (or a Variable)?
+	boolean isaConstantType(String name) {
+<span class="pc bpc" id="L622" title="2 of 4 branches missed.">		if (name == null || name.length() &lt; 1) { return false; } // Only variables can be nameless.</span>
+<span class="fc" id="L623">		char char0 = name.charAt(0);</span>
+<span class="fc bfc" id="L624" title="All 2 branches covered.">		if (char0 == '_') { return false; } // Underscore always indicates variable ala' YAP.</span>
+<span class="pc bpc" id="L625" title="3 of 4 branches missed.">		if (doVariablesStartWithQuestionMarks()) { return char0 != '?'; }</span>
+		// Ellipsis in range: is considered a constant
+<span class="pc bpc" id="L627" title="1 of 2 branches missed.">		if (name.equals(&quot;...&quot;)) { return true; }</span>
+<span class="pc bpc" id="L628" title="1 of 2 branches missed.">		switch (char0) {</span>
+			case '&quot;':
+			case '\'':  // Quoted strings are always constants.
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+<span class="nc" id="L640">			case '9': return true;  // Assume this is a number.  TODO confirm by parsing a number?</span>
+			// Underscore always indicates variable ala' YAP.  Now checked above, but leave here regardless.
+		}
+<span class="fc" id="L643">		boolean startsWithLowerCase = Character.isLowerCase(name.charAt(0));</span>
+
+<span class="pc bpc" id="L645" title="1 of 4 branches missed.">		if (usingStdLogicNotation()) { return !startsWithLowerCase; }</span>
+<span class="fc" id="L646">		return startsWithLowerCase;</span>
+	}
+
+	public StringConstant getStringConstant(String name) {
+<span class="fc" id="L650">		return getStringConstant(null, name);</span>
+	}
+
+
+	private StringConstant getStringConstant(TypeSpec spec, String name) {
+		// If false, will not clean and will always wrap in quote marks EVEN IF NO QUOTES ORIGINALLY.
+<span class="fc" id="L656">		return getStringConstant(spec, name, true);</span>
+	}
+
+
+	public StringConstant getStringConstant(TypeSpec spec, String name, boolean cleanString) {
+<span class="pc bpc" id="L661" title="1 of 4 branches missed.">		return getStringConstant(spec, (doVariablesStartWithQuestionMarks() || !cleanString ? name : Utils.setFirstCharToRequestedCase(name, usingStdLogicNotation())), cleanString, true);</span>
+	}
+
+	private StringConstant getStringConstant(TypeSpec spec, String nameRaw, boolean cleanString, boolean complainIfWrongCase) {
+
+<span class="pc bpc" id="L666" title="1 of 4 branches missed.">		if (cleanString &amp;&amp; !isaConstantType(nameRaw)) {</span>
+<span class="nc" id="L667">			Utils.error(&quot;Since variableIndicator = &quot; + variableIndicator  + &quot;, '&quot; + nameRaw + &quot;' is not a constant.&quot;);</span>
+			// The caller can handler the error (e.g., the parser might want to report the line number).
+<span class="nc" id="L669">			return null;</span>
+		}
+
+<span class="fc" id="L672">		boolean hadQuotesOriginally = false;</span>
+		// Handle quote marks.
+<span class="pc bpc" id="L674" title="3 of 6 branches missed.">		if (nameRaw != null &amp;&amp; nameRaw.length() &gt; 0 &amp;&amp; (nameRaw.charAt(0) == '&quot;' || (FileParser.allowSingleQuotes &amp;&amp; nameRaw.charAt(0) == '\''))) {</span>
+			// Treat x, 'x', 'X', &quot;x&quot;, and &quot;X&quot; as the same (assuming that lowercaseMeansVariable=false; otherwise the 'bare' x should be X; also ignoreCaseOfStringsOtherThanFirstChar=false means case does matter).
+<span class="nc" id="L676">			char lastChar = nameRaw.charAt(nameRaw.length() - 1);</span>
+<span class="nc bnc" id="L677" title="All 2 branches missed.">			if (lastChar != '&quot;' &amp;&amp; (!FileParser.allowSingleQuotes || lastChar != '\'')) { </span>
+<span class="nc" id="L678">				Utils.warning(&quot;\nSeems maybe there should be a quote mark at the end of\n  &quot; + nameRaw + &quot;\nbut read '&quot; + lastChar + &quot;'.&quot;);</span>
+			} else {
+<span class="nc" id="L680">				nameRaw = nameRaw.substring(1, nameRaw.length() - 1); // Drop the first and last characters (i.e., the quote marks).</span>
+<span class="nc" id="L681">				hadQuotesOriginally = true;</span>
+			}
+		}
+
+<span class="fc bfc" id="L685" title="All 2 branches covered.">		String name = (cleanString ? cleanString(nameRaw, hadQuotesOriginally) : nameRaw);</span>
+<span class="pc bpc" id="L686" title="1 of 2 branches missed.">		if (name == null)      { name = &quot;nullString&quot;;  }</span>
+
+<span class="fc" id="L688">		String         stdName     = standardize(name, cleanString, hadQuotesOriginally); // Hash case-independently.</span>
+<span class="fc" id="L689">		StringConstant hashedValue = stringConstantHash.get(stdName);</span>
+<span class="fc bfc" id="L690" title="All 2 branches covered.">		if (hashedValue != null) {</span>
+<span class="pc bpc" id="L691" title="1 of 2 branches missed.">			if (spec != null) { hashedValue.setTypeSpec(spec); }</span>
+<span class="fc" id="L692">			return hashedValue;</span>
+		}
+
+<span class="fc bfc" id="L695" title="All 2 branches covered.">		StringConstant result = new StringConstant(this, name, !cleanString, spec); // Use the first name encountered.</span>
+<span class="fc" id="L696">		stringConstantHash.put(stdName, result);</span>
+<span class="fc" id="L697">		return result;</span>
+	}
+
+	private int chooseStringForDouble(double value) { // NOTE: need to extend to handle long's.
+<span class="fc" id="L701">		int valueAsInt = (int) value;</span>
+
+<span class="fc bfc" id="L703" title="All 2 branches covered.">		if (Utils.diffDoubles(value, valueAsInt)) { // The integer value is sufficiently different than the double, so use the double.</span>
+<span class="fc" id="L704">			return NumericConstant.isaDouble;</span>
+		}
+<span class="fc" id="L706">		return     NumericConstant.isaInteger;</span>
+	}
+
+	// Uniquely store numbers (which will waste memory if lots of numbers ...).  Notice that matching will be as exact as the string rep, which seems reasonable.
+	// It is silly to duplicate this code just due to the type of the number, but clean up later.
+	public NumericConstant getNumericConstant(int value) {
+<span class="fc" id="L712">		return getNumericConstant(null, value);</span>
+	}
+
+	NumericConstant getNumericConstant(TypeSpec spec, int value) {
+<span class="fc" id="L716">		return getNumericConstant(spec, value, NumericConstant.isaInteger, Integer.toString(value)); // So '1' and '1.0' match, convert everything to a double.</span>
+	}
+	NumericConstant getNumericConstant(TypeSpec spec, long value) {
+<span class="nc" id="L719">		return getNumericConstant(spec, value, NumericConstant.isaLong,       Long.toString(value));</span>
+	}
+	public NumericConstant getNumericConstant(double value) {
+<span class="fc" id="L722">		return getNumericConstant(null, value);</span>
+	}
+	public NumericConstant getNumericConstant(TypeSpec spec, double value) {
+<span class="fc" id="L725">		int ncType = chooseStringForDouble(value);</span>
+<span class="fc bfc" id="L726" title="All 2 branches covered.">		return getNumericConstant(spec, value, ncType, (ncType == NumericConstant.isaInteger ? Integer.toString((int) value) : Double.toString(value)));</span>
+	}
+
+	NumericConstant getNumericConstant(TypeSpec spec, float value) {
+<span class="nc" id="L730">		return getNumericConstant(spec, (double) value);</span>
+	}
+	private NumericConstant getNumericConstant(TypeSpec spec, Number value, int type, String stringVersion) {
+<span class="fc" id="L733">		String stdName = standardize(stringVersion); // Hash case-independently, even if a number (could use scientific notation).</span>
+<span class="fc" id="L734">		NumericConstant hashedValue = numericConstantHash.get(stdName);</span>
+
+<span class="fc bfc" id="L736" title="All 2 branches covered.">		if (hashedValue != null) {</span>
+<span class="pc bpc" id="L737" title="1 of 2 branches missed.">			if (spec != null) { hashedValue.setTypeSpec(spec); }</span>
+<span class="fc" id="L738">			return hashedValue; }</span>
+
+<span class="fc" id="L740">		NumericConstant result = new NumericConstant(this, value, type, spec);</span>
+<span class="fc" id="L741">		numericConstantHash.put(stdName, result);</span>
+<span class="fc" id="L742">		return result;</span>
+	}
+
+	////////////////////// Type Ranges ////////////////////
+
+	public void recordPossibleTypes(String categoryRaw, List&lt;? extends Term&gt;possibleValues) {
+<span class="fc" id="L748">		String category       = cleanString(categoryRaw);</span>
+<span class="fc" id="L749">		String stdName        = standardize(category); // Hash case-independently.</span>
+<span class="fc" id="L750">		Type   categoryAsType = isaHandler.getIsaType(stdName);</span>
+
+<span class="fc" id="L752">		Set&lt;Term&gt; oldValue = getKnownConstantsOfThisType().get(categoryAsType);</span>
+<span class="pc bpc" id="L753" title="1 of 2 branches missed.">		if (oldValue != null) { Utils.error(&quot;Have already specified a list of possible values for &quot; + categoryAsType</span>
+												+ &quot;.  The old values: &quot; + oldValue + &quot; and the new: &quot; + possibleValues + &quot;.&quot;); }
+
+		// Confirm no duplicates in this list.  This is O(n^2) but these lists shouldn't be too long ...
+<span class="fc" id="L757">		int dups = 0;</span>
+<span class="fc" id="L758">		Set&lt;Term&gt; duplicated = null;</span>
+<span class="pc bpc" id="L759" title="3 of 6 branches missed.">		for (Term c : possibleValues) if (duplicated == null || !duplicated.contains(c)) {</span>
+			// The above confirms there were no previous constants of this type, but still need to check that none of these constants are of some other type.
+<span class="fc" id="L761">			int count = 0;</span>
+<span class="fc bfc" id="L762" title="All 4 branches covered.">			for (Term d : possibleValues) if (c.equals(d)) { count++; }</span>
+<span class="pc bpc" id="L763" title="1 of 2 branches missed.">			if (count &gt; 1) {</span>
+<span class="nc bnc" id="L764" title="All 2 branches missed.">				if (duplicated == null) { duplicated = new HashSet&lt;&gt;(4); }</span>
+<span class="nc" id="L765">				duplicated.add(c);</span>
+<span class="nc" id="L766">				Utils.println(&quot;  Warning: multiple copies (&quot; + count + &quot;) of '&quot; + c + &quot;' in types for &quot; + category + &quot; = &quot; + possibleValues + &quot;.  Discarding the duplicates.&quot;);</span>
+<span class="nc" id="L767">				dups += count;</span>
+			}
+		}
+<span class="pc bpc" id="L770" title="1 of 2 branches missed.">		List&lt;Term&gt; cleanedPossibleValues = (dups &gt; 0 ? null : new ArrayList&lt;&gt;(possibleValues));</span>
+<span class="pc bpc" id="L771" title="1 of 2 branches missed.">		if (dups &gt; 0) {</span>
+<span class="nc" id="L772">			cleanedPossibleValues = new ArrayList&lt;&gt;(possibleValues.size() - dups);</span>
+<span class="nc bnc" id="L773" title="All 4 branches missed.">			for (Term c : possibleValues) if (!duplicated.contains(c)) {</span>
+<span class="nc bnc" id="L774" title="All 2 branches missed.">				if (c == null) { Utils.error(&quot;This should not happen: &quot; + possibleValues); }</span>
+<span class="nc" id="L775">				cleanedPossibleValues.add(c);</span>
+			}
+
+			// Now need to add ONE copy of all the duplicated items.  TODO - this loses order, so if that matters, add the FIRST duplicate and mark in a 2nd hashMap.
+<span class="nc" id="L779">			cleanedPossibleValues.addAll(duplicated);</span>
+		}
+<span class="fc bfc" id="L781" title="All 2 branches covered.">		for (Term c : cleanedPossibleValues) { addNewConstantOfThisType(c, categoryAsType);	}</span>
+<span class="fc" id="L782">	}</span>
+
+	/*
+	 * Retrieves the constants of the given type. Inheritance is not
+	 * considered when looking at the types, so the types are exact.
+	 *
+	 * @param type The type of the constants you want to retrieve.
+	 * @return The constants of exactly the given type, as a hash map of
+	 *         something.
+	 */
+	public Set&lt;Term&gt; getConstantsOfExactlyThisType(Type type) {
+<span class="fc" id="L793">	    return getKnownConstantsOfThisType().get(type);</span>
+	}
+
+	/*
+	 * Retrieves the constants of the given type. Inheritance is not
+	 * considered when looking at the types, so the types are exact.
+     * @return The constants of exactly the given type as a list, or null if
+	 *         there are no such constants.  A FRESH list is returned.
+	 */
+	Set&lt;Term&gt; getConstantsOfExactlyThisTypeAsList(Type type) { // TODO if this is too slow, keep a HashSet AND a list version (i.e., the usual time-space tradeoff).
+<span class="nc" id="L803">	    Set&lt;Term&gt; types = getKnownConstantsOfThisType().get(type);</span>
+<span class="nc bnc" id="L804" title="All 2 branches missed.">	    if (types == null) { return null; }</span>
+<span class="nc" id="L805">	    Set&lt;Term&gt; result =  new HashSet&lt;&gt;(4);</span>
+<span class="nc" id="L806">	    result.addAll(types);</span>
+<span class="nc" id="L807">	    return result;</span>
+	}
+
+	public void addNewConstantOfThisType(Term constant, Type type) {
+<span class="fc" id="L811">		addNewConstantOfThisType(constant, type, true);</span>
+<span class="fc" id="L812">	}</span>
+	private void addNewConstantOfThisType(Term constant, Type type, boolean callAddISA) {
+<span class="fc" id="L814">		Type constantAsType = isaHandler.getIsaType(constant);</span>
+<span class="fc" id="L815">		isaHandler.addISA(constantAsType, type);</span>
+<span class="fc" id="L816">		Set&lt;Term&gt; existingConstantsOfThisType = getConstantsOfExactlyThisType(type);</span>
+
+<span class="fc bfc" id="L818" title="All 2 branches covered.">		if (existingConstantsOfThisType == null) { // Create this if needed.</span>
+<span class="fc" id="L819">			existingConstantsOfThisType = new HashSet&lt;&gt;(32);</span>
+<span class="fc" id="L820">			getKnownConstantsOfThisType().put(type, existingConstantsOfThisType);</span>
+		}
+<span class="fc bfc" id="L822" title="All 2 branches covered.">		if (existingConstantsOfThisType.contains(constant)) { return; } // Already in the map.</span>
+<span class="fc" id="L823">		existingConstantsOfThisType.add(constant);</span>
+<span class="fc" id="L824">		setTypeOfConstant(constant, type, callAddISA); // Avoid a circularity.</span>
+<span class="fc" id="L825">	}</span>
+
+	void addConstantToISA(Term childAsStringConstant, Type childType, Type parentType) {
+<span class="fc" id="L828">		isaHandler.addISA(childType, parentType);</span>
+<span class="fc" id="L829">		addNewConstantOfThisType(childAsStringConstant, parentType, false);</span>
+<span class="fc" id="L830">	}</span>
+
+	public List&lt;Type&gt; getTypesOfConstant(Term constant, boolean complainIfNull) {
+<span class="fc" id="L833">		List&lt;Type&gt; result = constantToTypesMap.get(constant);</span>
+<span class="pc bpc" id="L834" title="1 of 4 branches missed.">		if (result == null &amp;&amp; complainIfNull) { Utils.error(&quot;Cannot find type(s) of '&quot; + constant + &quot;' in &quot; + constantToTypesMap); }</span>
+<span class="fc" id="L835">		return result;</span>
+	}
+
+	private void setTypeOfConstant(Term constant, Type type, boolean callAddIsa) {
+<span class="fc" id="L839">		List&lt;Type&gt; oldTypes = getTypesOfConstant(constant, false);</span>
+
+<span class="pc bpc" id="L841" title="1 of 4 branches missed.">		if (oldTypes != null &amp;&amp; !oldTypes.contains(type)) {</span>
+<span class="fc" id="L842">			oldTypes.add(type);</span>
+		}
+<span class="fc bfc" id="L844" title="All 2 branches covered.">		if (oldTypes == null) {</span>
+<span class="fc" id="L845">			List&lt;Type&gt; types = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L846">			types.add(type);</span>
+<span class="fc" id="L847">			constantToTypesMap.put(constant, types);</span>
+		}
+<span class="pc bpc" id="L849" title="1 of 2 branches missed.">		if (callAddIsa) { isaHandler.addISA(constant, type); } // Keep the ISA hetrarchy and the information about constants consistent.  Also, avoid a circularity (wouldn't be an infinite loop due to other checking, but nevertheless would waste some cycles).</span>
+<span class="fc" id="L850">	}</span>
+
+	public void pushVariableHash() {
+<span class="pc bpc" id="L853" title="1 of 2 branches missed.">		if (variableHash == null) { Utils.error(&quot;variableHash should not be null!&quot;); }</span>
+<span class="fc" id="L854">		stackOfVariableHashes.push(variableHash);</span>
+<span class="fc" id="L855">		variableHash = new HashMap&lt;&gt;(16); // Assume these are small, since used for renaming, etc.</span>
+<span class="fc" id="L856">	}</span>
+	public void popVariableHash() {
+<span class="pc bpc" id="L858" title="1 of 2 branches missed.">		if (stackOfVariableHashes != null) { variableHash = stackOfVariableHashes.pop(); } // Revert to previous.</span>
+<span class="nc" id="L859">		else { Utils.error(&quot;stackOfVariableHashes should not be null!&quot;); }</span>
+<span class="fc" id="L860">	}</span>
+
+	private Variable pushVariable(TypeSpec spec, String name) {
+<span class="fc" id="L863">		checkForValidVariableName(name);</span>
+<span class="pc bpc" id="L864" title="2 of 6 branches missed.">		if (name != null &amp;&amp; name.length() &gt; 0 &amp;&amp; name.charAt(0) == '_') { return new Variable(this, name, overallCounter++, spec); } // Ala' YAP Prolog, variables that start with underscores are always unique.</span>
+<span class="fc" id="L865">		Stack&lt;Variable&gt; varStack = variableHash.get(name);</span>
+<span class="pc bpc" id="L866" title="1 of 2 branches missed.">		if (varStack != null) {</span>
+<span class="nc" id="L867">			Variable variable = new Variable(this, name, overallCounter++, spec);</span>
+<span class="nc" id="L868">			varStack.push(variable);</span>
+<span class="nc" id="L869">			return variable;</span>
+		}
+<span class="fc" id="L871">		return getExternalVariable(spec, name);</span>
+	}
+
+	private void checkForValidVariableName(String name) {
+<span class="pc bpc" id="L875" title="2 of 4 branches missed.">		if (name == null || name.length() &lt; 1) { return; }</span>
+<span class="fc bfc" id="L876" title="All 2 branches covered.">		if (name.charAt(0) == '_') { return; } // Allow strings starting with an underscore to be variable names ala' YAP.</span>
+<span class="pc bpc" id="L877" title="1 of 2 branches missed.">		if (doVariablesStartWithQuestionMarks()) {</span>
+<span class="nc bnc" id="L878" title="All 2 branches missed.">			if (name.charAt(0) !='?') { Utils.error(&quot;Variables need to start with a '?' but you provided: &quot; + name); }</span>
+<span class="pc bpc" id="L879" title="3 of 4 branches missed.">		} else if (usingStdLogicNotation() &amp;&amp; Character.isUpperCase(name.charAt(0))) {</span>
+<span class="nc" id="L880">			Utils.error(&quot;Variables need to start with a lower-case letter but you provided: &quot; + name);</span>
+<span class="pc bpc" id="L881" title="2 of 4 branches missed.">		} else if (usingPrologNotation()   &amp;&amp; Character.isLowerCase(name.charAt(0))) {</span>
+<span class="nc" id="L882">			Utils.error(&quot;Variables need to start with an upper-case letter but you provided: &quot; + name);</span>
+		}
+<span class="fc" id="L884">	}</span>
+
+	private void  popVariable(String name) {
+<span class="nc" id="L887">		Stack&lt;Variable&gt; varStack = variableHash.get(name);</span>
+<span class="nc bnc" id="L888" title="All 2 branches missed.">		if (varStack != null) { varStack.pop(); }</span>
+<span class="nc" id="L889">	}</span>
+
+	/*
+	 * Rename all the variables in this sentence starting at 'A'.
+	 */
+	public Sentence renameAllVariables(Sentence s) {
+<span class="fc" id="L895">		Collection&lt;Variable&gt; vars = s.collectAllVariables();</span>
+<span class="pc bpc" id="L896" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(vars) &lt; 1) { return s; }</span>
+<span class="fc" id="L897">		BindingList bl = renameAllVariables(vars, s);</span>
+<span class="fc" id="L898">		return s.applyTheta(bl.theta);</span>
+	}
+
+	BindingList renameAllVariables(Collection&lt;Variable&gt; vars, AllOfFOPC owner) { // If owner != null, variables that only appear once are renamed to &quot;_&quot;;
+<span class="pc bpc" id="L902" title="1 of 2 branches missed.">		if (vars == null) { return null; }</span>
+<span class="fc" id="L903">		BindingList bl = new BindingList();</span>
+<span class="fc" id="L904">		resetVarCounters();</span>
+<span class="fc bfc" id="L905" title="All 2 branches covered.">		for (Variable var : vars) {</span>
+<span class="fc bfc" id="L906" title="All 2 branches covered.">			Variable v = (countVarOccurrencesInFOPC(var, owner) == 1 ? getExternalVariable(var.getTypeSpec(), &quot;_&quot;, true) :  getNewGeneratedVariable(true));</span>
+<span class="fc" id="L907">			bl.addBinding(var, v);</span>
+<span class="fc" id="L908">		}</span>
+<span class="fc" id="L909">		resetVarCounters();</span>
+<span class="fc" id="L910">		return bl;</span>
+	}
+
+	private int countVarOccurrencesInFOPC(Variable v, AllOfFOPC fopc) {
+<span class="pc bpc" id="L914" title="1 of 4 branches missed.">		if (fopc == null || v == null) { return 0; }</span>
+<span class="fc" id="L915">		return fopc.countVarOccurrencesInFOPC(v);</span>
+	}
+
+	public String convertToVarString(String name) {
+<span class="pc bpc" id="L919" title="1 of 2 branches missed.">		if (doVariablesStartWithQuestionMarks()) {</span>
+<span class="nc bnc" id="L920" title="All 4 branches missed.">			if (name != null &amp;&amp; name.charAt(0) == '?') { return name; }</span>
+<span class="nc" id="L921">			return &quot;?&quot; + name;</span>
+		}
+<span class="fc" id="L923">		return Utils.setFirstCharToRequestedCase(name, usingPrologNotation());</span>
+	}
+	public Variable getExternalVariable(String name) {
+<span class="fc" id="L926">		return getExternalVariable(name, false);</span>
+	}
+	private Variable getExternalVariable(String name, boolean createNewVariable) {
+<span class="fc" id="L929">		return getExternalVariable(null, convertToVarString(name), createNewVariable);</span>
+	}
+	Variable getExternalVariable(TypeSpec spec, String name, boolean createNewVariable) {
+<span class="pc bpc" id="L932" title="2 of 8 branches missed.">		if (createNewVariable || (name != null &amp;&amp; name.length() &gt; 0 &amp;&amp; name.charAt(0) == '_')) { return pushVariable(spec, name); } // A variable of the form '_' is always a NEW variable.</span>
+<span class="fc" id="L933">		return getExternalVariable(spec, name);</span>
+	}
+	private Variable getExternalVariable(TypeSpec spec, String name) {
+<span class="fc" id="L936">		Variable variable = help_getVariable(spec, name, false);</span>
+<span class="pc bpc" id="L937" title="1 of 2 branches missed.">		if (name == null) { Utils.waitHere(&quot;getVariable: name=null&quot;); }</span>
+<span class="fc" id="L938">        variableNamesSeen.add(name);</span>
+<span class="fc" id="L939">		return variable;</span>
+	}
+
+	public Variable getGeneratedVariable(String name, boolean createNewVariable) {
+<span class="fc" id="L943">		return getGeneratedVariable(null, convertToVarString(name), createNewVariable);</span>
+	}
+	Variable getGeneratedVariable(TypeSpec spec, String name, boolean createNewVariable) {
+<span class="pc bpc" id="L946" title="3 of 8 branches missed.">		if (createNewVariable || (name != null &amp;&amp; name.length() &gt; 0 &amp;&amp; name.charAt(0) == '_')) { return pushVariable(spec, name); } // A variable of the form '_' is always a NEW variable.</span>
+<span class="fc" id="L947">		return getGeneratedVariable(spec, name);</span>
+	}
+	private Variable getGeneratedVariable(TypeSpec spec, String name) {
+<span class="fc" id="L950">		Variable var = help_getVariable(spec, name, true);</span>
+<span class="pc bpc" id="L951" title="1 of 2 branches missed.">		if (name == null) { Utils.waitHere(&quot;getGeneratedVariable: name=null&quot;); }</span>
+<span class="fc" id="L952">		return var;</span>
+	}
+
+	public Variable getNewUnamedVariable() {
+<span class="fc" id="L956">		return new Variable(this, null, overallCounter++, null, true); // These do not need to be hashed.</span>
+	}
+	public Variable getNewNamedGeneratedVariable() {
+<span class="fc" id="L959">		return getNewGeneratedVariable(false);</span>
+	}
+
+	private Variable help_getVariable(TypeSpec spec, String name, boolean generatedVar) {
+<span class="fc" id="L963">		Stack&lt;Variable&gt; hashedStackOfValues = variableHash.get(name); // TODO - could have one hash for each type of variable, but seems ok to merge.</span>
+
+<span class="pc bpc" id="L965" title="1 of 4 branches missed.">		if (hashedStackOfValues != null &amp;&amp; !hashedStackOfValues.empty()) {</span>
+<span class="fc" id="L966">			Variable var = hashedStackOfValues.peek();  // Return the top of the stack.</span>
+<span class="fc bfc" id="L967" title="All 2 branches covered.">			if (spec != null) { var.setTypeSpec(spec); }</span>
+<span class="fc" id="L968">			return var;</span>
+		}
+<span class="fc" id="L970">		checkForValidVariableName(name);</span>
+
+<span class="fc" id="L972">		Variable        variable = new Variable(this, name, overallCounter++, spec, generatedVar);</span>
+<span class="fc" id="L973">		Stack&lt;Variable&gt; stack    = new Stack&lt;&gt;();</span>
+<span class="fc" id="L974">		stack.push(variable);</span>
+
+<span class="fc" id="L976">		variableHash.put(name, stack);</span>
+
+<span class="fc" id="L978">        return variable;</span>
+	}
+
+	void stackTheseVariables(Collection&lt;Variable&gt; variables) { // This is used when entering the scope of a ForAll or Exists.
+<span class="nc bnc" id="L982" title="All 2 branches missed.">		for (Variable var : variables) { pushVariable(var.typeSpec, var.getName()); }</span>
+<span class="nc" id="L983">	}</span>
+
+	public void unstackTheseVariables(Collection&lt;Variable&gt; variables) { // This is used when exiting the scope of a ForAll or Exists.
+<span class="nc bnc" id="L986" title="All 2 branches missed.">		for (Variable var : variables) { popVariable(var.getName()); }</span>
+<span class="nc" id="L987">	}</span>
+
+	// Clear the stack of variables &quot;in view&quot; - so all new variable strings will get fresh instances.
+	public void resetAllVariables() {
+<span class="pc bpc" id="L991" title="1 of 2 branches missed.">		if (variableHash != null) {</span>
+<span class="fc" id="L992">			variableHash.clear();</span>
+		}
+<span class="fc" id="L994">	}</span>
+
+	private Variable getNewGeneratedVariable(boolean dontcheck_variableNamesSeen) { // Note: 'a-z' not the same as dealing with base 10 and '0-9' since the allowed string 'aa' is different from 'a' whereas '00' is an illegal digit string.
+		while (true) { // NOTE: if alphabet.length != 24, all those calc's will be off, though should be ok if there are MORE than 24 chars - in that case, we'd just skip some combo's.
+<span class="fc" id="L998">			int firstChar    = (int) (varCounter % 24); // Remember that 'l' and 'o' are dropped.</span>
+			// 'l' and 'o' dropped since they are confusing (look like '1' and '0').
+<span class="fc" id="L1000">			String alphabet = &quot;abcdefghijkmnpqrstuvwxyz&quot;;</span>
+<span class="fc" id="L1001">			String nameToUse = alphabet.substring(firstChar, firstChar+1);</span>
+<span class="pc bpc" id="L1002" title="1 of 2 branches missed.">			if      (varCounter &lt;  24) {</span>
+
+			}
+<span class="nc bnc" id="L1005" title="All 2 branches missed.">			else if (varCounter &lt; 576) {</span>
+<span class="nc" id="L1006">				int secondChar  = (int) (varCounter /    24); // Once we've gone from 'a' to 'z', go to 'aa' to 'az' to 'zz' then from 'aaa' to 'aaz' to 'zzz' (and maybe one or more cycles), after which go to 'aN' where N indicates the number of repeats.</span>
+<span class="nc" id="L1007">				nameToUse = alphabet.substring(secondChar-1, secondChar) + nameToUse;</span>
+<span class="nc" id="L1008">			}</span>
+<span class="nc bnc" id="L1009" title="All 2 branches missed.">			else if (varCounter &lt; 13824) {</span>
+<span class="nc" id="L1010">				int secondChar = (int) ((varCounter /     24) % 24);</span>
+<span class="nc" id="L1011">				int thirdChar  = (int) ( varCounter /    576);</span>
+<span class="nc" id="L1012">				nameToUse =   alphabet.substring(thirdChar-1, thirdChar)</span>
+<span class="nc" id="L1013">							+ alphabet.substring(secondChar,  secondChar+1) + nameToUse;</span>
+<span class="nc" id="L1014">			}</span>
+<span class="nc bnc" id="L1015" title="All 2 branches missed.">			else if (varCounter &lt; 331776) {</span>
+<span class="nc" id="L1016">				int secondChar = (int) ((varCounter /     24) % 24);</span>
+<span class="nc" id="L1017">				int thirdChar  = (int) ((varCounter /    576) % 24);</span>
+<span class="nc" id="L1018">				int fourthChar = (int) ( varCounter /  13824);</span>
+<span class="nc" id="L1019">				nameToUse =   alphabet.substring(fourthChar-1, fourthChar)</span>
+<span class="nc" id="L1020">							+ alphabet.substring(thirdChar,    thirdChar+1)</span>
+<span class="nc" id="L1021">							+ alphabet.substring(secondChar,   secondChar+1) + nameToUse;</span>
+<span class="nc" id="L1022">			}</span>
+<span class="nc bnc" id="L1023" title="All 2 branches missed.">			else if (varCounter &lt; 7962624) {</span>
+<span class="nc" id="L1024">				int secondChar = (int) ((varCounter /     24) % 24);</span>
+<span class="nc" id="L1025">				int thirdChar  = (int) ((varCounter /    576) % 24);</span>
+<span class="nc" id="L1026">				int fourthChar = (int) ((varCounter /  13824) % 24);</span>
+<span class="nc" id="L1027">				int fifthChar  = (int) ( varCounter / 331776);</span>
+<span class="nc" id="L1028">				nameToUse =   alphabet.substring(fifthChar-1, fifthChar)</span>
+<span class="nc" id="L1029">							+ alphabet.substring(fourthChar,  fourthChar+1)</span>
+<span class="nc" id="L1030">							+ alphabet.substring(thirdChar,   thirdChar+1)</span>
+<span class="nc" id="L1031">							+ alphabet.substring(secondChar,  secondChar+1) + nameToUse;</span>
+<span class="nc" id="L1032">			}</span>
+<span class="nc bnc" id="L1033" title="All 2 branches missed.">			else if (varCounter &lt; 191102976) {</span>
+<span class="nc" id="L1034">				int secondChar = (int) ((varCounter  /      24)) % 24;</span>
+<span class="nc" id="L1035">				int thirdChar  = (int) ((varCounter  /     576)) % 24;</span>
+<span class="nc" id="L1036">				int fourthChar = (int) ((varCounter  /   13824)) % 24;</span>
+<span class="nc" id="L1037">				int fifthChar  = (int) ((varCounter  /  331776)) % 24;</span>
+<span class="nc" id="L1038">				int sixthChar  = (int) ( varCounter  / 7962624);</span>
+<span class="nc" id="L1039">				nameToUse =   alphabet.substring(sixthChar-1, sixthChar)</span>
+<span class="nc" id="L1040">							+ alphabet.substring(fifthChar,   fifthChar+1)</span>
+<span class="nc" id="L1041">							+ alphabet.substring(fourthChar,  thirdChar+1)</span>
+<span class="nc" id="L1042">							+ alphabet.substring(thirdChar,   thirdChar+1)</span>
+<span class="nc" id="L1043">							+ alphabet.substring(secondChar,  secondChar+1) + nameToUse;</span>
+<span class="nc" id="L1044">			}</span>
+<span class="nc" id="L1045">			else { nameToUse += varCounter; }</span>
+<span class="fc" id="L1046">			String properCase = convertToVarString(nameToUse);</span>
+<span class="fc" id="L1047">			varCounter++;</span>
+<span class="pc bpc" id="L1048" title="1 of 4 branches missed.">			if (dontcheck_variableNamesSeen || !variableNamesSeen.contains(properCase)) { // Make sure no inadvertant name collisions.  TODO - could also use this to filter out bad four-letter words (but I'd rather not type up such a list ...).</span>
+<span class="fc" id="L1049">				return getGeneratedVariable(null, properCase);</span>
+			}
+<span class="nc" id="L1051">		}</span>
+	}
+
+	Term createNewSkolem(List&lt;Variable&gt; outerUniversalVars, TypeSpec typeSpec) {
+<span class="nc bnc" id="L1055" title="All 2 branches missed.">		if (outerUniversalVars == null) {</span>
+<span class="nc bnc" id="L1056" title="All 2 branches missed.">			if (doVariablesStartWithQuestionMarks()) { return getStringConstant(typeSpec, &quot;?skolem&quot; + countOfSkolemFunctions++); }</span>
+<span class="nc bnc" id="L1057" title="All 2 branches missed.">			return getStringConstant(typeSpec, (usingStdLogicNotation() ? &quot;Skolem&quot; : &quot;skolem&quot;) + countOfSkolemFunctions++);  // If no arguments, only need a constant.</span>
+		}
+<span class="nc" id="L1059">		FunctionName fName = getFunctionName(&quot;skolem&quot; + countOfSkolemFunctions++);</span>
+<span class="nc" id="L1060">		List&lt;Term&gt; arguments = new ArrayList&lt;&gt;(outerUniversalVars.size());</span>
+<span class="nc" id="L1061">		arguments.addAll(outerUniversalVars);</span>
+<span class="nc" id="L1062">		Function result = this.getFunction(fName, arguments, null);</span>
+<span class="nc" id="L1063">		result.typeSpec = typeSpec;</span>
+<span class="nc" id="L1064">		return result;</span>
+	}
+
+<span class="fc" id="L1067">	private final Map&lt;String,SetParamInfo&gt; hashOfSetParameters = new HashMap&lt;&gt;(4);</span>
+	// If doing joint inference, one target would be evidence for other predicate
+	// So it may have more than one mode for target. This prevents the error check.
+
+	// TODO(@hayesall): `dontComplainIfMoreThanOneTargetModes` is declared false, but `RDN.WILLSetup` initializes `stringHandler.dontComplainIfMoreThanOneTargetModes = true;`
+<span class="fc" id="L1072">	public boolean dontComplainIfMoreThanOneTargetModes = false;</span>
+
+	public void recordSetParameter(String paramName, String paramValue) {
+<span class="fc" id="L1075">		hashOfSetParameters.put(paramName, new SetParamInfo(paramValue));</span>
+<span class="fc" id="L1076">	}</span>
+
+	public String getParameterSetting(String paramName) {
+		// TODO(@hayesall): This `getParameterSetting` is used extremely frequently through the codebase.
+<span class="fc" id="L1080">		SetParamInfo lookup = hashOfSetParameters.get(paramName);</span>
+<span class="fc bfc" id="L1081" title="All 2 branches covered.">		if (lookup == null) { return null; }</span>
+<span class="fc" id="L1082">		return lookup.parameterValue;</span>
+	}
+
+	boolean usingStrictEqualsForFunctions() {
+<span class="nc" id="L1086">		return useStrictEqualsForFunctions;</span>
+	}
+
+	void setUseStrictEqualsForFunctions(boolean value) {
+<span class="nc" id="L1090">		useStrictEqualsForFunctions = value;</span>
+<span class="nc" id="L1091">	}</span>
+
+	public  ClauseOptimiser getClauseOptimizer() {
+<span class="fc bfc" id="L1094" title="All 2 branches covered.">        if ( clauseOptimizer == null ) {</span>
+<span class="fc" id="L1095">            clauseOptimizer = new ClauseOptimiser();</span>
+        }
+<span class="fc" id="L1097">        return clauseOptimizer;</span>
+    }
+
+	private String cleanString(String str) {
+<span class="fc" id="L1101">    	return cleanString(str, false);</span>
+    }
+    private String cleanString(String str, boolean hadQuotesOriginally) {
+<span class="fc" id="L1104">    	return Utils.cleanString(str, this, hadQuotesOriginally);</span>
+    }
+
+	StringConstant getAlphabeticalVariableName(int variableIndex) {
+<span class="fc" id="L1108">        StringBuilder stringBuilder = new StringBuilder();</span>
+
+        while (true) {
+<span class="fc" id="L1111">            int mod = variableIndex % alphabet2Size;</span>
+<span class="fc" id="L1112">            stringBuilder.append(alphabet2[mod]);</span>
+<span class="fc" id="L1113">            variableIndex -= mod;</span>
+<span class="pc bpc" id="L1114" title="1 of 2 branches missed.">            if (variableIndex == 0) {</span>
+<span class="fc" id="L1115">                break;</span>
+            }
+<span class="nc" id="L1117">            variableIndex /= alphabet2Size;</span>
+<span class="nc" id="L1118">        }</span>
+
+
+        String anonymousName;
+
+<span class="pc bpc" id="L1123" title="1 of 2 branches missed.">        if (doVariablesStartWithQuestionMarks()) {</span>
+<span class="nc" id="L1124">            anonymousName = &quot;?&quot; + stringBuilder;</span>
+        }
+<span class="pc bpc" id="L1126" title="1 of 2 branches missed.">        else if (usingStdLogicNotation()) {</span>
+<span class="nc" id="L1127">            anonymousName = stringBuilder.toString().toLowerCase();</span>
+        }
+        else {
+<span class="fc" id="L1130">            anonymousName = stringBuilder.toString();</span>
+        }
+
+<span class="fc" id="L1133">        return getStringConstant(null, anonymousName, false);</span>
+    }
+
+    public List&lt;PredicateNameAndArity&gt; getKnownModes() {
+<span class="fc" id="L1137">        return knownModes;</span>
+    }
+
+	public void addKnownMode(PredicateNameAndArity predicateName) {
+<span class="nc bnc" id="L1141" title="All 2 branches missed.">        if ( knownModes == null ) {</span>
+<span class="nc" id="L1142">            knownModes = new ArrayList&lt;&gt;();</span>
+        }
+
+<span class="nc bnc" id="L1145" title="All 2 branches missed.">        if (!knownModes.contains(predicateName)) {</span>
+<span class="nc" id="L1146">            knownModes.add(predicateName);</span>
+        }
+<span class="nc" id="L1148">    }</span>
+
+	static class SetParamInfo {
+		final String parameterValue;
+
+<span class="fc" id="L1153">		SetParamInfo(String parameterValue) {</span>
+<span class="fc" id="L1154">			this.parameterValue = parameterValue;</span>
+<span class="fc" id="L1155">		}</span>
+    }
+
+	public void setStringsAreCaseSensitive(boolean matchingShouldBeCaseSensitive) {
+<span class="pc bpc" id="L1159" title="1 of 2 branches missed.">		if (ignoreCaseOfStringsOtherThanFirstChar == matchingShouldBeCaseSensitive) { Utils.println(STRING_HANDLER_VARIABLE_INDICATOR, &quot;% Changing setStringsAreCaseSensitive to &quot; + matchingShouldBeCaseSensitive + &quot;.&quot;); }</span>
+<span class="pc bpc" id="L1160" title="1 of 2 branches missed.">		ignoreCaseOfStringsOtherThanFirstChar = !matchingShouldBeCaseSensitive;</span>
+<span class="fc" id="L1161">	}</span>
+	public boolean getStringsAreCaseSensitive() {
+<span class="pc bpc" id="L1163" title="1 of 2 branches missed.">		return !ignoreCaseOfStringsOtherThanFirstChar;</span>
+	}
+
+	public String getStringToIndicateStringCaseSensitivity() {
+<span class="pc bpc" id="L1167" title="1 of 2 branches missed.">		return &quot;setParam: stringsAreCaseSensitive = &quot; + !ignoreCaseOfStringsOtherThanFirstChar + &quot;.\n&quot;;</span>
+	}
+
+	private Map&lt;Type,Set&lt;Term&gt;&gt; getKnownConstantsOfThisType() {
+<span class="fc" id="L1171">		return knownConstantsOfThisType;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

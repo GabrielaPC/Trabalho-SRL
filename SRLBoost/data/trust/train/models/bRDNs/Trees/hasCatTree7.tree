@@ -1,0 +1,14 @@
+setParam: stringsAreCaseSensitive = true.
+
+usePrologVariables: true.
+
+
+(hasCat(A, _, 0.18451337399620513) :-  /* #neg=1 #pos=40 */ link(UniqueVar70, A), link(UniqueVar70, UniqueVar71), link(UniqueVar71, UniqueVar70)).
+(hasCat(A, _, 0.10750084563887316) :-  /* #neg=14 #pos=70 */ link(UniqueVar72, A), link(UniqueVar73, UniqueVar72), link(_, UniqueVar73)).
+(hasCat(A, _, 0.1510864023041478) :-  /* #neg=5 #pos=65 */ link(UniqueVar74, A), link(UniqueVar74, UniqueVar75), link(A, UniqueVar75)).
+(hasCat(A, _, 0.12808477230404644) :-  /* #neg=31 #pos=199 */ link(A, UniqueVar76), link(UniqueVar77, UniqueVar76), link(_, UniqueVar77)).
+(hasCat(A, _, 0.14894761778080481) :-  /* #neg=10 #pos=100 */ link(UniqueVar78, A), link(_, UniqueVar78)).
+(hasCat(A, _, 0.13353191193682779) :-  /* #neg=16 #pos=116 */ link(UniqueVar79, A), link(UniqueVar79, UniqueVar80), link(UniqueVar80, _)).
+(hasCat(A, _, 0.13247044756820728) :-  /* #neg=35 #pos=250 */ link(_, A)).
+(hasCat(A, _, 0.15526790709731605) :-  /* #neg=5 #pos=49 */ link(A, UniqueVar81), link(UniqueVar81, _)).
+hasCat(_, _, 0.13903479618855907) /* #neg=90 #pos=767 */ .

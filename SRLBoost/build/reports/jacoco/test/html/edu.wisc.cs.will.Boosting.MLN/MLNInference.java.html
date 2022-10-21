@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MLNInference.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.MLN</a> &gt; <span class="el_source">MLNInference.java</span></div><h1>MLNInference.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.MLN;
+
+import edu.wisc.cs.will.Boosting.Common.SRLInference;
+import edu.wisc.cs.will.Boosting.RDN.ConditionalModelPerPredicate;
+import edu.wisc.cs.will.Boosting.RDN.JointRDNModel;
+import edu.wisc.cs.will.Boosting.RDN.RegressionRDNExample;
+import edu.wisc.cs.will.Boosting.RDN.WILLSetup;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.Utils.ProbDistribution;
+import edu.wisc.cs.will.Utils.RegressionValueOrVector;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+/*
+ * Class used for inference in MLNs
+ * @author tkhot
+ */
+public class MLNInference extends SRLInference {
+
+<span class="fc" id="L22">	private final Map&lt;String, Long&gt; timePerModel = new HashMap&lt;&gt;();</span>
+	private Map&lt;String, Long&gt; cachedRegressionClauseWeights;
+	public MLNInference(WILLSetup setup, JointRDNModel model) {
+<span class="fc" id="L25">		super(setup);</span>
+<span class="fc" id="L26">		this.jointModel = model;</span>
+<span class="fc" id="L27">		cachedRegressionClauseWeights = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L28">	}</span>
+	
+	public void resetCache() {
+<span class="fc" id="L31">		cachedRegressionClauseWeights = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L32">	}</span>
+
+	@Override
+	public ProbDistribution getExampleProbability(Example eg) {
+<span class="fc" id="L36">		RegressionRDNExample rex = (RegressionRDNExample)eg;</span>
+		RegressionValueOrVector reg;
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">		if (rex.isHasRegressionVector()) {</span>
+<span class="nc" id="L39">			double[] probs = new double[rex.getOutputVector().length];</span>
+<span class="nc" id="L40">			Arrays.fill(probs, 0);</span>
+<span class="nc" id="L41">			reg = new RegressionValueOrVector(probs);</span>
+<span class="nc" id="L42">		} else {</span>
+<span class="fc" id="L43">			reg = new RegressionValueOrVector(0);</span>
+		}
+<span class="fc bfc" id="L45" title="All 2 branches covered.">		for (ConditionalModelPerPredicate mod : jointModel.values()) {</span>
+<span class="fc" id="L46">			String pred = mod.getTargetPredicate();</span>
+<span class="fc" id="L47">			long start = System.currentTimeMillis();</span>
+<span class="fc" id="L48">			mod.setCache(cachedRegressionClauseWeights);</span>
+			// TODO(TVK!) see if this works
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">			if (mod.getTargetPredicate().equals(eg.predicateName.name)) {</span>
+<span class="fc" id="L51">				reg.addValueOrVector(mod.returnModelRegressionWithPrior(eg));</span>
+			} else {
+<span class="nc" id="L53">				reg.addValueOrVector(mod.returnModelRegression(eg));</span>
+			}
+<span class="fc" id="L55">			long end = System.currentTimeMillis();</span>
+<span class="fc" id="L56">			addToTimePerModel(pred, end-start);	</span>
+<span class="fc" id="L57">		}</span>
+
+<span class="fc" id="L59">		return new ProbDistribution(reg, true);</span>
+		
+	}
+	private void addToTimePerModel(String pred, long l) {
+<span class="fc bfc" id="L63" title="All 2 branches covered.">		if (!timePerModel.containsKey(pred)) {</span>
+<span class="fc" id="L64">			timePerModel.put(pred, 0L);</span>
+		}
+<span class="fc" id="L66">		timePerModel.put(pred, timePerModel.get(pred) + l);</span>
+<span class="fc" id="L67">	}</span>
+
+	@Override
+	public void setMaxTrees(int max) {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">		for (ConditionalModelPerPredicate mod : jointModel.values()) {</span>
+<span class="fc" id="L72">			mod.setNumTrees(max);</span>
+<span class="fc" id="L73">		}</span>
+<span class="fc" id="L74">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

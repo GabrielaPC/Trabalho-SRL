@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AllOfFOPC.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">AllOfFOPC.java</span></div><h1>AllOfFOPC.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import java.util.Map;
+
+/*
+ * @author shavlik
+ */
+public abstract class AllOfFOPC {
+	final static int defaultPrecedence = Integer.MIN_VALUE;  // This plays it safe and uses a lot of parentheses.
+	static final boolean truncateStrings             = true; // Prevent printing very long strings if true.
+<span class="fc" id="L11">	public          static boolean printUsingAlchemyNotation   = false;</span>
+ 
+    /*
+	 * This class is a superclass of all FOPC constructs.
+	 */
+<span class="fc" id="L16">	AllOfFOPC() {</span>
+<span class="fc" id="L17">	}</span>
+
+	public abstract AllOfFOPC applyTheta(Map&lt;Variable,Term&gt; bindings);
+	public abstract int       countVarOccurrencesInFOPC(Variable v);
+
+    protected abstract String    toString(int precedenceOfCaller, BindingList bindingList);
+	protected abstract String    toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList);
+
+	public String toPrettyString() {
+<span class="nc" id="L26">		return toPrettyString(&quot;&quot;, defaultPrecedence); // Use some average value?</span>
+	}
+
+	@Override
+	public String toString() {
+<span class="fc" id="L31">		return toString(defaultPrecedence); // Use some average value?</span>
+	}
+
+    String toString(BindingList bindingList) {
+<span class="fc" id="L35">        return toString(defaultPrecedence, bindingList);</span>
+    }
+
+    public String toString(int precedenceOfCaller) {
+<span class="fc" id="L39">		return toString(precedenceOfCaller, null);</span>
+    }
+
+    public String toPrettyString(String newLineStarter, int precedenceOfCaller) {
+<span class="fc" id="L43">		return toPrettyString(newLineStarter, precedenceOfCaller, null);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DependencyPredicateNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.RDN.Models</a> &gt; <span class="el_source">DependencyPredicateNode.java</span></div><h1>DependencyPredicateNode.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.RDN.Models;
+
+import edu.wisc.cs.will.FOPC.PredicateName;
+import edu.wisc.cs.will.FOPC.PredicateSpec;
+import edu.wisc.cs.will.FOPC.TypeSpec;
+import edu.wisc.cs.will.Utils.Utils;
+
+/*
+ * @author Tushar Khot
+ */
+public class DependencyPredicateNode extends DependencyNode {
+	private PredicateName predicate;
+
+<span class="fc" id="L14">	public enum PredicateType {</span>
+<span class="fc" id="L15">		HIDDEN,</span>
+<span class="fc" id="L16">		EVIDENCE,</span>
+<span class="fc" id="L17">		QUERY,</span>
+<span class="fc" id="L18">		COMPUTED,</span>
+	}
+	// Default value is EVIDENCE
+	private PredicateType type;
+	
+	DependencyPredicateNode(PredicateName name) {
+<span class="fc" id="L24">		super();</span>
+<span class="fc" id="L25">		type=PredicateType.EVIDENCE;</span>
+<span class="fc" id="L26">		setPredicate(name);</span>
+<span class="fc" id="L27">	}</span>
+	
+	private String labelForDOT() {
+<span class="fc" id="L30">		StringBuilder arglist = new StringBuilder();</span>
+<span class="pc bpc" id="L31" title="2 of 4 branches missed.">		if (predicate != null &amp;&amp; predicate.getTypeList() != null) {</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">			for (PredicateSpec spec : predicate.getTypeList()) {</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">				if (spec.getTypeSpecList() != null) {</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">					for (TypeSpec tspec : spec.getTypeSpecList()) {</span>
+<span class="fc" id="L35">						arglist.append(&quot;,&quot;).append(tspec.getType());</span>
+<span class="fc" id="L36">					}</span>
+<span class="fc" id="L37">					arglist = new StringBuilder(arglist.toString().replaceFirst(&quot;,&quot;, &quot;&quot;));</span>
+<span class="fc" id="L38">					break;</span>
+				}
+<span class="nc" id="L40">			}</span>
+		}
+<span class="fc" id="L42">		return predicate.toString()  + &quot;(&quot; + arglist + &quot;)&quot; + &quot;&quot;;</span>
+	}
+	
+	private String colorForDOT() {
+<span class="pc bpc" id="L46" title="3 of 5 branches missed.">		switch(type) {</span>
+<span class="fc" id="L47">			case QUERY: return &quot;gray52&quot;;</span>
+<span class="nc" id="L48">			case HIDDEN: return &quot;gray62&quot;;</span>
+<span class="nc" id="L49">			case COMPUTED: return &quot;gray82&quot;;</span>
+<span class="fc" id="L50">			case EVIDENCE: return &quot;gray92&quot;;</span>
+		}
+<span class="nc" id="L52">		return &quot;white&quot;;</span>
+	}
+	public String textForDOT() {
+<span class="fc" id="L55">		return &quot;style=\&quot;filled\&quot; label=\&quot;&quot; + labelForDOT() +&quot;\&quot; color=\&quot;&quot; + colorForDOT() + &quot;\&quot;&quot;;</span>
+	}
+	
+	/*
+	 * @return the predicate
+	 */
+	public PredicateName getPredicate() {
+<span class="fc" id="L62">		return predicate;</span>
+	}
+
+	/*
+	 * @param predicate the predicate to set
+	 */
+	private void setPredicate(PredicateName predicate) {
+<span class="fc" id="L69">		this.predicate = predicate;</span>
+<span class="fc" id="L70">	}</span>
+	
+	/*
+	 * @return the type
+	 */
+	public PredicateType getType() {
+<span class="fc" id="L76">		return type;</span>
+	}
+
+	/*
+	 * @param type the type to set
+	 */
+	public void setType(PredicateType type) {
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">		if (this.type != PredicateType.EVIDENCE) {</span>
+<span class="nc" id="L84">			Utils.waitHere(&quot;Changing type for &quot; + this.labelForDOT() + &quot; from &quot; + this.type +&quot; to &quot; + type);</span>
+		}
+<span class="fc" id="L86">		this.type = type;</span>
+<span class="fc" id="L87">	}</span>
+
+	@Override
+	public boolean ignoreNodeForDOT() {
+<span class="fc" id="L91">		String predString = getPredicate().toString();</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">		if (predString.equals(&quot;all&quot;) ||</span>
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">			predString.equals(&quot;is&quot;)  ||</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">			predString.equals(&quot;==&quot;)  ||</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">			predString.equals(&quot;=&quot;)  ||</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">			predString.equals(&quot;addList&quot;)  ||</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">			predString.equals(&quot;&gt;&quot;)   ||</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">			predString.equals(&quot;!&quot;)   ||</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">			predString.equals(&quot;member&quot;)) {</span>
+<span class="fc" id="L100">			return true;</span>
+		}
+
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">		return getType() == PredicateType.COMPUTED &amp;&amp;</span>
+<span class="pc bnc" id="L104" title="All 2 branches missed.">				getChildren().isEmpty();</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

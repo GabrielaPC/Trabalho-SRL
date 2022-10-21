@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RunBoostedModels.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Common</a> &gt; <span class="el_source">RunBoostedModels.java</span></div><h1>RunBoostedModels.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Common;
+
+import edu.wisc.cs.will.Boosting.MLN.RunBoostedMLN;
+import edu.wisc.cs.will.Boosting.RDN.RunBoostedRDN;
+import edu.wisc.cs.will.Boosting.RDN.WILLSetup;
+import edu.wisc.cs.will.Boosting.Regression.RunBoostedRegressionTrees;
+import edu.wisc.cs.will.Boosting.Utils.BoostingUtils;
+import edu.wisc.cs.will.Boosting.Utils.CommandLineArguments;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.Utils.condor.CondorFile;
+
+import java.io.File;
+
+/**
+ * Generic code to call MLN-Boost and RDN-Boost
+ * @author tkhot
+ */
+public abstract class RunBoostedModels {
+
+	protected CommandLineArguments cmdArgs;
+
+	private void setCmdArgs(CommandLineArguments cmdArgs) {
+<span class="fc" id="L23">		this.cmdArgs = cmdArgs;</span>
+<span class="fc" id="L24">	}</span>
+
+	protected WILLSetup  setup;
+	
+<span class="fc" id="L28">	protected RunBoostedModels() {</span>
+		
+<span class="fc" id="L30">	}</span>
+	
+	private static CommandLineArguments parseArgs(String[] args) {
+<span class="fc" id="L33">		CommandLineArguments cmdArgs = new CommandLineArguments();</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">		if (cmdArgs.parseArgs(args)) {</span>
+<span class="fc" id="L35">			return cmdArgs;</span>
+		}
+<span class="nc" id="L37">		return null;</span>
+	}
+	
+	protected void runJob() {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">		if (cmdArgs.isLearnVal()) {</span>
+<span class="fc" id="L42">			long start = System.currentTimeMillis();</span>
+<span class="fc" id="L43">			learnModel();</span>
+<span class="fc" id="L44">			long end = System.currentTimeMillis();</span>
+<span class="fc" id="L45">			Utils.println(&quot;\n% Total learning time (&quot;  + Utils.comma(cmdArgs.getMaxTreesVal()) + &quot; trees): &quot; + Utils.convertMillisecondsToTimeSpan(end - start, 3) + &quot;.&quot;);</span>
+		}
+		
+<span class="fc bfc" id="L48" title="All 2 branches covered.">		if (cmdArgs.isInferVal()) {</span>
+<span class="fc" id="L49">			long   start    = System.currentTimeMillis();</span>
+<span class="fc" id="L50">			inferModel();</span>
+<span class="fc" id="L51">			long end = System.currentTimeMillis();</span>
+<span class="fc" id="L52">			Utils.println(&quot;\n% Total inference time (&quot; + Utils.comma(cmdArgs.getMaxTreesVal()) + &quot; trees): &quot; + Utils.convertMillisecondsToTimeSpan(end - start, 3) + &quot;.&quot;);</span>
+		}
+		
+<span class="fc" id="L55">	}</span>
+
+	protected abstract void learn();
+	
+	protected void learnModel() {
+<span class="fc" id="L60">		setupWILLForTrain();</span>
+<span class="fc" id="L61">		beforeLearn();</span>
+<span class="fc" id="L62">		learn();</span>
+<span class="fc" id="L63">		afterLearn();</span>
+<span class="fc" id="L64">	}</span>
+
+	private void setupWILLForTrain() {
+<span class="fc" id="L67">		setup     = new WILLSetup();</span>
+<span class="fc" id="L68">		Utils.println(&quot;\n% Calling SETUP.&quot;);</span>
+<span class="fc" id="L69">		setup.setup(cmdArgs, cmdArgs.getTrainDirVal(), true);</span>
+<span class="fc" id="L70">	}</span>
+	
+	/**
+	 * Override this method if you want to take some steps before calling learn.
+	 */
+	private void beforeLearn() {
+<span class="fc" id="L76">		Utils.println(cmdArgs.getModelDirVal());</span>
+<span class="fc" id="L77">		File dir = new CondorFile(cmdArgs.getModelDirVal());</span>
+<span class="fc" id="L78">		Utils.ensureDirExists(dir);</span>
+		
+		// Rename old model files to prevent accidental re-use.
+<span class="fc" id="L81">		renameOldModelFiles();</span>
+<span class="fc" id="L82">	}</span>
+
+	/**
+	 * Override to call methods after learning.
+	 */
+	protected void afterLearn() {
+<span class="fc" id="L88">		Utils.println(&quot;cached groundings hit: &quot; + setup.getInnerLooper().num_hits + &quot;\nMisses: &quot; +setup.getInnerLooper().num_misses);</span>
+<span class="fc" id="L89">	}</span>
+	
+	protected void clearCheckPointFiles(String saveModelName) {
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">		if (Utils.fileExists(BoostingUtils.getCheckPointFile(saveModelName))) {</span>
+<span class="fc" id="L93">			Utils.delete(BoostingUtils.getCheckPointFile(saveModelName));</span>
+		}
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">		if (Utils.fileExists(BoostingUtils.getCheckPointExamplesFile(saveModelName))) {</span>
+<span class="nc" id="L96">			Utils.delete(BoostingUtils.getCheckPointExamplesFile(saveModelName));</span>
+		}
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">		if (Utils.fileExists(BoostingUtils.getCheckPointFlattenedLitFile(saveModelName))) {</span>
+<span class="fc" id="L99">			Utils.delete(BoostingUtils.getCheckPointFlattenedLitFile(saveModelName));</span>
+		}
+		
+<span class="fc" id="L102">	}</span>
+	private void renameOldModelFiles() {
+<span class="fc" id="L104">		int numbModelsToMake = 1;</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">		for (int i = 0; i &lt; numbModelsToMake; i++) {</span>
+			// Rename model files.
+<span class="fc bfc" id="L107" title="All 2 branches covered.">			for (String pred : cmdArgs.getTargetPredVal()) {</span>
+<span class="fc" id="L108">				String filename = BoostingUtils.getModelFile(cmdArgs, pred, true);</span>
+<span class="fc" id="L109">				File f = new CondorFile(filename);</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">				if (f.exists()) {</span>
+<span class="fc" id="L111">					renameAsOld(f);</span>
+				}
+<span class="fc" id="L113">			}</span>
+		}		
+<span class="fc" id="L115">	}</span>
+
+	
+	public static void renameAsOld(File f) {
+<span class="fc" id="L119">		String justFileName = f.getName();</span>
+<span class="fc" id="L120">		File   parent       = f.getParentFile();</span>
+<span class="fc" id="L121">		File   newF         = new CondorFile(parent, &quot;old_&quot; + justFileName);</span>
+	
+<span class="fc bfc" id="L123" title="All 2 branches covered.">		if (newF.exists()) {</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">			if (!newF.delete()) {</span>
+<span class="nc" id="L125">				Utils.error(&quot;Couldn't delete the file: &quot; + newF.getAbsolutePath());</span>
+			}
+		}
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">		if (!f.renameTo(newF)) {</span>
+<span class="nc" id="L129">			Utils.error(&quot;Couldn't rename from &quot; + f.getAbsolutePath() + &quot; to &quot; + newF.getAbsolutePath());</span>
+		}
+<span class="fc" id="L131">	}</span>
+	
+	protected abstract void loadModel();
+	
+	protected abstract void infer();
+	protected void inferModel() {
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">		if(!setupWILLForTest()) {</span>
+<span class="nc" id="L138">			return;</span>
+		}
+<span class="fc" id="L140">		beforeInfer();</span>
+<span class="fc" id="L141">		infer();</span>
+<span class="fc" id="L142">	}</span>
+
+	private void beforeInfer() {
+<span class="fc" id="L145">		loadModel();</span>
+<span class="fc" id="L146">	}</span>
+
+	private boolean setupWILLForTest() {
+<span class="fc" id="L149">		setup = new WILLSetup();</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">		if(!setup.setup(cmdArgs, cmdArgs.getTestDirVal(), false)) {</span>
+<span class="nc" id="L151">			Utils.println(&quot;\nSetup failed (possibly because there are no examples), so will not infer anything.&quot;);</span>
+<span class="nc" id="L152">			return false;</span>
+		}
+<span class="fc" id="L154">		return true;</span>
+	}
+
+	public static void main(String[] args) {
+		
+<span class="fc" id="L159">		args = Utils.chopCommentFromArgs(args); </span>
+<span class="fc" id="L160">		CommandLineArguments cmd = RunBoostedModels.parseArgs(args);</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">		if (cmd == null) {</span>
+<span class="nc" id="L162">			Utils.error(CommandLineArguments.getUsageString());</span>
+		}
+		RunBoostedModels runClass;
+<span class="fc bfc" id="L165" title="All 2 branches covered.">		if (cmd.isLearnMLN()) {</span>
+<span class="fc" id="L166">			runClass = new RunBoostedMLN();</span>
+		} else {
+<span class="fc bfc" id="L168" title="All 2 branches covered.">			if (cmd.isLearnRegression()) {</span>
+<span class="fc" id="L169">				runClass = new RunBoostedRegressionTrees();</span>
+			}
+			else {
+<span class="fc" id="L172">				runClass = new RunBoostedRDN();</span>
+			}
+		}
+<span class="fc" id="L175">		runClass.setCmdArgs(cmd);</span>
+<span class="fc" id="L176">		runClass.runJob();</span>
+<span class="fc" id="L177">	}</span>
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreeStructuredTheoryInteriorNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">TreeStructuredTheoryInteriorNode.java</span></div><h1>TreeStructuredTheoryInteriorNode.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.ILP.SingleClauseNode;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+<span class="pc bpc" id="L11" title="1 of 2 branches missed.">public class TreeStructuredTheoryInteriorNode extends TreeStructuredTheoryNode {</span>
+
+	// Note: the fullNodeTest is the complete path to the root and the nodeTest is the local piece (null means 'true').  For simplicity the local piece
+	//       also is a clause rather than a List&lt;Literal&gt;.  Do the order this code was generated, initially there was no fullNodeTest and so some methods could be simplified now that there is. 
+	private Clause                   fullNodeTest;
+	private Clause                   nodeTest;
+	private SingleClauseNode         searchNodeThatLearnedTheClause; // This is the search node that produced this tree-structured node (i.e., learned the node test).
+	private TreeStructuredTheoryNode treeForTrue;
+	private TreeStructuredTheoryNode treeForFalse;
+
+	// 8/8/11 : TVK set this to true. RDN-Boost code will take care of dropping the false nodes whereas the MLN code needs the false tests.
+	// TODO(@hayesall): This should have no knowledge of boosting, refactor.
+
+<span class="fc" id="L24">	private double				       regressionValueIfLeaf= 0;    // Since we reset the examples while trying to expand a node, this value is lost. Rather than re-computing it, we cache it here.</span>
+<span class="fc" id="L25">	private List&lt;Boolean&gt;			   treePath = new ArrayList&lt;&gt;();</span>
+	
+	public TreeStructuredTheoryInteriorNode(double weightedCountOfPositiveExamples, double weightedCountOfNegativeExamples, Clause learnedClause, Clause localClause, SingleClauseNode searchNodeThatLearnedTheClause) {
+<span class="fc" id="L28">		super();</span>
+		// The two node tests will probably be set in ILPouterLoop.
+<span class="fc" id="L30">		this.fullNodeTest = learnedClause;</span>
+<span class="fc" id="L31">		this.nodeTest     = localClause;</span>
+<span class="fc" id="L32">		this.weightedCountOfPositiveExamples = weightedCountOfPositiveExamples;</span>
+<span class="fc" id="L33">		this.weightedCountOfNegativeExamples = weightedCountOfNegativeExamples;</span>
+<span class="fc" id="L34">		this.searchNodeThatLearnedTheClause  = searchNodeThatLearnedTheClause;</span>
+<span class="fc" id="L35">	}		</span>
+	private TreeStructuredTheoryInteriorNode(double weightedCountOfPositiveExamples, double weightedCountOfNegativeExamples, Clause learnedClause, Clause localClause, SingleClauseNode searchNodeThatLearnedTheClause, TreeStructuredTheoryNode treeForTrue, TreeStructuredTheoryNode treeForFalse) {
+<span class="fc" id="L37">		this(weightedCountOfPositiveExamples, weightedCountOfNegativeExamples, learnedClause, localClause, searchNodeThatLearnedTheClause);</span>
+<span class="fc" id="L38">		this.treeForTrue  = treeForTrue;</span>
+<span class="fc" id="L39">		this.treeForFalse = treeForFalse;</span>
+<span class="fc" id="L40">	}	</span>
+
+	// Climb the ancestors of seeker to find the last parent of a TRUE branch.
+	public TreeStructuredTheoryInteriorNode getLastParentOnTrueBranch(TreeStructuredTheoryInteriorNode seeker) {
+<span class="fc bfc" id="L44" title="All 2 branches covered.">		if (treeForTrue == seeker) { return this; }</span>
+<span class="fc" id="L45">		TreeStructuredTheoryInteriorNode parent = getParent();</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">		if (parent == null) { return null; }</span>
+		// Fixed this bug which matched the leaf node (seeker) in the right and left child
+		// of all the ancestors. This would obviously never return any match. (TVK 17th April 2012) 
+		// return parent.getLastParentOnTrueBranch(seeker);
+		// Instead search for the current node to match the parent's right and left child. This bug
+		// probably made our code less accurate since we missed some possible rules.  
+<span class="fc" id="L52">		return parent.getLastParentOnTrueBranch(this);</span>
+	}
+
+	// Need to change a child node.
+	public void changeChild(TreeStructuredTheoryNode oldNode, TreeStructuredTheoryNode newNode) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">		if      (treeForTrue  == oldNode) { treeForTrue  = newNode; }</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">		else if (treeForFalse == oldNode) { treeForFalse = newNode; } // ASSUMES THAT oldNode DOES NOT EQUAL *BOTH* CHILDREN!</span>
+		else {
+<span class="nc" id="L60">			Utils.error(&quot;Could not find\n'&quot; + oldNode + &quot;'\n in\n'&quot; + this + &quot;'.&quot;);</span>
+		}		
+<span class="fc" id="L62">	}</span>
+
+	public Clause getNodeTest() {
+<span class="fc" id="L65">		return nodeTest;</span>
+	}
+
+	public void setNodeTestFromFullNodeTest(Clause fullNodeTest) {
+<span class="fc" id="L69">		this.fullNodeTest = fullNodeTest;</span>
+<span class="pc bpc" id="L70" title="2 of 4 branches missed.">		this.nodeTest     = (fullNodeTest == null ? null : (searchNodeThatLearnedTheClause == null ? fullNodeTest : searchNodeThatLearnedTheClause.getLocallyAddedClause()));</span>
+<span class="fc" id="L71">	}</span>
+
+	public SingleClauseNode getSearchNodeThatLearnedTheClause() {
+<span class="fc" id="L74">		return searchNodeThatLearnedTheClause;</span>
+	}
+
+	public void setSearchNodeThatLearnedTheClause(SingleClauseNode searchNodeThatLearnedTheClause) {
+<span class="fc" id="L78">		this.searchNodeThatLearnedTheClause = searchNodeThatLearnedTheClause;</span>
+<span class="fc" id="L79">	}</span>
+
+	public void setTreeForTrue(TreeStructuredTheoryNode treeForTrue) {
+<span class="fc" id="L82">		this.treeForTrue = treeForTrue;</span>
+<span class="fc" id="L83">		treeForTrue.setLevel(getLevel() + 1);</span>
+<span class="fc" id="L84">	}</span>
+
+	public void setTreeForFalse(TreeStructuredTheoryNode treeForFalse) {
+<span class="fc" id="L87">		this.treeForFalse = treeForFalse;</span>
+<span class="fc" id="L88">		treeForFalse.setLevel(getLevel() + 1);</span>
+<span class="fc" id="L89">	}</span>
+	
+	private String createThisManySpaces(int depth) {
+<span class="fc" id="L92">		StringBuilder result = new StringBuilder();</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">		for (int i = 0; i &lt; depth; i++) { result.append(&quot;| &quot;); }</span>
+<span class="fc" id="L94">		return result.toString();</span>
+	}
+	
+	@Override
+	protected String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L99">		return printRelationalTree(newLineStarter, precedenceOfCaller, 0, bindingList);</span>
+	}
+	@Override
+	public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L103">		return toPrettyString(&quot;&quot;, precedenceOfCaller, bindingList);</span>
+	}
+	
+	public void addToPath(boolean branch) {
+<span class="fc" id="L107">		treePath.add(branch);</span>
+<span class="fc" id="L108">	}</span>
+	
+	public List&lt;Boolean&gt; returnBoolPath() {
+<span class="fc" id="L111">		return treePath;</span>
+	}
+	public void setBoolPath(List&lt;Boolean&gt; path) {
+<span class="fc" id="L114">		treePath = new ArrayList&lt;&gt;(path);</span>
+<span class="fc" id="L115">	}</span>
+	private String writeClauseBody(BindingList bl) {
+<span class="fc" id="L117">		StringBuilder result = new StringBuilder();</span>
+<span class="fc" id="L118">		boolean firstTime = true;</span>
+		
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">		Collection&lt;Literal&gt; negLits = (nodeTest == null ? null : nodeTest.negLiterals);</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(negLits) &lt; 1) { return &quot;true&quot;; }</span>
+
+<span class="pc bpc" id="L123" title="2 of 4 branches missed.">		assert negLits != null;</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">		for (Literal lit : negLits) {</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">			if (firstTime) { firstTime = false; } else { result.append(&quot;, &quot;); }</span>
+<span class="fc" id="L126">			result.append(lit.toString(bl));</span>
+<span class="fc" id="L127">		}</span>
+<span class="fc" id="L128">		return result.toString();</span>
+	}
+
+	@Override
+	public String printRelationalTree(String newLineStarter, int precedenceOfCaller, int depth, BindingList bindingList) {
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">		if (depth &gt; 10) { return &quot; ... &lt;tree too deep&gt;&quot;; }</span>
+<span class="fc" id="L134">		BindingList blCopy = new BindingList(bindingList.theta);</span>
+<span class="fc" id="L135">		return &quot;if ( &quot; + writeClauseBody(blCopy) + &quot; )\n&quot;</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">				+ newLineStarter + createThisManySpaces(depth) + &quot;then &quot; + ( treeForTrue == null ? &quot;???&quot; :  treeForTrue.printRelationalTree(newLineStarter, precedenceOfCaller, depth + 1, blCopy)) + &quot;\n&quot;</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">				+ newLineStarter + createThisManySpaces(depth) + &quot;else &quot; + (treeForFalse == null ? &quot;???&quot; : treeForFalse.printRelationalTree(newLineStarter, precedenceOfCaller, depth + 1, blCopy));</span>
+	}
+
+	@Override
+	public List&lt;Clause&gt; collectPathsToRoots(TreeStructuredTheory treeTheory) {
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">		List&lt;Clause&gt; clausesTrue  = ( treeForTrue  == null ? null :  treeForTrue.collectPathsToRoots(treeTheory));</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">		List&lt;Clause&gt; clausesFalse = (treeForFalse  == null ? null : treeForFalse.collectPathsToRoots(treeTheory));</span>
+		
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">		List&lt;Literal&gt; newLits = (nodeTest == null ? null : nodeTest.negLiterals);</span>
+		
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(newLits) &lt; 1) {</span>
+<span class="nc" id="L148">			Utils.waitHere(&quot;Have an empty nodeTest! &quot; + this);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">			if (clausesTrue  == null) { return clausesFalse; }</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">			if (clausesFalse == null) { return clausesTrue;  }</span>
+<span class="nc" id="L151">			clausesTrue.addAll(clausesFalse);</span>
+<span class="nc" id="L152">			return clausesTrue;</span>
+		}
+		
+<span class="fc" id="L155">		int           numbNewLits = Utils.getSizeSafely(newLits);</span>
+
+<span class="pc bpc" id="L157" title="2 of 4 branches missed.">		assert newLits != null;</span>
+<span class="fc" id="L158">		Literal           newHead = newLits.get(0);</span>
+		// Not needed due to semantics of Prolog and our use of CUTs.
+
+<span class="fc" id="L161">		List&lt;Clause&gt; results = new ArrayList&lt;&gt;(Utils.getSizeSafely(clausesTrue));</span>
+<span class="pc bpc" id="L162" title="1 of 4 branches missed.">		if (clausesTrue != null) for (Clause c : clausesTrue) {</span>
+<span class="fc" id="L163">			Clause cCopy = c.copy(false);</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">			if (numbNewLits &lt; 2) {</span>
+<span class="fc" id="L165">				cCopy.addNegLiteralToFront(newHead);</span>
+			} else {
+<span class="fc bfc" id="L167" title="All 2 branches covered.">				for (int i = numbNewLits - 1; i &gt;= 0; i--) { cCopy.addNegLiteralToFront(newLits.get(i)); } // Need to maintain left-to-right order.</span>
+			}
+<span class="fc" id="L169">			results.add(cCopy);</span>
+<span class="fc" id="L170">		}</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">		if (clausesFalse != null) {</span>
+			// If collectTestForFalseNodes is true, create invented supporting predicates ?
+<span class="fc bfc" id="L173" title="All 2 branches covered.">			for (Clause c : clausesFalse) {</span>
+<span class="fc" id="L174">				Clause cCopy = c.copy(false);</span>
+<span class="fc" id="L175">				results.add(cCopy);</span>
+<span class="fc" id="L176">			}</span>
+		}
+<span class="fc" id="L178">		return results;</span>
+	}
+
+	@Override
+	public TreeStructuredTheoryInteriorNode applyTheta(Map&lt;Variable, Term&gt; bindings) {
+<span class="fc" id="L183">		return new TreeStructuredTheoryInteriorNode(weightedCountOfPositiveExamples, weightedCountOfNegativeExamples,</span>
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">													(fullNodeTest == null ? null : fullNodeTest.applyTheta(bindings)),</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">													(nodeTest     == null ? null : nodeTest.applyTheta(bindings)),</span>
+													searchNodeThatLearnedTheClause, // NOTE: do to renaming this node's variables will no longer match the variables in this node.
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">													(treeForTrue  == null ? null : treeForTrue.applyTheta(bindings)),</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">													(treeForFalse == null ? null : treeForFalse.applyTheta(bindings)));</span>
+	}
+
+    @Override
+	public Collection&lt;Variable&gt; collectFreeVariables(Collection&lt;Variable&gt; boundVariables) {
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">		Collection&lt;Variable&gt; freeA = (nodeTest     == null ? null : nodeTest.collectFreeVariables(    boundVariables));</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">		Collection&lt;Variable&gt; freeB = (treeForTrue  == null ? null : treeForTrue.collectFreeVariables( boundVariables));</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">		Collection&lt;Variable&gt; freeC = (treeForFalse == null ? null : treeForFalse.collectFreeVariables(boundVariables));</span>
+						
+<span class="fc" id="L197">		return Variable.combineSetsOfVariables(Variable.combineSetsOfVariables(freeA, freeB), freeC);</span>
+	}
+	@Override
+	public String writeDotFormat() {
+		// Set by parent
+<span class="fc bfc" id="L202" title="All 2 branches covered.">		if (this.nodeNumber == 0) {</span>
+<span class="fc" id="L203">			nodeNumber = counter++;</span>
+		}
+<span class="fc" id="L205">		String result = &quot;&quot;;</span>
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">		if (nodeTest != null) { </span>
+<span class="fc" id="L207">			result += nodeNumber + &quot;[label = \&quot;&quot; + nodeTest.getDefiniteClauseBody() + &quot;\&quot;];\n&quot;;</span>
+		} else {
+<span class="nc" id="L209">			result += nodeNumber + &quot;[label = \&quot;&quot; + &quot;null&quot; + &quot;\&quot;];\n&quot;;</span>
+		}
+<span class="pc bpc" id="L211" title="1 of 2 branches missed.">		if (treeForTrue != null) {</span>
+<span class="fc" id="L212">			treeForTrue.nodeNumber = counter++;</span>
+<span class="fc" id="L213">			result = result + nodeNumber + &quot; -&gt; &quot; + treeForTrue.nodeNumber + &quot;[label=\&quot;True\&quot;];\n&quot;;</span>
+			
+		}
+		
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">		if (treeForFalse != null) {</span>
+<span class="fc" id="L218">			treeForFalse.nodeNumber = counter++;</span>
+<span class="fc" id="L219">			result = result + nodeNumber + &quot; -&gt; &quot; + treeForFalse.nodeNumber + &quot;[label=\&quot;False\&quot;];\n&quot;;</span>
+		}
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">		if (treeForTrue != null) {</span>
+<span class="fc" id="L222">			result = result + treeForTrue.writeDotFormat();</span>
+		}
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">		if (treeForFalse != null) {</span>
+<span class="fc" id="L225">			result = result + treeForFalse.writeDotFormat();</span>
+		}
+<span class="fc" id="L227">		return result;</span>
+	}
+
+	@Override
+	public int countVarOccurrencesInFOPC(Variable v) {
+<span class="nc bnc" id="L232" title="All 2 branches missed.">		return (nodeTest == null ? 0 : nodeTest.countVarOccurrencesInFOPC(v));</span>
+	}	
+
+	public double getRegressionValueIfLeaf() {
+<span class="fc" id="L236">		return regressionValueIfLeaf;</span>
+	}
+	public void setRegressionValueIfLeaf(double regressionValueIfLeaf) {
+<span class="fc" id="L239">		this.regressionValueIfLeaf = regressionValueIfLeaf;</span>
+<span class="fc" id="L240">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

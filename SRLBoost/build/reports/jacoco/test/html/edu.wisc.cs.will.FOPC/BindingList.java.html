@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BindingList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">BindingList.java</span></div><h1>BindingList.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.*;
+import java.util.Map.Entry;
+
+/*
+ * @author shavlik
+ * 
+ * Binding lists return the results of unification.
+ *
+ */
+public class BindingList extends AllOfFOPC {
+	public final HashMap&lt;Variable,Term&gt; theta;
+
+<span class="fc" id="L17">	public BindingList() {</span>
+<span class="fc" id="L18">		theta = createMap(0);</span>
+<span class="fc" id="L19">	}</span>
+<span class="fc" id="L20">	public BindingList(HashMap&lt;Variable,Term&gt; theta) {</span>
+<span class="fc" id="L21">		this.theta = theta;</span>
+<span class="fc" id="L22">	}</span>
+	
+	// This is rarely used, but keep it for debugging etc (it is currently only used when in the read-eval-print loop of the resolution theorem prover.
+<span class="fc" id="L25">	public BindingList(List&lt;Binding&gt; bindings) {</span>
+<span class="fc" id="L26">		theta = createMap(0);</span>
+
+<span class="fc bfc" id="L28" title="All 2 branches covered.">		if (bindings != null) {</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">            for (Binding bind : bindings) {</span>
+<span class="fc" id="L30">                theta.put(bind.var, bind.term);</span>
+<span class="fc" id="L31">            }</span>
+        }
+<span class="fc" id="L33">	}</span>
+	
+	private void addBindings(List&lt;Binding&gt; bindings) {
+<span class="nc bnc" id="L36" title="All 4 branches missed.">		if (bindings != null) for (Binding bind : bindings) { </span>
+<span class="nc" id="L37">			Term existingBinding = lookup(bind.var);</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">			if (existingBinding == null) { theta.put(bind.var, bind.term);</span>
+			}
+<span class="nc bnc" id="L40" title="All 2 branches missed.">			else if (existingBinding != bind.term) {</span>
+<span class="nc bnc" id="L41" title="All 4 branches missed.">				if (bind.term instanceof Variable &amp;&amp; existingBinding == lookup((Variable) bind.term)) { continue; } // Both bound to same thing, which is fine.</span>
+<span class="nc" id="L42">				Utils.error(&quot;Asking to bind '&quot; + bind.var + &quot;' to '&quot; + bind.term + &quot;', but it is already bound to '&quot; + existingBinding + &quot;'.&quot;);</span>
+			}
+<span class="nc" id="L44">		}</span>
+<span class="nc" id="L45">	}</span>
+	
+	public void addBindings(BindingList bl) {
+<span class="nc" id="L48">		addBindings(bl.collectBindingsInList());</span>
+<span class="nc" id="L49">	}</span>
+
+	public BindingList copy() {
+<span class="fc bfc" id="L52" title="All 2 branches covered.">		if (theta.isEmpty()) { return new BindingList(); }</span>
+
+<span class="fc" id="L54">        HashMap newMap = createMap(theta.size());</span>
+<span class="fc" id="L55">        newMap.putAll(theta);</span>
+
+<span class="fc" id="L57">		return new BindingList(newMap);</span>
+	}
+
+    /* Creates a new theta map.
+     *
+     * I offloading this to a small helper so that I could easily change the type of
+     * map that was created without changing it in 5 different places.
+     *
+     * @return A new theta map.
+     */
+    private HashMap&lt;Variable,Term&gt; createMap(int size) {
+
+<span class="fc" id="L69">        int realSize = Math.max(16, (int)Math.ceil(size * 0.75f)+1);</span>
+
+<span class="fc" id="L71">        return new HashMap&lt;&gt;(realSize);</span>
+    }
+
+	public List&lt;Literal&gt; applyTheta(List&lt;Literal&gt; literals) { // Note that the above code assumes this will make a top-level copy (but the above wont call this if theta is empty or the list is).
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">		if (literals == null) { return null; }</span>
+<span class="pc bpc" id="L76" title="2 of 4 branches missed.">		if (theta    == null || theta.size() == 0) { return literals; } // No need to apply the empty list of bindings.</span>
+<span class="fc" id="L77">		List&lt;Literal&gt; result = new ArrayList&lt;&gt;(literals.size());</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">		for (Literal literal : literals) {	</span>
+<span class="fc" id="L79">			result.add(literal.applyTheta(theta));  // Since Java doesn't do dynamic casting, need to put applyTheta's in the FOPC classes.</span>
+<span class="fc" id="L80">		}</span>
+<span class="fc" id="L81">		return result;</span>
+	}
+
+	/* Returns the current mapping of variable to term, recursively.
+     *
+     * This does a lookup of the variable recursively.  @see getMapping(Variable)
+     * for non-recursive lookups.  Only variables are looked up
+     * recursively.  Terms containing variables are not and will require
+     * an applyTheta call to resolve completely.
+     */
+	public Term lookup(Variable var) { // Could save this method call.
+<span class="fc" id="L92">		Term result = theta.get(var);</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">		if (result == null) { return null; }</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (result == var ) { return result; }</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">		if (result instanceof Variable) { // Do a recursive lookup.</span>
+<span class="nc" id="L96">			Term result2 = lookup((Variable) result);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">			if (result2 == null) { return result; } { return result2; }</span>
+		}
+<span class="fc" id="L99">		return result;</span>
+	}
+
+    /* Returns the current mapping of variable to term, non-recursively.
+     *
+     * This does a lookup of the variable non-recursively.  @see lookup(Variable)
+     * for recursive lookups.
+     */
+    public Term getMapping(Variable var) {
+<span class="fc" id="L108">		return theta.get(var);</span>
+	}
+
+	public int size() {
+<span class="fc" id="L112">        return theta.size();</span>
+    }
+
+
+	Variable reverseLookup(Term term) { // Could save this method call.
+<span class="nc" id="L117">		boolean hold = term.stringHandler.usingStrictEqualsForFunctions();</span>
+<span class="nc" id="L118">		term.stringHandler.setUseStrictEqualsForFunctions(false);</span>
+<span class="nc bnc" id="L119" title="All 4 branches missed.">		if (theta == null || !theta.containsValue(term)) {</span>
+<span class="nc" id="L120">			term.stringHandler.setUseStrictEqualsForFunctions(hold);</span>
+<span class="nc" id="L121">			return null; // Saves time?</span>
+		}
+		
+<span class="nc bnc" id="L124" title="All 2 branches missed.">		for (Variable var : theta.keySet()) {</span>
+<span class="nc" id="L125">			Term trm = theta.get(var);</span>
+			
+<span class="nc bnc" id="L127" title="All 2 branches missed.">			if (term.equals(trm)) { </span>
+<span class="nc" id="L128">				term.stringHandler.setUseStrictEqualsForFunctions(hold);</span>
+<span class="nc" id="L129">				return var; </span>
+			}
+<span class="nc" id="L131">		}</span>
+<span class="nc" id="L132">		Utils.error(&quot;ContainsValue found &quot; + term + &quot; in &quot; + theta + &quot;, but this code could not.&quot;);</span>
+<span class="nc" id="L133">		term.stringHandler.setUseStrictEqualsForFunctions(hold);</span>
+<span class="nc" id="L134">		return null;</span>
+	}
+
+	boolean addBindingFailSoftly(Variable var, Term term) {
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">		if (help_addBinding(var, term, false)) { return true; }</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">		if (term instanceof Variable) { return help_addBinding((Variable) term, var, false); } // This is probably already checked below, but try again nevertheless.</span>
+<span class="nc" id="L140">		return false;</span>
+	}
+	public void addBinding(Variable var, Term term) {
+<span class="fc" id="L143">		help_addBinding(var, term, true);</span>
+<span class="fc" id="L144">	}</span>
+	private boolean help_addBinding(Variable var, Term term, boolean errorIfProblem) {
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">		if (theta.containsKey(var)) { </span>
+<span class="nc" id="L147">			Term oldAnswer = theta.get(var);</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">			if (oldAnswer == term) { return true; } // Already there, which is fine.</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">			if (oldAnswer instanceof Variable) { addBinding((Variable) oldAnswer, term); return true; }</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">			else if (term instanceof Variable) {</span>
+<span class="nc" id="L151">				Variable v = (Variable) term;</span>
+				// Have something like ?X-&gt;term and asking to do ?X-&gt;?Y.  Then do ?Y-&gt;term if ?Y is not yet bound.
+<span class="nc bnc" id="L153" title="All 2 branches missed.">				if (!theta.containsKey(v)) {  // If this term is a variable and is not already in the binding list, then just return the binding for it.</span>
+<span class="nc" id="L154">					theta.put(v, oldAnswer);	</span>
+<span class="nc" id="L155">					return true;</span>
+				} // Could handle more, but wait on this until a concrete case arises.
+			}
+<span class="nc bnc" id="L158" title="All 2 branches missed.">			if (errorIfProblem) {</span>
+<span class="nc" id="L159">				Utils.error(&quot;Cannot addBinding(&quot; + var + &quot;,&quot; + term +&quot;) because '&quot; + var + &quot;' is already bound to '&quot; + theta.get(var) + &quot;'.&quot;);</span>
+			}
+<span class="nc" id="L161">			return false;</span>
+		}
+<span class="fc" id="L163">		theta.put(var, term);</span>
+<span class="fc" id="L164">		return true;</span>
+	}
+
+	// Collect all the bindings in the HashMap.
+	public List&lt;Binding&gt; collectBindingsInList() {
+<span class="fc bfc" id="L169" title="All 2 branches covered.">		if (Utils.getSizeSafely(theta) &lt; 1) { return null; }  // Might want to instead return the empty list?</span>
+<span class="fc" id="L170">		List&lt;Binding&gt; results = new ArrayList&lt;&gt;(theta.size());</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">		for (Variable var : theta.keySet()) {</span>
+<span class="fc" id="L172">			results.add(new Binding(var, theta.get(var)));</span>
+<span class="fc" id="L173">		}</span>
+<span class="fc" id="L174">		return results;</span>
+	}
+
+	public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L178">		return theta.toString();</span>
+	}
+	public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L181">		StringBuilder stringBuilder = new StringBuilder();</span>
+<span class="nc" id="L182">        stringBuilder.append(&quot;{&quot;);</span>
+<span class="nc" id="L183">        boolean first = true;</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">		for (Variable var : theta.keySet()) {</span>
+<span class="nc" id="L185">			Term trm = theta.get(var);</span>
+			
+<span class="nc bnc" id="L187" title="All 2 branches missed.">			if (!first) { stringBuilder.append(&quot;, &quot;); } else { first = false; }</span>
+<span class="nc" id="L188">            stringBuilder.append(var.toString(bindingList)).append(&quot;=&quot;).append(trm.toString(bindingList));</span>
+<span class="nc" id="L189">		}</span>
+<span class="nc" id="L190">        stringBuilder.append(&quot;}&quot;);</span>
+
+<span class="nc" id="L192">        return stringBuilder.toString();</span>
+	}
+
+    public String toString() {
+<span class="nc" id="L196">        return toString(null);</span>
+    }
+
+	@Override
+	public BindingList applyTheta(Map&lt;Variable, Term&gt; bindings) {
+<span class="nc" id="L201">		Utils.error(&quot;Should not call applyTheta on a Binding List.&quot;);</span>
+<span class="nc" id="L202">		return this;</span>
+	}
+
+    /*
+	 * Applies the Theta bindings to all of the terms of this bindingList.
+     *
+     * This method is used to apply the bindings in the provided map to the
+     * terms in this map.
+     *
+     */
+    public void applyThetaInPlace(Map&lt;Variable, Term&gt; bindings) {
+
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        for (Entry&lt;Variable, Term&gt; entry : theta.entrySet()) {</span>
+<span class="fc" id="L215">            Term t2 = entry.getValue().applyTheta(bindings);</span>
+<span class="fc" id="L216">            entry.setValue(t2);</span>
+<span class="fc" id="L217">        }</span>
+<span class="fc" id="L218">    }</span>
+	@Override
+	public int countVarOccurrencesInFOPC(Variable v) {
+<span class="nc bnc" id="L221" title="All 2 branches missed.">		return (theta.containsKey(v) ? 1 : 0);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

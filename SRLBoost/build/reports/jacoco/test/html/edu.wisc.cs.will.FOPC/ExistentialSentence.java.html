@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExistentialSentence.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">ExistentialSentence.java</span></div><h1>ExistentialSentence.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.*;
+
+/*
+ * @author shavlik
+ *
+ */
+public class ExistentialSentence extends QuantifiedSentence {
+	
+<span class="nc" id="L13">	ExistentialSentence(HandleFOPCstrings stringHandler, Collection&lt;Variable&gt; variables, Sentence body) {</span>
+<span class="nc" id="L14">		this.stringHandler = stringHandler;</span>
+<span class="nc" id="L15">		this.variables     = variables;</span>
+<span class="nc" id="L16">		this.body          = body;</span>
+<span class="nc bnc" id="L17" title="All 4 branches missed.">		if (variables == null || variables.size() &lt; 1) { Utils.error(&quot;Must have at least one quantified variable in a quantified sentences.&quot;); }</span>
+<span class="nc bnc" id="L18" title="All 2 branches missed.">		if (body      == null) { Utils.error(&quot;Cannot have an empty body in a quantified sentences.&quot;); }</span>
+<span class="nc" id="L19">	}</span>
+	
+    @Override
+	public ExistentialSentence copy(boolean recursiveCopy) { // recursiveCopy=true means that the copying recurs down to the leaves. 
+<span class="nc bnc" id="L23" title="All 2 branches missed.">		if (recursiveCopy) {</span>
+<span class="nc" id="L24">			stringHandler.stackTheseVariables(variables);</span>
+<span class="nc" id="L25">			Collection&lt;Variable&gt; newVariables = new ArrayList&lt;&gt;(variables.size());</span>
+<span class="nc bnc" id="L26" title="All 2 branches missed.">			for (Variable var : variables) {</span>
+<span class="nc" id="L27">				newVariables.add(var.copy(true));</span>
+<span class="nc" id="L28">			}</span>
+<span class="nc" id="L29">			Sentence            newBody = body.copy(true);</span>
+<span class="nc" id="L30">			ExistentialSentence result  = (ExistentialSentence) stringHandler.getExistentialSentence(newVariables, newBody).setWeightOnSentence(wgtSentence);</span>
+<span class="nc" id="L31">			stringHandler.unstackTheseVariables(variables);</span>
+<span class="nc" id="L32">			return result;	</span>
+		}
+<span class="nc" id="L34">		return (ExistentialSentence) stringHandler.getExistentialSentence(variables, body).setWeightOnSentence(wgtSentence);</span>
+	}
+
+    @Override
+	public ExistentialSentence copy2(boolean recursiveCopy, BindingList bindingList) { // recursiveCopy=true means that the copying recurs down to the leaves.
+<span class="nc bnc" id="L39" title="All 2 branches missed.">		if (recursiveCopy) {</span>
+<span class="nc" id="L40">			Collection&lt;Variable&gt; newVariables = new ArrayList&lt;&gt;(variables.size());</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">			for (Variable var : variables) {</span>
+<span class="nc" id="L42">				newVariables.add(var.copy2(true, bindingList));</span>
+<span class="nc" id="L43">			}</span>
+<span class="nc" id="L44">			Sentence            newBody = body.copy2(true, bindingList);</span>
+<span class="nc" id="L45">			return (ExistentialSentence) stringHandler.getExistentialSentence(newVariables, newBody).setWeightOnSentence(wgtSentence);</span>
+		}
+<span class="nc" id="L47">		return (ExistentialSentence) stringHandler.getExistentialSentence(variables, body).setWeightOnSentence(wgtSentence);</span>
+	}
+
+    @Override
+	public boolean containsFreeVariablesAfterSubstitution(BindingList theta) {
+<span class="nc bnc" id="L52" title="All 4 branches missed.">		if (body == null || theta == null) { return false; }</span>
+<span class="nc" id="L53">		return body.containsFreeVariablesAfterSubstitution(theta);</span>
+	}
+
+    @Override
+	public ExistentialSentence applyTheta(Map&lt;Variable,Term&gt; bindings) {
+<span class="nc" id="L58">		Sentence newBody = body.applyTheta(bindings);</span>
+<span class="nc" id="L59">		return (ExistentialSentence) stringHandler.getExistentialSentence(variables, newBody).setWeightOnSentence(wgtSentence);</span>
+	}
+
+	@Override
+	public int hashCode() { // Need to have equal objects produce the same hash code.
+<span class="nc" id="L64">		final int prime = 31;</span>
+<span class="nc" id="L65">		int result = 1;</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">		result = prime * result + ((variables == null) ? 0 : variables.hashCode());</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">		result = prime * result + ((body      == null) ? 0 : body.hashCode());</span>
+<span class="nc" id="L68">		return result;</span>
+	}	
+    @Override
+	public boolean equals(Object other) { // This doesn't handle permuted variable binding lists.
+<span class="nc bnc" id="L72" title="All 2 branches missed.">		if (!(other instanceof ExistentialSentence)) { return false; }</span>
+		
+<span class="nc" id="L74">		ExistentialSentence otherUsent = (ExistentialSentence) other;</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">		if (variables.size() != otherUsent.variables.size()) { return false; }</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">		for (Iterator&lt;Variable&gt; vars1 = variables.iterator(), vars2 = otherUsent.variables.iterator(); vars1.hasNext(); ) {</span>
+<span class="nc" id="L77">			Variable var1 = vars1.next();</span>
+<span class="nc" id="L78">			Variable var2 = vars2.next();</span>
+			
+<span class="nc bnc" id="L80" title="All 2 branches missed.">			if (!var1.equals(var2)) { return false; }</span>
+<span class="nc" id="L81">		}</span>
+<span class="nc" id="L82">		return body.equals(((ExistentialSentence) other).body);</span>
+	}
+	
+    @Override
+	public BindingList variants(Sentence other, BindingList bindings) { // This doesn't handle permuted variable binding lists.
+<span class="nc bnc" id="L87" title="All 2 branches missed.">		if (!(other instanceof ExistentialSentence)) { return null; }</span>
+		
+<span class="nc" id="L89">		BindingList bList2 = bindings;</span>
+<span class="nc" id="L90">		ExistentialSentence otherUsent = (ExistentialSentence) other;</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">		if (variables.size() != otherUsent.variables.size()) { return null; }</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">		for (Iterator&lt;Variable&gt; vars1 = variables.iterator(), vars2 = otherUsent.variables.iterator(); vars1.hasNext(); ) {</span>
+<span class="nc" id="L93">			Variable var1 = vars1.next();</span>
+<span class="nc" id="L94">			Variable var2 = vars2.next();</span>
+			
+<span class="nc" id="L96">			bList2 = var1.variants(var2, bindings);</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">			if (bList2 == null) { return null; }</span>
+<span class="nc" id="L98">		}</span>
+<span class="nc" id="L99">		return body.variants(((ExistentialSentence) other).body, bList2);</span>
+	}
+
+	// Clausal-form converter stuff.
+    @Override
+	protected boolean containsThisFOPCtype(String marker) {
+<span class="nc bnc" id="L105" title="All 4 branches missed.">		if (marker.equalsIgnoreCase(&quot;thereExists&quot;) || marker.equalsIgnoreCase(&quot;exists&quot;)) { return true; }</span>
+<span class="nc" id="L106">		return body.containsThisFOPCtype(marker);</span>
+	}
+    @Override
+	protected ExistentialSentence convertEquivalenceToImplication() {
+<span class="nc" id="L110">		Sentence newBody = body.convertEquivalenceToImplication();</span>
+<span class="nc" id="L111">		return (ExistentialSentence) stringHandler.getExistentialSentence(variables, newBody).setWeightOnSentence(wgtSentence);</span>
+	}
+    @Override
+	protected ExistentialSentence eliminateImplications() {
+<span class="nc" id="L115">		Sentence newBody = body.eliminateImplications();</span>
+<span class="nc" id="L116">		return (ExistentialSentence) stringHandler.getExistentialSentence(variables, newBody).setWeightOnSentence(wgtSentence);</span>
+	}
+	// 'not ThereExists p' is equivalent to 'ForAll not(p)'
+    @Override
+	protected UniversalSentence negate() { // According to the original MLN paper (page 11), negative weights when moving a negation inward.  BUT since we're KEEPING the negation, we don't negate the weight here.
+<span class="nc" id="L121">		Sentence negatedBody = body.negate();</span>
+<span class="nc" id="L122">		return (UniversalSentence) stringHandler.getUniversalSentence(variables, negatedBody).setWeightOnSentence(wgtSentence);</span>
+	}
+    @Override
+	protected ExistentialSentence moveNegationInwards() {
+<span class="nc" id="L126">		Sentence newBody = body.moveNegationInwards();</span>
+<span class="nc" id="L127">		return (ExistentialSentence) stringHandler.getExistentialSentence(variables, newBody).setWeightOnSentence(wgtSentence);</span>
+	}
+    @Override
+	protected Sentence skolemize(List&lt;Variable&gt; outerUniversalVars) {
+<span class="nc" id="L131">		BindingList bindings = new BindingList(); // Create a binding list for each existential variable here.</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">		for (Variable v : variables) {</span>
+<span class="nc" id="L133">			bindings.addBinding(v, stringHandler.createNewSkolem(outerUniversalVars, v.typeSpec));</span>
+<span class="nc" id="L134">		}</span>
+<span class="nc" id="L135">		Sentence newBody1 = body.applyTheta(bindings.theta); // Replace all these existential variables with their Skolem functions.</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">		if (body.wgtSentence &lt; Sentence.maxWeight) { Utils.error(&quot;Dont know what to do when the weight on the body of an existential is not infinite.&quot;); }</span>
+<span class="nc" id="L137">		return newBody1.skolemize(outerUniversalVars).setWeightOnSentence(wgtSentence); // Pass the weight of the existential to the body (which has infinite weight).</span>
+	}	
+
+    @Override
+	public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L142">		int    precedence = 1500;</span>
+<span class="nc" id="L143">		StringBuilder result     = new StringBuilder(returnWeightString() + &quot;Exists &quot;);</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">		if (variables.size() == 1) { return result.toString() + Utils.getIthItemInCollectionUnsafe(variables, 0) + &quot; &quot; + body.toPrettyString(newLineStarter, precedence, bindingList); }</span>
+<span class="nc" id="L145">		result.append(&quot;{&quot;);</span>
+<span class="nc" id="L146">		boolean firstTime = true;</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">		for (Variable var : variables) {</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">			if (firstTime) { firstTime = false; } else { result.append(&quot;, &quot;); }</span>
+<span class="nc" id="L149">			result.append(var.toString());</span>
+<span class="nc" id="L150">		}</span>
+<span class="nc" id="L151">		return result + &quot;} &quot; + body.toPrettyString(newLineStarter, precedence, bindingList);</span>
+	}
+    @Override
+	public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L155">		int    precedence = 1500;</span>
+<span class="nc" id="L156">		StringBuilder result     = new StringBuilder(returnWeightString() + &quot;Exists &quot;);</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">		if (variables.size() == 1) { return result.toString() + Utils.getIthItemInCollectionUnsafe(variables, 0) + &quot; &quot; + body.toString(precedence, bindingList); }</span>
+<span class="nc" id="L158">		result.append(&quot;{&quot;);</span>
+<span class="nc" id="L159">		boolean firstTime = true;</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">		for (Variable var : variables) {</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">			if (firstTime) { firstTime = false; } else { result.append(&quot;, &quot;); }</span>
+<span class="nc" id="L162">			result.append(var.toString());</span>
+<span class="nc" id="L163">		}</span>
+<span class="nc" id="L164">		return result + &quot;} &quot; + body.toString(precedence, bindingList);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

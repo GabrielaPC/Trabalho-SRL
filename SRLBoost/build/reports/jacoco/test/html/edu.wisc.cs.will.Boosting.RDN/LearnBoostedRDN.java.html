@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LearnBoostedRDN.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.RDN</a> &gt; <span class="el_source">LearnBoostedRDN.java</span></div><h1>LearnBoostedRDN.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.RDN;
+
+import edu.wisc.cs.will.Boosting.Common.SRLInference;
+import edu.wisc.cs.will.Boosting.Trees.LearnRegressionTree;
+import edu.wisc.cs.will.Boosting.Trees.RegressionTree;
+import edu.wisc.cs.will.Boosting.Utils.BoostingUtils;
+import edu.wisc.cs.will.Boosting.Utils.CommandLineArguments;
+import edu.wisc.cs.will.FOPC.Literal;
+import edu.wisc.cs.will.FOPC.Theory;
+import edu.wisc.cs.will.FOPC.TreeStructuredTheory;
+import edu.wisc.cs.will.Utils.ProbDistribution;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.Utils.VectorStatistics;
+import edu.wisc.cs.will.Utils.condor.CondorFile;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+
+/*
+ * @author Tushar Khot
+ *
+ */
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">public class LearnBoostedRDN {</span>
+
+	private final CommandLineArguments cmdArgs;
+	private final WILLSetup setup;
+
+<span class="fc" id="L35">	private List&lt;RegressionRDNExample&gt; egs    = null;</span>
+<span class="fc" id="L36">	private String  targetPredicate          = null;</span>
+	private final int     maxTrees;
+
+<span class="fc" id="L39">	private long learningTimeTillNow = 0;</span>
+
+<span class="fc" id="L41">	public LearnBoostedRDN(CommandLineArguments cmdArgs, WILLSetup setup) {</span>
+<span class="fc" id="L42">		this.cmdArgs = cmdArgs;</span>
+<span class="fc" id="L43">		this.setup = setup;</span>
+<span class="fc" id="L44">		maxTrees = cmdArgs.getMaxTreesVal();</span>
+<span class="fc" id="L45">	}</span>
+
+	public void learnNextModel(SRLInference sampler, ConditionalModelPerPredicate rdn, int numMoreTrees) {
+
+<span class="fc" id="L49">		Utils.println(&quot;\n% Learn model for: &quot; + targetPredicate);</span>
+<span class="fc" id="L50">		long start = System.currentTimeMillis();</span>
+
+		// Call facts and examples the first time.
+<span class="fc" id="L53">		setup.prepareFactsAndExamples(targetPredicate);</span>
+
+<span class="fc" id="L55">		Utils.println(&quot;% Have prepared facts.&quot;);</span>
+
+<span class="fc" id="L57">		learnRDN(targetPredicate, rdn, sampler, numMoreTrees);</span>
+
+<span class="fc" id="L59">		long end = System.currentTimeMillis();</span>
+<span class="fc" id="L60">		learningTimeTillNow += (end - start);</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">		if (rdn.getNumTrees() == maxTrees) {</span>
+<span class="fc" id="L62">			Utils.println(&quot;% Time taken to learn model for '&quot; + targetPredicate + &quot;': &quot; + Utils.convertMillisecondsToTimeSpan(end - start, 3) + &quot;.&quot;);</span>
+		}
+<span class="fc" id="L64">	}</span>
+
+	private void learnRDN(String pred, ConditionalModelPerPredicate rdn, SRLInference sampler, int numMoreTrees) {
+		// Thought we needed the 'caller' but we don't - leave it here, though, in case we do end up needing it.
+<span class="fc" id="L68">		String saveModelName = BoostingUtils.getModelFile(cmdArgs, pred, true);</span>
+
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">		if(rdn.getNumTrees() == 0) {</span>
+<span class="fc" id="L71">			rdn.setTargetPredicate(pred);</span>
+<span class="pc bpc" id="L72" title="1 of 2 branches missed.">			rdn.setTreePrefix(pred + (cmdArgs.getModelFileVal() == null ? &quot;&quot; : &quot;_&quot; + cmdArgs.getModelFileVal()));</span>
+		}
+
+
+<span class="fc" id="L76">		long start = System.currentTimeMillis();</span>
+		//TODO(TVK!)
+<span class="fc" id="L78">		if (</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">			cmdArgs.isLearnRegression()) {</span>
+<span class="fc" id="L80">			rdn.setLog_prior(0);</span>
+		}
+		
+<span class="fc bfc" id="L83" title="All 4 branches covered.">		if (cmdArgs.isLearnMLN() &amp;&amp; cmdArgs.isLearningMLNClauses()) {</span>
+<span class="fc" id="L84">			setup.getOuterLooper().setMaxBodyLength(cmdArgs.getMaxMLNClauseLength());</span>
+<span class="fc" id="L85">			setup.getOuterLooper().maxNumberOfClauses = cmdArgs.getNumberOfMLNClauses();</span>
+<span class="fc" id="L86">			setup.getOuterLooper().maxNumberOfCycles = cmdArgs.getNumberOfMLNClauses();</span>
+<span class="fc" id="L87">			setup.getInnerLooper().beamWidth = 10;</span>
+		}
+		
+		// Learn maxTrees models.
+		int i;
+<span class="pc bpc" id="L92" title="2 of 4 branches missed.">		if (rdn.getNumTrees() == 0 &amp;&amp; cmdArgs.useCheckPointing()) {</span>
+<span class="fc" id="L93">			loadCheckPointModel(rdn);</span>
+		}
+
+		// check if rdn already has some trees from checkpoint
+<span class="fc" id="L97">		i=rdn.getNumTrees();</span>
+		
+<span class="fc" id="L99">		int maxTreesForThisRun = Math.min(maxTrees, (i+numMoreTrees));</span>
+	
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">		if(i &gt;= maxTrees) {</span>
+<span class="nc" id="L102">			rdn.setNumTrees(maxTrees);</span>
+		}
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">		if (i == 0) {</span>
+<span class="fc" id="L105">			dumpTheoryToFiles(null, -1);  // Print something initially in case a run dies (i.e., be sure to erase any old results right away).</span>
+		}
+<span class="fc bfc" id="L107" title="All 2 branches covered.">		for (; i &lt; maxTreesForThisRun; i++) {</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">			if (i &gt;= maxTrees/2) {</span>
+<span class="fc" id="L109">				setup.addAllTargetModes();</span>
+			}
+			
+<span class="fc" id="L112">			long end = System.currentTimeMillis();</span>
+<span class="fc bfc" id="L113" title="All 4 branches covered.">			if (cmdArgs.isLearnMLN() &amp;&amp; cmdArgs.isLearningMLNClauses()) {</span>
+<span class="fc" id="L114">				setup.getOuterLooper().setMaxBodyLength((i/4)+1);</span>
+<span class="fc" id="L115">				setup.getOuterLooper().maxNumberOfClauses = (20/(i+1));</span>
+<span class="fc" id="L116">				setup.getOuterLooper().maxNumberOfCycles = (20/(i+1));</span>
+			}
+<span class="fc bfc" id="L118" title="All 2 branches covered.">			if (i &gt; 0) {</span>
+<span class="fc" id="L119">				Utils.println(&quot;% Time taken to learn &quot; + Utils.comma(i) + &quot; trees is &quot; + Utils.convertMillisecondsToTimeSpan(learningTimeTillNow + end - start, 3) + &quot;.\n&quot;);</span>
+			}
+			
+			// Do we need this here? It is called before executeOuterLoop and in dumpTheoryToFiles.
+<span class="fc" id="L123">			setup.getOuterLooper().resetAll();</span>
+
+<span class="fc bfc" id="L125" title="All 2 branches covered.">			for (int modelNumber = 0; modelNumber &lt; RunBoostedRDN.numbModelsToMake; modelNumber++) { // This code assumes modelNumber=0 is learned first.</span>
+				// Build data set for this model in this iteration.
+<span class="fc" id="L127">				long bddstart = System.currentTimeMillis();						</span>
+<span class="fc" id="L128">				List&lt;RegressionRDNExample&gt; newDataSet = buildDataSet(targetPredicate, sampler);</span>
+<span class="fc" id="L129">				long bbend = System.currentTimeMillis();</span>
+<span class="fc" id="L130">				Utils.println(&quot;Time to build dataset: &quot; + Utils.convertMillisecondsToTimeSpan(bbend-bddstart));</span>
+				RegressionTree tree;
+<span class="fc" id="L132">				tree = getWILLTree(newDataSet, i);</span>
+<span class="fc" id="L133">				double stepLength = cmdArgs.getDefaultStepLenVal();</span>
+<span class="fc" id="L134">				rdn.addTree(tree, stepLength, modelNumber);  // This code assume modelNumber=0 is learned first.</span>
+			}
+<span class="fc" id="L136">			rdn.updateSetOfTrees();</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">			if (cmdArgs.useCheckPointing()) {</span>
+<span class="fc" id="L138">				createCheckPointForModel(rdn, saveModelName);</span>
+			}
+<span class="fc bfc" id="L140" title="All 2 branches covered.">			if ((i + 1) % 10 == 0) { </span>
+<span class="fc" id="L141">				rdn.saveModel(saveModelName);</span>
+			} // Every now and then save the model so we can see how it is doing.
+		}
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">		if (i &gt;= maxTrees) {</span>
+<span class="fc" id="L145">			addPrologCodeForUsingAllTrees(rdn, i); </span>
+		}
+<span class="fc" id="L147">	}</span>
+
+	public void loadCheckPointModel(ConditionalModelPerPredicate rdn) {
+<span class="fc" id="L150">		String saveModelName = BoostingUtils.getModelFile(cmdArgs, targetPredicate, true);</span>
+<span class="fc" id="L151">		String chkPointFile = BoostingUtils.getCheckPointFile(saveModelName);</span>
+<span class="fc" id="L152">		File willFile = getWILLsummaryFile();</span>
+<span class="fc" id="L153">		File chkFile = new File(chkPointFile);</span>
+<span class="pc bpc" id="L154" title="3 of 4 branches missed.">		if (chkFile.exists() &amp;&amp; chkFile.length() &gt; 0) {</span>
+<span class="nc" id="L155">			Utils.println(&quot;Loading checkpoint model from &quot; + chkPointFile);</span>
+<span class="nc" id="L156">			rdn.loadModel(chkPointFile, setup, -1);</span>
+<span class="nc" id="L157">			Utils.println(&quot;Found &quot; + rdn.getNumTrees() + &quot; trees in checkpoint&quot;);</span>
+<span class="nc" id="L158">			String addString = &quot;\n//// Loaded checkpoint from &quot; + chkPointFile + &quot; at &quot; + Utils.getDateTime() + </span>
+<span class="nc" id="L159">							  &quot;.\n//// Number of trees loaded:&quot; + rdn.getNumTrees() ;</span>
+<span class="nc" id="L160">			Utils.appendString(willFile, addString);</span>
+		}
+
+<span class="fc" id="L163">		String chkptLitFile = BoostingUtils.getCheckPointFlattenedLitFile(saveModelName);</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">		if (Utils.fileExists(chkptLitFile)) {</span>
+<span class="nc" id="L165">			List&lt;Literal&gt; lits = setup.getInnerLooper().getParser().readLiteralsInPureFile(chkptLitFile);</span>
+<span class="nc" id="L166">			addToFlattenedLiterals(lits);</span>
+<span class="nc" id="L167">			Utils.appendString(willFile, &quot;\n//// Also loaded &quot; + theseFlattenedLits.size() + &quot; flattened literals from &quot; + chkptLitFile);</span>
+		}
+<span class="fc" id="L169">	}</span>
+
+	private void createCheckPointForModel(ConditionalModelPerPredicate rdn, String saveModelName) {
+<span class="fc" id="L172">		String chkptFile = BoostingUtils.getCheckPointFile(saveModelName);</span>
+<span class="fc" id="L173">		rdn.saveModel(chkptFile);</span>
+
+<span class="fc" id="L175">		File chkptLitFile = new CondorFile(BoostingUtils.getCheckPointFlattenedLitFile(saveModelName));</span>
+<span class="fc" id="L176">		Utils.writeStringToFile(&quot;// Checkpointed flattened literals\n&quot;, chkptLitFile);</span>
+		
+		try {
+<span class="fc" id="L179">			BufferedWriter ckptLitWriter = new BufferedWriter(new FileWriter(chkptLitFile));</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">			for (Literal lit : theseFlattenedLits) {</span>
+<span class="fc" id="L181">				ckptLitWriter.write(lit.toString() + &quot;\n&quot;);</span>
+<span class="fc" id="L182">			}</span>
+<span class="fc" id="L183">			ckptLitWriter.close();</span>
+<span class="nc" id="L184">		} catch (IOException e) {</span>
+			// TODO Auto-generated catch block
+<span class="nc" id="L186">			e.printStackTrace();</span>
+<span class="fc" id="L187">		}</span>
+		
+<span class="fc" id="L189">	}</span>
+
+
+<span class="fc" id="L192">	private final Collection&lt;Literal&gt; theseFlattenedLits = new HashSet&lt;&gt;(4);</span>
+	private RegressionTree getWILLTree(List&lt;RegressionRDNExample&gt; newDataSet, int i) {
+		TreeStructuredTheory th;
+<span class="fc" id="L195">		Theory thry = null;</span>
+		try {
+			// WILL somehow loses all the examples after every run.  TODO - JWS: Guess there is some final cleanup. 
+<span class="fc" id="L198">			setup.getOuterLooper().setPosExamples(BoostingUtils.convertToListOfExamples(newDataSet));</span>
+
+<span class="fc" id="L200">			thry = setup.getOuterLooper().executeOuterLoop();</span>
+
+<span class="fc bfc" id="L202" title="All 2 branches covered.">			if (thry instanceof TreeStructuredTheory) {</span>
+<span class="fc" id="L203">				th = (TreeStructuredTheory)thry;</span>
+<span class="fc" id="L204">				Collection&lt;Literal&gt; currentFlattenedLits = th.getUniqueFlattenedLiterals();</span>
+<span class="fc" id="L205">				addToFlattenedLiterals(currentFlattenedLits);</span>
+<span class="fc" id="L206">				dumpTheoryToFiles(th, i);</span>
+			}
+<span class="nc" id="L208">		} catch (SearchInterrupted e) {</span>
+<span class="nc" id="L209">			Utils.reportStackTrace(e);</span>
+<span class="nc" id="L210">			Utils.error(&quot;Problem in getWILLTree.&quot;);</span>
+<span class="fc" id="L211">		}</span>
+		
+<span class="fc" id="L213">		LearnRegressionTree learner = new LearnRegressionTree(setup);</span>
+<span class="fc" id="L214">		return learner.parseTheory(thry);</span>
+	}
+
+
+	private void getSampledPosNegEx(List&lt;RegressionRDNExample&gt; all_exs) {
+
+<span class="fc bfc" id="L220" title="All 2 branches covered.">		if (egs != null) {</span>
+<span class="fc bfc" id="L221" title="All 2 branches covered.">			for (int i = 0; i &lt; Utils.getSizeSafely(egs); i++) {</span>
+<span class="fc" id="L222">				RegressionRDNExample eg = egs.get(i);</span>
+<span class="fc" id="L223">				eg.clearCache();</span>
+			}
+		}
+		// Only sample the second time onwards.
+<span class="fc bfc" id="L227" title="All 2 branches covered.">		if (egs != null) {</span>
+<span class="fc" id="L228">			setup.prepareExamplesForTarget(targetPredicate);</span>
+		}
+<span class="fc" id="L230">		all_exs.addAll(BoostingUtils.castToListOfRegressionRDNExamples(setup.getOuterLooper().getPosExamples()));</span>
+<span class="fc" id="L231">		Utils.println(&quot;% Dataset size: &quot; + Utils.comma(all_exs));</span>
+<span class="fc" id="L232">		egs = all_exs;</span>
+<span class="fc" id="L233">	}</span>
+
+	private List&lt;RegressionRDNExample&gt; buildDataSet(String targetPredicate, SRLInference sampler) {
+<span class="fc" id="L236">		List&lt;RegressionRDNExample&gt; all_exs = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L238">		getSampledPosNegEx(        all_exs);</span>
+		// No need to get sample probabilities as there is no \psi_0 or gradient.
+<span class="fc" id="L240">		boolean disableBoosting = false;</span>
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">		if (!disableBoosting) {</span>
+<span class="fc" id="L242">			Utils.println(&quot;Computing probabilities&quot;);</span>
+<span class="fc" id="L243">			long start = System.currentTimeMillis();</span>
+<span class="fc" id="L244">			sampler.getProbabilities(all_exs);</span>
+<span class="fc" id="L245">			long end = System.currentTimeMillis();</span>
+<span class="fc" id="L246">			Utils.println(&quot;prob time:&quot;+Utils.convertMillisecondsToTimeSpan(end-start));</span>
+		}
+		
+		
+		// Update facts based on the sampled states
+
+<span class="fc bfc" id="L252" title="All 2 branches covered.">		for (int i = 0; i &lt; Utils.getSizeSafely(all_exs); i++) {</span>
+			
+<span class="fc" id="L254">			RegressionRDNExample eg = all_exs.get(i);</span>
+<span class="fc" id="L255">			eg.clearCache();</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">			if(cmdArgs.isLearnRegression()) {</span>
+<span class="fc" id="L257">				eg.setOutputValue(eg.originalRegressionOrProbValue - eg.getProbOfExample().getProbOfBeingTrue());</span>
+<span class="fc" id="L258">				continue;</span>
+			}
+
+<span class="fc" id="L261">			ProbDistribution probDistr = eg.getProbOfExample();</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">			if (probDistr.isHasDistribution()) {</span>
+				double[] base_prob;
+<span class="nc" id="L264">				double[] distr = probDistr.getProbDistribution();</span>
+<span class="nc" id="L265">				base_prob = VectorStatistics.createIndicator(distr.length, eg.getOriginalValue());</span>
+
+<span class="nc" id="L267">				double[] grad  = VectorStatistics.subtractVectors(base_prob, distr);</span>
+
+				// Only update for EM
+<span class="nc" id="L270">				eg.setOutputVector(grad);</span>
+<span class="nc" id="L271">			} else {</span>
+<span class="fc" id="L272">				double prob = probDistr.getProbOfBeingTrue();</span>
+<span class="fc" id="L273">				double stateProb = 1;</span>
+				// Only set for EM
+<span class="pc bpc" id="L275" title="1 of 2 branches missed.">				if (cmdArgs.isSoftM()){</span>
+<span class="nc" id="L276">					double alpha = cmdArgs.getAlpha();</span>
+<span class="nc" id="L277">					double beta = cmdArgs.getBeta();</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">					if (eg.isOriginalTruthValue()) {</span>
+
+<span class="nc" id="L280">						eg.setOutputValue(1 - prob/(prob + (1-prob)* Math.exp(alpha)));</span>
+					} else {
+
+<span class="nc" id="L283">						eg.setOutputValue(1 - prob/(prob + (1-prob)* Math.exp(-beta)));</span>
+					}
+<span class="nc" id="L285">				} else {</span>
+<span class="fc bfc" id="L286" title="All 2 branches covered.">				if (eg.isOriginalTruthValue()) {</span>
+<span class="fc" id="L287">					eg.setOutputValue(stateProb * (1 - prob));</span>
+				} else {
+<span class="fc" id="L289">					eg.setOutputValue(stateProb * (0 - prob));</span>
+				}
+				}
+			}
+		}
+		// TODO(@hayesall): This `println` was originally conditioned on the result of the removed `isHiddenLiteral` method
+<span class="fc" id="L295">		Utils.println(&quot;No hidden examples for : &quot; + targetPredicate);</span>
+<span class="fc" id="L296">		return all_exs;</span>
+	}
+
+
+	// ------------------------------------------------------
+	// ------------------------------------------------------
+	// Functions that write various useful theory/prolog files
+	// ------------------------------------------------------
+	// ------------------------------------------------------
+	static final String LOG_PRIOR_PREDICATE = &quot;logPrior&quot;;
+	private static final String STEPLEN_PREDICATE_PREFIX = &quot;stepLength&quot;;
+
+	private File getWILLsummaryFile() {  // Always recompute in case 'targetPredicate' changes.
+<span class="fc" id="L309">		return Utils.ensureDirExists(getWILLFile(cmdArgs.getModelDirVal(), cmdArgs.getModelFileVal(), targetPredicate));</span>
+	}
+	
+	public static String getWILLFile(String dir, String postfix, String predicate) {
+<span class="fc" id="L313">		String filename = dir + &quot;/WILLtheories/&quot; + predicate + &quot;_learnedWILLregressionTrees&quot;;</span>
+<span class="pc bpc" id="L314" title="1 of 2 branches missed.">		if (postfix != null) {</span>
+<span class="nc" id="L315">			filename += &quot;_&quot; + postfix;</span>
+		}
+<span class="fc" id="L317">		filename += Utils.defaultFileExtensionWithPeriod;</span>
+<span class="fc" id="L318">		return filename;</span>
+	}
+
+
+	private void addToFlattenedLiterals(Collection&lt;Literal&gt; lits) { // Written by JWS.
+<span class="pc bpc" id="L323" title="1 of 2 branches missed.">		if (lits == null) { return; }</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">		for (Literal lit : lits) {</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">			if (!(lit.member(theseFlattenedLits))) {</span>
+<span class="fc" id="L326">				theseFlattenedLits.add(lit);</span>
+			}
+<span class="fc" id="L328">		}</span>
+<span class="fc" id="L329">	}</span>
+	private void dumpTheoryToFiles(Theory th, int i) {
+<span class="fc bfc" id="L331" title="All 2 branches covered.">		String stringToPrint = (i &lt; 0 ? &quot;&quot; : &quot;\n%%%%%  WILL-Produced Tree #&quot; + (i + 1) + &quot; @ &quot; + Utils.getDateTime() + &quot;.  %%%%%\n\n&quot;);</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">		if (i &gt;= 0) { Utils.println(stringToPrint); }</span>
+<span class="fc" id="L333">		File file = getWILLsummaryFile();</span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">		if (i &gt;= 0) { Utils.appendString(file, stringToPrint + th.toPrettyString(), cmdArgs.useLockFiles); } </span>
+		else { // Write a file right away in case a run crashes.
+			
+			// First save the old model file
+			// Rename single model files.
+<span class="fc bfc" id="L339" title="All 2 branches covered.">			if (file.exists()) {</span>
+<span class="fc" id="L340">				RunBoostedRDN.renameAsOld(file);</span>
+			}
+			
+			
+<span class="fc" id="L344">			stringToPrint = setup.getHandler().getStringToIndicateCurrentVariableNotation();  // Assume we don't change the variable indicator mid-run.</span>
+<span class="fc" id="L345">			stringToPrint += &quot;\n% maxTreeDepthInNodes                 = &quot; + Utils.comma(setup.getOuterLooper().getMaxTreeDepth())                        + &quot;\n&quot;;</span>
+<span class="fc" id="L346">			stringToPrint +=   &quot;% maxTreeDepthInLiterals              = &quot; + Utils.comma(setup.getOuterLooper().getMaxTreeDepthInLiterals())              + &quot;\n&quot;;</span>
+<span class="fc" id="L347">			stringToPrint +=   &quot;% maxNumberOfLiteralsAtAnInteriorNode = &quot; + Utils.comma(setup.getOuterLooper().getMaxNumberOfLiteralsAtAnInteriorNode()) + &quot;\n&quot;;</span>
+<span class="fc" id="L348">			stringToPrint +=   &quot;% maxFreeBridgersInBody               = &quot; + Utils.comma(setup.getOuterLooper().innerLoopTask.maxFreeBridgersInBody)      + &quot;\n&quot;;</span>
+<span class="fc" id="L349">			stringToPrint +=   &quot;% maxNumberOfClauses                  = &quot; + Utils.comma(setup.getOuterLooper().maxNumberOfClauses)                       + &quot;\n&quot;;</span>
+<span class="fc" id="L350">			stringToPrint +=   &quot;% maxNodesToConsider                  = &quot; + Utils.comma(setup.getOuterLooper().innerLoopTask.getMaxNodesToConsider())    + &quot;\n&quot;;</span>
+<span class="fc" id="L351">			stringToPrint +=   &quot;% maxNodesToCreate                    = &quot; + Utils.comma(setup.getOuterLooper().innerLoopTask.getMaxNodesToCreate())      + &quot;\n&quot;;</span>
+<span class="fc" id="L352">			stringToPrint +=   &quot;% maxAcceptableNodeScoreToStop        = &quot; + Utils.truncate(setup.getOuterLooper().getMaxAcceptableNodeScoreToStop(), 3)  + &quot;\n&quot;;</span>
+<span class="fc" id="L353">			stringToPrint +=   &quot;% negPosRatio                         = &quot; + Utils.truncate(cmdArgs.getSampleNegsToPosRatioVal(),3)                       + &quot;\n&quot;;</span>
+<span class="fc" id="L354">			stringToPrint +=   &quot;% testNegPosRatio                     = &quot; + Utils.truncate(cmdArgs.getTestNegsToPosRatioVal(),  3)                       + &quot;\n&quot;;</span>
+<span class="fc" id="L355">			stringToPrint +=   &quot;% # of pos examples                   = &quot; + Utils.comma(setup.getOuterLooper().getNumberOfPosExamples())                 + &quot;\n&quot;;</span>
+<span class="fc" id="L356">			stringToPrint +=   &quot;% # of neg examples                   = &quot; + Utils.comma(setup.getOuterLooper().getNumberOfNegExamples())                 + &quot;\n&quot;;</span>
+<span class="fc" id="L357">			Utils.writeStringToFile(stringToPrint + &quot;\n&quot;, file); </span>
+		}
+<span class="fc bfc" id="L359" title="All 2 branches covered.">		if (i &gt;= 0) {</span>
+<span class="fc" id="L360">			Utils.println(th.toPrettyString());</span>
+			// 	Model directory is set to the working directory as the default value.
+<span class="pc bpc" id="L362" title="1 of 2 branches missed.">			if (th instanceof TreeStructuredTheory) {</span>
+<span class="fc" id="L363">				String tree_dotfile = cmdArgs.getModelDirVal() + &quot;bRDNs/dotFiles/WILLTreeFor_&quot; + targetPredicate + i + &quot;.dot&quot;;</span>
+<span class="fc" id="L364">				Utils.ensureDirExists(tree_dotfile);</span>
+<span class="fc" id="L365">				((TreeStructuredTheory)th).writeDOTFile(tree_dotfile);</span>
+			}
+		}
+<span class="fc" id="L368">	}</span>
+
+	/*
+	 * 
+	 * @param i The tree index(starts from 1)
+	 * @return Suffix that is used for filenames and rules.
+	 */
+	private static String getTreeSuffix(int i) {
+<span class="fc" id="L376">		return &quot;_tree&quot; + i;</span>
+	}
+	 
+	static String stepLengthPredicate(int i) {
+<span class="fc" id="L380">		return LearnBoostedRDN.STEPLEN_PREDICATE_PREFIX + getTreeSuffix(i);</span>
+	}
+	
+	private void addPrologCodeForUsingAllTrees(ConditionalModelPerPredicate rdn, int numberOfTrees) { // Added by JWS.
+<span class="pc bpc" id="L384" title="1 of 2 branches missed.">		if (numberOfTrees &lt; 1) { return; }</span>
+<span class="fc" id="L385">		File file = getWILLsummaryFile();</span>
+<span class="fc" id="L386">		List&lt;Literal&gt; targets = setup.getInnerLooper().getTargets();</span>
+<span class="fc" id="L387">		Literal       target  = null;</span>
+<span class="pc bpc" id="L388" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(targets) == 1) { target = targets.get(0); } else { Utils.error(&quot;Should only have one target.  Have: &quot; + targets); }</span>
+<span class="pc bpc" id="L389" title="2 of 4 branches missed.">		assert target != null;</span>
+<span class="pc bpc" id="L390" title="1 of 2 branches missed.">		if (!target.predicateName.name.equals(targetPredicate)) {</span>
+<span class="nc" id="L391">			Utils.error(&quot;These predicate names should match: targetPredicate = &quot; + targetPredicate + &quot; and target = &quot; + target); </span>
+		}
+
+<span class="fc" id="L394">		StringBuilder stringToPrint = new StringBuilder(&quot;\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n%%%%%  Final call for computing score for &quot; + targetPredicate + &quot;.  %%%%%\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n&quot;);</span>
+
+<span class="fc bfc" id="L396" title="All 2 branches covered.">		for (int i = 0; i &lt; numberOfTrees; i++) {</span>
+<span class="fc" id="L397">			String sentence = rdn.getStepLengthSentence(i+1);</span>
+<span class="fc" id="L398">			stringToPrint.append(sentence).append(&quot;\n&quot;);</span>
+		}
+		
+<span class="fc" id="L401">		stringToPrint.append(&quot;\n&quot;).append(rdn.getLogPriorSentence());</span>
+
+<span class="fc" id="L403">		stringToPrint.append(&quot;\n&quot;).append(getComputationPrologRules(numberOfTrees));</span>
+<span class="fc bfc" id="L404" title="All 2 branches covered.">		if (!theseFlattenedLits.isEmpty()) {</span>
+<span class="fc" id="L405">			stringToPrint.append(&quot;\nflattenedLiteralsInThisSetOfTrees(&quot;).append(targetPredicate).append(&quot;, &quot;).append(theseFlattenedLits.size()).append(&quot;, [\n&quot;);</span>
+<span class="fc" id="L406">			boolean firstTime = true;</span>
+<span class="fc bfc" id="L407" title="All 2 branches covered.">			for (Literal lit : theseFlattenedLits) {</span>
+<span class="fc bfc" id="L408" title="All 2 branches covered.">				if (firstTime) { firstTime = false; } else { stringToPrint.append(&quot;,\n&quot;); }</span>
+<span class="fc" id="L409">				stringToPrint.append(&quot;   &quot;).append(lit);</span>
+<span class="fc" id="L410">			}</span>
+<span class="fc" id="L411">			stringToPrint.append(&quot;]).&quot;);</span>
+<span class="fc" id="L412">			theseFlattenedLits.clear();</span>
+<span class="fc" id="L413">		} else {</span>
+<span class="fc" id="L414">			stringToPrint.append(&quot;\nflattenedLiteralsInThisSetOfTrees(0, []).&quot;);</span>
+		}
+
+<span class="fc" id="L417">		Utils.appendString(file, stringToPrint.toString(), cmdArgs.useLockFiles);</span>
+<span class="fc" id="L418">		Utils.println(stringToPrint.toString());</span>
+<span class="fc" id="L419">	}</span>
+
+
+
+	private String getComputationPrologRules(int numberOfTrees) {
+<span class="fc" id="L424">		String totalStr    = setup.getInnerLooper().getStringHandler().convertToVarString(&quot;Total&quot;);</span>
+<span class="fc" id="L425">		String treeStr     = setup.getInnerLooper().getStringHandler().convertToVarString(&quot;TreesToUse&quot;);</span>
+<span class="fc" id="L426">		String stepStr     = setup.getInnerLooper().getStringHandler().convertToVarString(&quot;StepLen&quot;);</span>
+<span class="fc" id="L427">		String logPriorStr = setup.getInnerLooper().getStringHandler().convertToVarString(&quot;LogPrior&quot;);</span>
+		
+<span class="fc" id="L429">		StringBuilder argsString  = new StringBuilder();</span>
+		// The error checking whether this matches the target predicate is done in addPrologCodeForUsingAllTrees.
+<span class="fc" id="L431">		List&lt;Literal&gt; targets = setup.getInnerLooper().getTargets();</span>
+<span class="fc" id="L432">		Literal       target  = null;</span>
+<span class="pc bpc" id="L433" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(targets) == 1) { target = targets.get(0); } else { Utils.error(&quot;Should only have one target.  Have: &quot; + targets); }</span>
+
+<span class="pc bpc" id="L435" title="2 of 4 branches missed.">		assert target != null;</span>
+<span class="fc bfc" id="L436" title="All 2 branches covered.">		for (int i = target.numberArgs() - 1; i &gt;= 0; i--) { argsString.insert(0, target.getArgument(i) + &quot;, &quot;); }</span>
+<span class="fc" id="L437">		StringBuilder stringToPrint = new StringBuilder(targetPredicate + &quot;(&quot; + argsString + totalStr + &quot;) :- // A general accessor. \n&quot;);</span>
+<span class="fc" id="L438">		stringToPrint.append(&quot;   &quot;).append(targetPredicate).append(&quot;(&quot;).append(argsString).append(&quot;1000000, &quot;).append(totalStr).append(&quot;), !.\n&quot;);</span>
+<span class="fc" id="L439">		stringToPrint.append(targetPredicate).append(&quot;(&quot;).append(argsString).append(totalStr).append(&quot;) :- waitHere(\&quot;This should not fail\&quot;, &quot;).append(targetPredicate).append(&quot;(&quot;).append(argsString).append(totalStr).append(&quot;)).\n\n&quot;);</span>
+
+<span class="fc" id="L441">		stringToPrint.append(targetPredicate).append(&quot;(&quot;).append(argsString).append(treeStr).append(&quot;, &quot;).append(totalStr).append(&quot;) :- // A tree-limited accessor (e.g., for tuning the number of trees to use).\n&quot;);</span>
+<span class="fc" id="L442">		stringToPrint.append(&quot;   &quot; + LOG_PRIOR_PREDICATE + &quot;(&quot;).append(logPriorStr).append(&quot;),\n&quot;);</span>
+<span class="fc bfc" id="L443" title="All 2 branches covered.">		for (int i = 1; i &lt;= numberOfTrees; i++) {</span>
+<span class="fc" id="L444">			stringToPrint.append(&quot;   getScore_&quot;).append(targetPredicate).append(getTreeSuffix(i)).append(&quot;(&quot;).append(argsString).append(treeStr).append(&quot;, &quot;).append(totalStr).append(i).append(&quot;),\n&quot;);</span>
+		}
+
+<span class="fc" id="L447">		stringToPrint.append(&quot;   &quot;).append(totalStr).append(&quot; is &quot;).append(logPriorStr);</span>
+<span class="fc bfc" id="L448" title="All 2 branches covered.">		for (int i = 1; i &lt;= numberOfTrees; i++) {</span>
+<span class="fc" id="L449">			stringToPrint.append(&quot; + &quot;).append(totalStr).append(i);</span>
+		}
+<span class="fc" id="L451">		stringToPrint.append(&quot;,\n   !.\n&quot;).append(targetPredicate).append(&quot;(&quot;).append(argsString).append(treeStr).append(&quot;, &quot;).append(totalStr).append(&quot;) :- waitHere(\&quot;This should not fail\&quot;, &quot;).append(targetPredicate).append(&quot;(&quot;).append(argsString).append(treeStr).append(&quot;, &quot;).append(totalStr).append(&quot;)).\n&quot;);</span>
+<span class="fc bfc" id="L452" title="All 2 branches covered.">		for (int i = 1; i &lt;= numberOfTrees; i++) { </span>
+<span class="fc" id="L453">			stringToPrint.append(&quot;\ngetScore_&quot;).append(targetPredicate).append(getTreeSuffix(i)).append(&quot;(&quot;).append(argsString).append(treeStr).append(&quot;, 0.0) :- &quot;).append(i).append(&quot; &gt; &quot;).append(treeStr).append(&quot;, !.&quot;);</span>
+<span class="fc" id="L454">			stringToPrint.append(&quot;\ngetScore_&quot;).append(targetPredicate).append(getTreeSuffix(i)).append(&quot;(&quot;).append(argsString).append(treeStr).append(&quot;, &quot;).append(totalStr).append(i).append(&quot;) :- &quot;).append(targetPredicate).append(&quot;_tree&quot;).append(i).append(&quot;(&quot;).append(argsString).append(totalStr).append(&quot;), &quot;).append(stepLengthPredicate(i)).append(&quot;(&quot;).append(stepStr).append(&quot;), &quot;).append(totalStr).append(i).append(&quot; is &quot;).append(totalStr).append(&quot; * &quot;).append(stepStr).append(&quot;.\n&quot;);</span>
+		}
+<span class="fc" id="L456">		return stringToPrint.toString();</span>
+	}
+
+	public void setTargetPredicate(String targetPredicate) {
+<span class="fc" id="L460">		this.targetPredicate = targetPredicate;</span>
+<span class="fc" id="L461">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

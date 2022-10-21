@@ -1,0 +1,1416 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LearnOneClause.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">LearnOneClause.java</span></div><h1>LearnOneClause.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.DataSetUtils.ArgSpec;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.DataSetUtils.RegressionExample;
+import edu.wisc.cs.will.DataSetUtils.TypeManagement;
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.FOPC_MLN_ILP_Parser.FileParser;
+import edu.wisc.cs.will.ILP.Regression.RegressionInfoHolder;
+import edu.wisc.cs.will.ILP.Regression.RegressionInfoHolderForMLN;
+import edu.wisc.cs.will.ILP.Regression.RegressionInfoHolderForRDN;
+import edu.wisc.cs.will.ResThmProver.HornClauseContext;
+import edu.wisc.cs.will.ResThmProver.HornClauseProver;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.*;
+
+import javax.swing.event.EventListenerList;
+import java.io.*;
+import java.util.*;
+ 
+/*
+ * @author shavlik
+ *
+ * This is the ILP inner loop.  See broad-based comments in ILPouterLoop.java
+ *
+ *
+ * TODO list: (not meant to be understood by users - this is simply a place to collect local notes)
+ *
+ *
+ *
+ *  check for other uses of cached files (other than neg examples?)
+ *    document all the cached files in one place!
+ *
+ *
+ * 	post-pruning code: drop one literal (if legal to do so?) and repeat as long as progress made
+ * 		- maybe say unacceptable if ANY pos are lost?  Are using F1 as the heuristic to hill climb?
+ *
+ * 		figure out how to avoid too many outer parents when printString'ing
+ *
+ * List&lt;Example&gt; coveredPosExamplesThisCycle = innerLoopTask.collectPosExamplesCovered(bestNode); NEED TO DO THIS MORE EFFICIENTLY!
+ *
+      Handle these (for both pos and neg)
+:- jws_set(positive_examples_filtered_out,        25).
+:- jws_set(inverse_sampling_rate_of_neg_examples, 4.0000).
+
+		if something is no good in RRR for one set of seeds,
+		it will also be no good for restarts in that seed
+			- keep a hashmap for these  KEEP SAME ROOT
+
+			save gleaner after every N outer loops?
+
+
+ *        no hits to these (not even 2x)
+ *          between_args_frequencies.b:mode: phrase_contains_several_between_10x_word(+phrase, #arg, #pos,        +fold). %  +fold was #fold
+ *
+ *        need to figure out to deal with CLAUSES during parsing (for now, 'canPrune(Literal lit)' does not allow pruning with such cases).
+ *
+ *        infer modes through deduction and not just from basic facts?  or too cpu-complicated?
+ *
+ *
+ *        allow other specs about predicates:
+ *
+ *        	symmetric: p/2  &lt;-- use this in creating neg examples
+ *          symmetric: p(s,s,s,_,_) &lt;-- any permutation of the s's equivalent
+ *          etc
+//:- symmetric(different_phrases/2).  &lt;-- automatically create prune rules
+// :- symmetric(different_words/2).
+ *
+ *        allow inference of types to be turned off - with some sort of parser command
+ *
+ *        handle a fact like (where X is a variable):   s(1, X).
+ *
+ *        make use of 'target' in modes - can put on hold
+ * *
+ *        accept Aleph's spec for modes?  and for determinations?  - can put on hold
+ *
+ *  	  have a &quot;checkpoint&quot; facility
+ *  	  need gleaner to also do this (write and read)
+ *
+ *
+ *  	  here's a Prolog benchmark: http://www.sics.se/sicstus/bench.pl
+ *
+ *       add Vitor's trick to see if current clause same as previous (maybe hold N such clauses?)
+ *          - index by parent node (don't want to &quot;reuse&quot; two nodes with different parents)
+ *          - doesn't happen w/o the bottom clause, though confirm current code removes duplicates
+ *
+ *      think through the Exists stuff and MLNs
+ *
+ *		allow facts to include lessThan(small, medium) &lt;- assume transitivity [this allows &quot;tiles&quot; to be used on symbolic constants]
+ *
+ *		if facts have variables in then, is the naming done properly?  probably not ...
+ * *
+ */
+
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">public class LearnOneClause extends StateBasedSearchTask {</span>
+
+<span class="fc" id="L97">    String              callerName = &quot;unnamed caller&quot;;               // Used to annotate printing during runs.</span>
+
+	private final FileParser          parser;
+
+<span class="fc" id="L101">	private   boolean             isaTreeStructuredTask = false; // For a tree-structured task, we don't want to generalize the heads (e.g., p(X,X) might be a good rule - will need to learn this via sameAs() calls ...).</span>
+<span class="fc" id="L102">	SingleClauseNode    currentStartingNode   = null;  // For some calculations we want to stop at this node.</span>
+
+<span class="fc" id="L104">	public    boolean			  regressionTask    = false; // Is this a REGRESSION task?</span>
+<span class="fc" id="L105">	boolean			  mlnRegressionTask	= false;</span>
+
+<span class="fc" id="L107">    int                 maxBodyLength                     =   9;     // Max length for the bodies of clauses.</span>
+<span class="fc" id="L108">	public    int                 maxFreeBridgersInBody             = maxBodyLength; // Bridgers can run amok so limit them (only has an impact when countBridgersInLength=true).  This is implemented as follows: the first  maxBridgersInBody don't count in the length, but any excess does.</span>
+<span class="fc" id="L109">	public    int                 maxNumberOfNewVars                =  10;     // Limit on the number of &quot;output&quot; variables used in a rule body.</span>
+<span class="fc" id="L110">	public    int        		  maxDepthOfNewVars                 =   7;     // The depth of variables in the head is 0.  The depth of a new variable is 1 + max depth of the input variables in the new predicate.</span>
+<span class="fc" id="L111">    private   double              minPosCoverage                    =   2.0;   // [If in (0,1), treat as a FRACTION of totalPosWeight].  Acceptable clauses must cover at least this many positive examples.  NOTE: this number is compared to SUMS of weighted examples, not simply counts (which is why this is a 'double').</span>
+<span class="fc" id="L112">	private   double              maxNegCoverage                    =  -1.0;   // [If in (0,1), treat as a FRACTION of totalNegWeight].  Acceptable clauses must cover no  more this many negative examples.  NOTE: this number is compared to SUMS of weighted examples, not simply counts (which is why this is a 'double').  IGNORE IF A NEGATIVE NUMBER.</span>
+<span class="fc" id="L113">	double              minPrecision                      =   0.501; // Acceptable clauses must have at least this precision.</span>
+<span class="fc" id="L114">	double              maxRecall                         =   1.01;  // When learning trees, don't want to accept nodes with TOO much recall, since want some examples on the 'false' branch.</span>
+<span class="fc" id="L115">    boolean             stopIfPerfectClauseFound          =   true;  // Might want to continue searching if a good SET of rules (eg, for Gleaner) is sought.</span>
+<span class="fc" id="L116">	public    double              clausesMustCoverFractPosSeeds     =   0.499; // ALL candidate clauses must cover at least this fraction of the pos seeds.  If performing RRR, these sets are used when creating the starting points.</span>
+<span class="fc" id="L117">    boolean             stopWhenUnacceptableCoverage      =   true;  // If set to  true, don't continue to prove examples when impossible to meet the minPosCoverage and minPrecision specifications.</span>
+<span class="fc" id="L118">    public    int                 minNumberOfNegExamples            =  10;     // If less than this many negative examples, create some implicit negative examples.</span>
+<span class="fc" id="L119">    final long                maxResolutionsPerClauseEval    = 10000000;     // When evaluating a clause, do not perform more than this many resolutions.  If this is exceeded, a clause is said to cover 0 pos and 0 neg, regardless of how many have been proven and it won't be expanded.</span>
+
+    private List&lt;Example&gt;         posExamples;
+    private List&lt;Example&gt;         negExamples;
+<span class="fc" id="L123">	double              totalPosWeight = -1.0;   // Sum of the weights on the positive examples.</span>
+	double              totalNegWeight;          // Ditto for negative examples.
+<span class="fc" id="L125">	double              totalWeightOnPosSeeds  = -1;</span>
+<span class="fc" id="L126">	double              totalWeightOnNegSeeds  = -1;</span>
+	private List&lt;PredicateNameAndArity&gt; targetModes;     // The modes for the target.
+	Set&lt;PredicateNameAndArity&gt;  bodyModes;       // Should we keep as a list so user can impact order they are considered (though that might not matter much ...)?  But if we do then we need to check for duplicates.
+
+	List&lt;Example&gt;       seedPosExamples;
+	List&lt;Example&gt;       seedNegExamples;
+
+<span class="fc" id="L133">	PredicateName       procDefinedEnoughDiffMatches   = null;  // This is a built-in predicate that tests if a new literal being added to a clause being grown can be matched in a unique way on some POS seeds.</span>
+<span class="fc" id="L134">	PredicateName       procDefinedForConstants        = null;  // This is used to see which constants in the positive seeds can fill some arguments in a new literal.</span>
+<span class="fc" id="L135">	PredicateName       procDefinedNeedForNewVariables = null;  // See if these new variables ever bind in the positive seeds to some thing new in the clause (otherwise they aren't needed).  Only used if dontAddNewVarsUnlessDiffBindingsPossibleOnPosSeeds=true.</span>
+	List&lt;List&lt;Term&gt;&gt;    collectedConstantBindings;    // This is used as a temporary variable by a method below.
+<span class="fc" id="L137">	final BindingList         bindings = new BindingList(); // Only recreate theta if needed, in order to save on creating new lists.</span>
+
+<span class="fc" id="L139">    private   List&lt;PredicateNameAndArity&gt;  examplePredicates          = null; // These store the positive example predicates that are eventually turned into targets.</span>
+<span class="fc" id="L140">	private   List&lt;List&lt;Term&gt;&gt;     examplePredicateSignatures = null; // Something like [constant, function(constant), constant].</span>
+
+<span class="fc" id="L142">    public    List&lt;Literal&gt;        targets                    = null; // These are the actual targets determined from the examplePredicates.</span>
+<span class="fc" id="L143">	List&lt;List&lt;ArgSpec&gt;&gt;  targetArgSpecs             = null; // The info about the target argument being used and the variables matched with their types.</span>
+<span class="fc" id="L144">	List&lt;List&lt;Term&gt;&gt;     variablesInTargets         = null; // These are really 'arguments' since it is possible a mode specifies a constant be used.</span>
+
+    final HornClauseContext    context;
+
+	HandleFOPCstrings    stringHandler;
+	final Unifier              unifier; // Make instances out of some things that could be 'statics' so the code is safer.
+	private   HornClauseProver     prover; // This is initialized by getProver() so please don't use this variable directly.
+
+    private   InlineManager        inlineHandler; // Handle the in-lining of literal bodies (should only be applied to literals that are only defined by ONE clause).
+	private final TypeManagement       typeManager;
+
+	//private   HornClauseProverChildrenGenerator ruleAndFactsHolder;
+	private final Reader               posExamplesReader; // We now also delay this in case we want to specify this is a regression task.
+	private final Reader               negExamplesReader; // Needed in case implicit negatives need to be created (we delay doing this to allow the caller to set parameters related to this neg-generation process).
+
+	// Clarification on how m-estimates are currently used in this code:
+	//  All clauses are assumed to also match mEstimateNeg negative examples
+	//  The set of positive examples is assumed to have mEstimatePos examples added to it, but these examples are NOT covered the clause.
+	//  So if a clause covers 3 of 7 positive and 2 of 10 negative examples, and these two m-estimates are 1, then
+	//    precision = 3 of 3+2+1 and recall = 3 of 7+1
+<span class="fc" id="L164">	private   double               mEstimatePos = 0.1; // When computing coverage of a rule use these &quot;m estimates.&quot;  NOTE these are also used when examples are weighted, so if total weight is small, might want to change these.</span>
+<span class="fc" id="L165">	private   double               mEstimateNeg = 0.1; // Note: these are used in recall as well as precision.</span>
+
+<span class="fc" id="L167">	private final EventListenerList searchListenerList = new EventListenerList();</span>
+
+<span class="fc" id="L169">    private List&lt;Sentence&gt; facts = null; // This temporarily stores the facts between construction and initialization.  After initialization it will be null.</span>
+
+<span class="fc" id="L171">    private boolean initialized = false;</span>
+
+
+	/*
+	 * Constructs a new LearnOneClause search.
+     */
+	public LearnOneClause(String workingDir, String prefix,
+						  Reader posExamplesReader, Reader negExamplesReader,
+						  Reader backgroundClausesReader, Reader factsReader,
+						  SearchStrategy strategy, ScoreSingleClause scorer,
+						  SearchMonitor monitor,
+<span class="fc" id="L182">						  HornClauseContext context, boolean deferLoadingExamples) {</span>
+
+<span class="fc" id="L184">        taskName = &quot;LearnOneClause&quot;;</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">        this.stringHandler = (context == null ? null : context.getStringHandler());</span>
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">        if ( stringHandler == null ) stringHandler = new HandleFOPCstrings();</span>
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        if ( strategy == null ) strategy = new BestFirstSearch();</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">        if ( scorer   == null ) scorer   = new ScoreSingleClauseByAccuracy();</span>
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        if ( monitor  == null ) monitor  = new Gleaner();</span>
+
+<span class="fc" id="L191">		this.unifier       = Unifier.UNIFIER;</span>
+<span class="fc" id="L192">        this.stringHandler = context.getStringHandler();</span>
+<span class="fc" id="L193">		this.parser        = context.getFileParser();</span>
+<span class="fc" id="L194">		this.setDirectoryName(workingDir);</span>
+<span class="fc" id="L195">		this.setPrefix(prefix);</span>
+<span class="fc" id="L196">        this.context       = context;</span>
+
+<span class="fc" id="L198">		this.typeManager   = new TypeManagement(stringHandler);</span>
+        
+<span class="fc" id="L200">		verbosity = 1;</span>
+
+<span class="fc" id="L202">        setInlineManager(new InlineManager(   stringHandler, getProver().getClausebase()));</span>
+
+		// Load BK first since it is the place where 'usePrologVariables' etc is typically set.
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">		if (backgroundClausesReader != null) { context.assertSentences(readBackgroundTheory(backgroundClausesReader)); }</span>
+
+<span class="fc" id="L207">		Initializer              init        = new InitializeILPsearchSpace();</span>
+<span class="fc" id="L208">		ChildrenClausesGenerator nodeGen     = new ChildrenClausesGenerator();</span>
+        // Limit the closed list to 100K items.  Note that items aren't placed here until EXPANDED, but items wont be placed in OPEN if already in CLOSED.
+<span class="fc" id="L210">        int maxSizeOfClosed = 100000;</span>
+<span class="fc" id="L211">        VisitedClauses           c           = new VisitedClauses(maxSizeOfClosed);</span>
+<span class="fc" id="L212">		initalizeStateBasedSearchTask(init, null, monitor, strategy, scorer, nodeGen, c);</span>
+<span class="fc" id="L213">		nodeGen.initialize();</span>
+<span class="fc" id="L214">		setGleaner(monitor);</span>
+
+<span class="fc" id="L216">		Utils.println(&quot;\n%  Read the facts.&quot;);</span>
+
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">		if (factsReader != null) {</span>
+<span class="fc" id="L219">        	facts = readFacts(factsReader, workingDir);</span>
+<span class="fc" id="L220">        	context.assertSentences(facts);</span>
+<span class="fc" id="L221">			Utils.println(&quot;%  Have read &quot; + Utils.comma(facts) + &quot; facts.&quot;);</span>
+		}
+
+		// NO LONGER BEING DONE.  checkBKforFacts(); // See if some facts were in the BK file.  If so, move them without complaint.
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(stringHandler.getKnownModes()) &lt; 1) { Utils.severeWarning(&quot;Need to have at least one mode: &quot; + stringHandler.getKnownModes()); }</span>
+
+<span class="fc" id="L227">		this.posExamplesReader = posExamplesReader; // Hold on to in case we want to say this is a regression task.</span>
+<span class="fc" id="L228">		this.negExamplesReader = negExamplesReader; // Hold on to this to allow the caller a chance to set parameters (e.g., sampling rate).</span>
+
+        // Wait until initialize() is called, in case some things need to be set.  
+<span class="pc bpc" id="L231" title="1 of 4 branches missed.">		if (!deferLoadingExamples &amp;&amp; posExamplesReader != null) { </span>
+<span class="fc" id="L232">			readExamples(posExamplesReader, negExamplesReader);</span>
+<span class="fc" id="L233">			closeWithoutException(posExamplesReader);</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">			if (negExamplesReader       != null) closeWithoutException(negExamplesReader);</span>
+		}
+<span class="pc bpc" id="L236" title="1 of 2 branches missed.">        if (factsReader             != null) closeWithoutException(factsReader);</span>
+<span class="pc bpc" id="L237" title="1 of 2 branches missed.">        if (backgroundClausesReader != null) closeWithoutException(backgroundClausesReader);</span>
+<span class="fc" id="L238">		Utils.println(&quot;\n%  LearnOneClause initialized.&quot;);</span>
+<span class="fc" id="L239">	}</span>
+
+    private void readExamples(Reader positiveReader, Reader negativeReader) {
+		// TODO(@hayesall): `skewMaxNegToPosUse` is always -1, dropping the code related to this.
+<span class="fc bfc" id="L243" title="All 2 branches covered.">        if (posExamples == null) {</span>
+<span class="pc bpc" id="L244" title="1 of 2 branches missed.">            setPosExamples(positiveReader == null ? null : readExamples(positiveReader, getDirectoryName()));</span>
+        }
+<span class="fc bfc" id="L246" title="All 4 branches covered.">        if (negExamples == null &amp;&amp; !regressionTask) {</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">            setNegExamples(negativeReader == null ? null : readExamples(negativeReader, getDirectoryName())); // Negative examples can be EXPLICIT (or absent).</span>
+        }
+<span class="pc bpc" id="L249" title="3 of 4 branches missed.">        if (posExamples == null &amp;&amp; positiveReader != null) {</span>
+<span class="nc" id="L250">            Utils.error(&quot;You should provide some positive examples.  None were found in reader '&quot; + positiveReader + &quot;'.&quot;);</span>
+        }
+
+<span class="fc" id="L253">	}</span>
+    // cth: Added so that previous gleaner can be grabbed from the LearnOneClause object
+    // needed to make Gleaner setting persistent
+    final SearchMonitor getGleaner() {
+<span class="fc" id="L257">    	return this.searchMonitor;</span>
+    }
+
+	final void setGleaner(SearchMonitor monitor) {
+
+<span class="fc" id="L262">       this.searchMonitor = monitor;</span>
+
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">		if (monitor != null) {</span>
+<span class="fc" id="L265">			monitor.setSearchTask(this); // Connect the search monitor (if one) to this search task.</span>
+		}
+<span class="fc" id="L267">	}</span>
+
+<span class="fc" id="L269">	public final int num_hits = 0;</span>
+<span class="fc" id="L270">	public final int num_misses = 0;</span>
+
+	public void setMEstimateNeg(double mEstimateNeg) {
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">		if (mEstimateNeg &lt; 0.0) Utils.error(&quot;The 'm' for neg examples covered needs to be a non-negative number.  You provided: &quot; + mEstimateNeg);</span>
+<span class="fc" id="L274">		this.mEstimateNeg = mEstimateNeg;</span>
+<span class="fc" id="L275">	}</span>
+	double getMEstimateNeg() {
+<span class="fc" id="L277">		return mEstimateNeg;</span>
+	}
+	public void setMEstimatePos(double mEstimatePos) {
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">		if (mEstimatePos &lt; 0.0) Utils.error(&quot;The 'm' for pos examples covered needs to be a non-negative number.  You provided: &quot; + mEstimatePos);</span>
+<span class="fc" id="L281">		this.mEstimatePos = mEstimatePos;</span>
+<span class="fc" id="L282">	}</span>
+	double getMEstimatePos() {
+<span class="fc" id="L284">		return mEstimatePos;</span>
+	}
+
+	// Some accessor functions.
+	public List&lt;Example&gt; getPosExamples() {
+<span class="fc" id="L289">		return posExamples;</span>
+	}
+	public List&lt;Example&gt; getNegExamples() {
+<span class="fc" id="L292">	       return negExamples;</span>
+	}
+
+    public HandleFOPCstrings getStringHandler() {
+<span class="fc" id="L296">		return stringHandler;</span>
+	}
+	public final HornClauseProver getProver() {
+<span class="fc bfc" id="L299" title="All 2 branches covered.">        if ( prover == null ) {</span>
+<span class="fc" id="L300">            prover = new HornClauseProver( context );</span>
+        }
+<span class="fc" id="L302">		return prover;</span>
+	}
+
+	private void initialize() {
+<span class="nc" id="L306">		initialize(false);</span>
+<span class="nc" id="L307">	}</span>
+	public void initialize(boolean creatingConjunctiveFeaturesOnly) { // Make this a separate call so that caller can set some public variables if it wants to do so.
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">		if (!initialized) {</span>
+<span class="fc" id="L310">			long istart = System.currentTimeMillis();</span>
+<span class="fc" id="L311">            initialized = true;</span>
+
+<span class="fc bfc" id="L313" title="All 2 branches covered.">            if (regressionTask) {</span>
+<span class="fc" id="L314">                stopIfPerfectClauseFound = false;</span>
+                // This causes the posExamplesThatFailedHere to be incomplete, if not set to false.
+<span class="fc" id="L316">                stopWhenUnacceptableCoverage = false;</span>
+            }
+<span class="fc" id="L318">            readExamples(posExamplesReader, negExamplesReader);</span>
+<span class="pc bpc" id="L319" title="1 of 2 branches missed.">            if (posExamplesReader       != null) closeWithoutException(posExamplesReader);</span>
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">			if (negExamplesReader       != null) closeWithoutException(negExamplesReader);</span>
+			// Will be set to true when using this code to create features.
+
+<span class="fc" id="L323">            targetModes = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L324">            bodyModes   = new LinkedHashSet&lt;&gt;(Utils.getSizeSafely(stringHandler.getKnownModes()) - 1);</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">            for (PredicateNameAndArity pName : stringHandler.getKnownModes()) {</span>
+				// Note: we are not allowing recursion here since P is either a head or a body predicate.
+<span class="pc bpc" id="L327" title="1 of 4 branches missed.">				if (examplePredicates != null &amp;&amp; examplePredicates.contains(pName)) {</span>
+<span class="fc" id="L328">                	targetModes.add(pName);</span>
+                }
+<span class="fc" id="L330">                else bodyModes.add(pName);</span>
+<span class="fc" id="L331">            }</span>
+
+<span class="fc" id="L333">        ProcedurallyDefinedPredicateHandler procHandler   = new ILPprocedurallyDefinedPredicateHandler(this);</span>
+<span class="fc" id="L334">		procDefinedEnoughDiffMatches   = stringHandler.getPredicateName(&quot;differentlyBoundOutputVars&quot;);</span>
+<span class="fc" id="L335">		procDefinedForConstants        = stringHandler.getPredicateName(&quot;collectContantsBoundToTheseVars&quot;);</span>
+<span class="fc" id="L336">		procDefinedNeedForNewVariables = stringHandler.getPredicateName(&quot;newTermBoundByThisVariable&quot;);</span>
+<span class="fc" id="L337">        context.getClausebase().setUserProcedurallyDefinedPredicateHandler(procHandler);</span>
+		// TODO(hayesall): Is the `procHandler` actually doing anything?
+
+<span class="pc bpc" id="L340" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(posExamples) + Utils.getSizeSafely(negExamples) &gt; 0) {</span>
+<span class="fc" id="L341">			chooseTargetMode();</span>
+		}
+
+<span class="fc" id="L344">		Utils.println(&quot;\n% Started collecting constants&quot;);</span>
+
+		// TODO(hayesall): `typeManager` also appears to try to do type inference. This behavior should be deprecated.
+
+<span class="fc" id="L348">		long start = System.currentTimeMillis();</span>
+<span class="fc" id="L349">		typeManager.collectTypedConstants(targets, targetArgSpecs, bodyModes, getPosExamples(), getNegExamples(), facts);</span>
+<span class="fc" id="L350">		long end = System.currentTimeMillis();</span>
+
+<span class="fc" id="L352">		Utils.println(&quot;% Time to collect constants: &quot; + Utils.convertMillisecondsToTimeSpan(end - start));</span>
+<span class="pc bpc" id="L353" title="2 of 6 branches missed.">        if (!creatingConjunctiveFeaturesOnly &amp;&amp; minNumberOfNegExamples &gt; 0 &amp;&amp; getNegExamples() == null) {</span>
+<span class="nc" id="L354">            Utils.severeWarning(&quot;Have ZERO negative examples!  Variable 'minNumberOfNegExamples' is currently set to &quot; + minNumberOfNegExamples + &quot;.&quot;);</span>
+        }
+
+<span class="fc" id="L357">        Utils.println(&quot;\n% Read &quot; + Utils.comma(getPosExamples()) + &quot; pos examples and &quot; + Utils.comma(getNegExamples()) + &quot; neg examples.&quot;);</span>
+
+<span class="fc" id="L359">        facts = null; // Release the temporarily stored facts so we aren't wasting memory.</span>
+<span class="fc" id="L360">        long iend = System.currentTimeMillis();</span>
+<span class="fc" id="L361">        Utils.println(&quot;% Time to init learnOneClause: &quot; + Utils.convertMillisecondsToTimeSpan(iend-istart));</span>
+        }
+<span class="fc" id="L363">	}</span>
+
+    public void addBodyMode(PredicateNameAndArity pName) {
+<span class="nc" id="L366">        bodyModes.add(pName);</span>
+<span class="nc" id="L367">        stringHandler.addKnownMode(pName);</span>
+<span class="nc" id="L368">    }</span>
+
+<span class="fc" id="L370">	private int countOfSearchesPerformedWithCurrentModes = 0;  // Trevor - if you wish to see getSearchParametersString, feel free to add some reportFirstNsearches variable.  Jude</span>
+
+    @Override
+    public SearchResult performSearch() throws SearchInterrupted {
+
+<span class="fc" id="L375">        SearchResult result = null;</span>
+
+<span class="fc" id="L377">        ILPSearchAction action = fireInnerLoopStarting(this);</span>
+ 
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">        if ( action == ILPSearchAction.PERFORM_LOOP ) {</span>
+
+			// Limit number of reports.
+<span class="fc bfc" id="L382" title="All 2 branches covered.">            if (++countOfSearchesPerformedWithCurrentModes &lt; 2) { Utils.print(getSearchParametersString()); }</span>
+<span class="fc" id="L383">			result = super.performSearch();</span>
+
+<span class="fc" id="L385">			fireInnerLoopFinished(this);</span>
+        }
+<span class="nc bnc" id="L387" title="All 2 branches missed.">        else if (action == ILPSearchAction.SKIP_ITERATION) {</span>
+<span class="nc" id="L388">            Utils.println(&quot;ILPSearchListener skipped inner-loop.&quot;);</span>
+        }
+        else {
+<span class="nc" id="L391">            Utils.println(&quot;ILPSearchListener terminated further inner-loop execution.&quot;);</span>
+<span class="nc" id="L392">            throw new SearchInterrupted(&quot;ILPSearchListener terminated further inner-loop execution.&quot;);</span>
+        }
+
+<span class="fc" id="L395">        return result;</span>
+    }
+
+    void performSearch(SingleClauseNode bestNodeFromPreviousSearch) throws SearchInterrupted {
+<span class="pc bpc" id="L399" title="1 of 2 branches missed.">        if (!initialized) { initialize(); }</span>
+<span class="fc" id="L400">        ((InitializeILPsearchSpace) initializer).setBestNodeFromPreviousSearch(bestNodeFromPreviousSearch);</span>
+<span class="fc" id="L401">		performSearch();</span>
+<span class="fc" id="L402">	}</span>
+
+    private String getSearchParametersString() {
+<span class="fc" id="L405">        StringBuilder stringBuilder = new StringBuilder();</span>
+<span class="fc" id="L406">        stringBuilder.append(&quot;\n% LearnOneClause Parameters:\n&quot;);</span>
+        
+<span class="fc" id="L408">        Set&lt;String&gt; theTargets = getModeStrings(targetModes);</span>
+<span class="fc" id="L409">        stringBuilder.append(&quot;%   Targets (&quot;).append(Utils.comma(theTargets)).append(&quot;):\n%    &quot;);</span>
+<span class="fc" id="L410">        stringBuilder.append(Utils.toString(theTargets, &quot;,\n%    &quot;));</span>
+<span class="fc" id="L411">        stringBuilder.append(&quot;\n&quot;);</span>
+
+<span class="fc" id="L413">        Set&lt;String&gt; modes = getModeStrings(bodyModes);</span>
+<span class="fc" id="L414">        stringBuilder.append(&quot;%  Modes (&quot;).append(Utils.comma(modes)).append(&quot;):\n%    &quot;);</span>
+<span class="fc" id="L415">        stringBuilder.append(Utils.toString(modes, &quot;,\n%    &quot;));</span>
+
+<span class="fc" id="L417">        stringBuilder.append(&quot;\n&quot;);</span>
+<span class="fc" id="L418">        return stringBuilder.toString();</span>
+    }
+
+    private Set&lt;String&gt; getModeStrings(Collection&lt;PredicateNameAndArity&gt; modes) {
+
+<span class="fc" id="L423">        Set&lt;String&gt; set = new LinkedHashSet&lt;&gt;();</span>
+
+<span class="fc bfc" id="L425" title="All 2 branches covered.">        for (PredicateNameAndArity predicateName : modes) {</span>
+
+<span class="fc" id="L427">            List&lt;PredicateSpec&gt; types = predicateName.getPredicateName().getTypeList();</span>
+<span class="fc bfc" id="L428" title="All 2 branches covered.">            for (PredicateSpec predicateSpec : types) {</span>
+<span class="fc" id="L429">                StringBuilder stringBuilder = new StringBuilder();</span>
+<span class="fc" id="L430">                stringBuilder.append(predicateName.getPredicateName().name).append(&quot;(&quot;);</span>
+
+<span class="fc" id="L432">                List&lt;TypeSpec&gt; typeSpecs = predicateSpec.getTypeSpecList();</span>
+<span class="fc" id="L433">                boolean first = true;</span>
+<span class="fc bfc" id="L434" title="All 2 branches covered.">                for (TypeSpec typeSpec : typeSpecs) {</span>
+<span class="fc bfc" id="L435" title="All 2 branches covered.">                    if (!first) {</span>
+<span class="fc" id="L436">                        stringBuilder.append(&quot;, &quot;);</span>
+                    }
+
+<span class="fc" id="L439">                    stringBuilder.append(typeSpec);</span>
+<span class="fc" id="L440">                    first = false;</span>
+<span class="fc" id="L441">                }</span>
+<span class="fc" id="L442">                stringBuilder.append(&quot;)&quot;);</span>
+<span class="fc" id="L443">                set.add(stringBuilder.toString());</span>
+<span class="fc" id="L444">            }</span>
+<span class="fc" id="L445">        }</span>
+
+<span class="fc" id="L447">        return set;</span>
+    }
+
+    public Set&lt;String&gt; getAlchemyModeStrings(Collection&lt;PredicateNameAndArity&gt; pnameArities) {
+
+<span class="fc" id="L452">        Set&lt;String&gt; set = new LinkedHashSet&lt;&gt;();</span>
+
+<span class="fc bfc" id="L454" title="All 2 branches covered.">        for (PredicateNameAndArity predicateName : pnameArities) {</span>
+
+<span class="fc" id="L456">            List&lt;PredicateSpec&gt; types = predicateName.getPredicateSpecs();</span>
+<span class="pc bpc" id="L457" title="1 of 2 branches missed.">            for (PredicateSpec predicateSpec : types) {</span>
+<span class="fc" id="L458">                StringBuilder stringBuilder = new StringBuilder();</span>
+<span class="fc" id="L459">                stringBuilder.append(predicateName.getPredicateName().name).append(&quot;(&quot;);</span>
+
+<span class="fc" id="L461">                List&lt;TypeSpec&gt; typeSpecs = predicateSpec.getTypeSpecList();</span>
+<span class="fc" id="L462">                boolean first = true;</span>
+<span class="fc bfc" id="L463" title="All 2 branches covered.">                for (TypeSpec typeSpec : typeSpecs) {</span>
+<span class="fc bfc" id="L464" title="All 2 branches covered.">                    if (!first) {</span>
+<span class="fc" id="L465">                        stringBuilder.append(&quot;, &quot;);</span>
+                    }
+
+<span class="fc" id="L468">                    stringBuilder.append(typeSpec.isaType.toString().toLowerCase());</span>
+<span class="fc" id="L469">                    first = false;</span>
+<span class="fc" id="L470">                }</span>
+<span class="fc" id="L471">                stringBuilder.append(&quot;)&quot;);</span>
+<span class="fc" id="L472">                set.add(stringBuilder.toString());</span>
+<span class="fc" id="L473">                break;</span>
+            }
+<span class="fc" id="L475">        }</span>
+
+<span class="fc" id="L477">        return set;</span>
+    }
+
+	void checkIfAcceptableClausePossible() throws IllegalArgumentException {
+<span class="fc" id="L481">		checkMinPosCoverage();</span>
+<span class="fc" id="L482">		checkMinPrecision();</span>
+<span class="fc" id="L483">	}</span>
+
+    /* Sets the min weight of covered positive example for a clause to be valid.
+     *
+     * If 0 &amp;gte minPosCoverage &amp;gt 1, it is considered the fraction of positive
+     * examples required.  If minPosCoverage &amp;gte 1, it is used directly.
+     *
+     * Note, the actual value returned by getMinPosCoverage() is always the
+     * computed value after the above conversion has been done.  Thus, getMinPosCoverage()
+     * may return a different value than the one set via this method.
+     *
+     * @param minPosCoverage The minimum weighted positive values to cover, 0 &amp;gte minPosCoverage &amp;gte totalPosWeight.
+     */
+	public void setMinPosCoverage(double minPosCoverage) {
+        // I left the &quot;out of range&quot; warnings here, but I moved
+        // the logic for determining the actual value into getMinPosCoverage.
+        // I did this so that if totalPosWeight is set or updated after
+        // setMinPosCoverage is call, we still get same values (although we
+        // might miss the warnings in that case). -Trevor
+
+		// Actually, I moved the error checking up to checkMinPosCoverage().
+        // It should have the same functionality as before...
+<span class="fc" id="L505">        checkMinPosCoverage();</span>
+
+<span class="fc" id="L507">		this.minPosCoverage = minPosCoverage;</span>
+<span class="fc" id="L508">	}</span>
+	
+	public void setMinPosCoverageAsFraction(double minPosCoverageAsFractionOfPosExamples) {
+<span class="pc bpc" id="L511" title="1 of 2 branches missed.">		if (posExamples == null) { Utils.error(&quot;Calling setMinPosCoverageAsFraction when posExamples == null.&quot;); } // Setting posExamples will set totalPosWeight.</span>
+<span class="fc" id="L512">		setMinPosCoverage(minPosCoverageAsFractionOfPosExamples * totalPosWeight);</span>
+<span class="fc" id="L513">	}</span>
+
+    /* Returns the minPosCoverage value.
+     *
+     * If minPosCoverage is between 0 and 1, it will be considered a fraction
+     * of the total positives and the computed value will be returned.
+     */
+	double getMinPosCoverage() {
+<span class="fc" id="L521">		double result = help_getMinPosCoverage();</span>
+<span class="fc" id="L522">		return Math.max(result, Double.MIN_VALUE); // Make sure we never allow zero.</span>
+	}
+	private double help_getMinPosCoverage() {
+<span class="pc bpc" id="L525" title="1 of 2 branches missed.">        if ( minPosCoverage &gt; totalPosWeight ) {</span>
+<span class="nc" id="L526">            return maxPossiblePrecision() * totalPosWeight;</span>
+        }
+<span class="pc bpc" id="L528" title="1 of 2 branches missed.">        else if ( minPosCoverage &lt; 0) {</span>
+<span class="nc" id="L529">            return 0;</span>
+        }
+<span class="fc" id="L531">        else return minPosCoverage;</span>
+	}
+
+    /* Checks if the value of minPosCoverage is valid for this run.
+     *
+     * @return True if the value was valid, false otherwise.  If false, getMinPosCoverage() will probably
+     * fix the value to a reasonable value anyway.
+     */
+	private void checkMinPosCoverage() {
+		// TODO(@hayesall): This function prints warnings, but does not do anything.
+        // Check the min pos coverage values...
+<span class="pc bpc" id="L542" title="1 of 4 branches missed.">		if (totalPosWeight &gt; 0 &amp;&amp; minPosCoverage &gt; totalPosWeight) {  // Anything odd happen here if totalPosWeight &lt; 1?</span>
+<span class="nc" id="L543">			Utils.warning(&quot;% Should not set minPosCoverage (&quot; + Utils.truncate(minPosCoverage) + &quot;) to more than the total weight on the positive examples (&quot; + Utils.truncate(totalPosWeight) + &quot;).  Will use the maximum possible value.&quot;);</span>
+		}
+<span class="pc bpc" id="L545" title="1 of 2 branches missed.">        else if (minPosCoverage &lt; 0) {</span>
+<span class="nc" id="L546">			Utils.warning(&quot;% Should not set minPosCoverage (&quot; + Utils.truncate(minPosCoverage) + &quot;) to a negative value.&quot;);</span>
+		}
+<span class="fc" id="L548">	}</span>
+
+    /* Sets the max weight of covered negative example for a clause to be valid.
+     *
+     * If 0 &amp;gte maxNegCoverage &amp;gt 1, it is considered the fraction of negative
+     * examples required.  If maxNegCoverage &amp;gte 1, it is used directly.
+     *
+     * Note, the actual value returned by getMaxNegCoverage() is always the
+     * computed value after the above conversion has been done.  Thus, getMaxNegCoverage()
+     * may return a different value than the one set via this method.
+     *
+     * @param maxNegCoverage The maximum weighted negative values to cover, 0 &amp;gte minPosCoverage &amp;gte totalPosWeight.
+     */
+	public void setMaxNegCoverage(double maxNegCoverage) {
+        // I moved the logic for determining the actual value into getMaxNegCoverage.
+        // I did this so that if totalNegWeight is set or updated after
+        // setMinPosCoverage is call, we still get sane values (although we
+        // might miss the warnings in that case). -Trevor
+<span class="fc" id="L566">		this.maxNegCoverage = maxNegCoverage;</span>
+
+<span class="fc" id="L568">	}</span>
+
+    /* Returns the maximum negative coverage value.
+     *
+     * If maxNegCoverage is between 0 and 1, it will be considered a fraction
+     * of the total negative and the computed value will be returned.
+     */
+	double getMaxNegCoverage() {
+<span class="pc bpc" id="L576" title="3 of 6 branches missed.">        if (maxNegCoverage &gt; 0 &amp;&amp; maxNegCoverage &lt; 1 &amp;&amp; totalNegWeight &gt; 0) {</span>
+<span class="nc" id="L577">			return maxNegCoverage * totalNegWeight; // In this situation, interpret maxNegCoverage as a FRACTION.</span>
+		}
+<span class="fc" id="L579">		return maxNegCoverage;</span>
+	}
+
+	void setMinPrecision(double minPrecision) {
+<span class="fc" id="L583">		checkMinPrecision();</span>
+<span class="fc" id="L584">		this.minPrecision = minPrecision;</span>
+<span class="fc" id="L585">	}</span>
+
+	double getMinPrecision() {
+<span class="fc" id="L588">		return minPrecision;</span>
+	}
+
+
+	void setMaxRecall(double maxRecall) {
+<span class="fc" id="L593">		checkMaxRecall();</span>
+<span class="fc" id="L594">		this.maxRecall = maxRecall;</span>
+<span class="fc" id="L595">	}</span>
+
+	/* Checks the value of the minPrecision.
+     *
+     * @throws IllegalArgumentException Throws an IllegalArgumentException if the parameter is out of range.
+     */
+	private void checkMinPrecision() throws IllegalArgumentException {
+<span class="pc bpc" id="L602" title="1 of 2 branches missed.">        if (minPrecision &lt; 0) {</span>
+<span class="nc" id="L603">        	minPrecision = 0.0;</span>
+<span class="nc" id="L604">        	Utils.warning(&quot;Should not set minPrecision (&quot; + Utils.truncate(minPrecision) + &quot;) to a negative value.  Will use 0.&quot;);</span>
+		}
+
+<span class="pc bpc" id="L607" title="1 of 2 branches missed.">		if (minPrecision &gt; 1) {</span>
+<span class="nc" id="L608">			minPrecision = maxPossiblePrecision();</span>
+<span class="nc" id="L609">			Utils.warning(&quot;Should not set minPrecision (&quot; + Utils.truncate(minPrecision) + &quot;) to a value above 1.  Will use the maxPossiblePrecision().&quot;);</span>
+		}
+
+<span class="pc bpc" id="L612" title="1 of 4 branches missed.">		if (totalPosWeight &gt; 0 &amp;&amp; minPrecision &gt; maxPossiblePrecision()) {</span>
+<span class="nc" id="L613">			minPrecision= maxPossiblePrecision();</span>
+<span class="nc" id="L614">			Utils.warning(&quot;Should not set minPrecision (&quot; + Utils.truncate(minPrecision) + &quot;) to a value above the max possible precision (&quot; + maxPossiblePrecision() + &quot;).  Will use this max value instead.&quot;);</span>
+		}
+<span class="fc" id="L616">    }</span>
+
+    private void checkMaxRecall()  throws IllegalArgumentException {
+<span class="pc bpc" id="L619" title="1 of 2 branches missed.">        if (maxRecall &lt;= 0.0) {</span>
+<span class="nc" id="L620">        	maxRecall = 0.000001;</span>
+<span class="nc" id="L621">        	Utils.warning(&quot;Should not set maxRecall (&quot; + Utils.truncate(maxRecall) + &quot;) to a non-positive value.  Using &quot; + maxRecall);</span>
+		}
+<span class="fc" id="L623">    }</span>
+
+	private double maxPossiblePrecision() {
+<span class="fc" id="L626">		return totalPosWeight / (totalPosWeight +  getMEstimateNeg());</span>
+	}
+
+    List&lt;Example&gt; collectPosExamplesCovered(SingleClauseNode node) throws SearchInterrupted {
+<span class="fc" id="L630">		return collectExamplesCovered(getPosExamples(),node);</span>
+	}
+	List&lt;Example&gt; collectNegExamplesCovered(SingleClauseNode node) throws SearchInterrupted {
+<span class="fc" id="L633">		return collectExamplesCovered(getNegExamples(),node);</span>
+	}
+
+
+	/* Attempts to prove a single example given clause &lt;code&gt;clause&lt;/code&gt; and returns
+    * the bindings if finds a proof.
+    * If an error occurs, this method silently catches the error and returns
+    * false.
+    *
+    * @param clause Clause to evaluate.
+    * @param ex Example to prove.
+    * @return binding list for head, if the example is true, null otherwise.
+    */
+   public BindingList proveExampleAndReturnBindingList(Clause clause, Example ex) {
+
+       try {
+<span class="nc" id="L649">           Literal head = clause.posLiterals.get(0);</span>
+<span class="nc" id="L650">           List&lt;Literal&gt; clauseBody = clause.negLiterals;</span>
+<span class="nc" id="L651">           BindingList bindingList = unifier.unify(head, ex);</span>
+
+<span class="nc bnc" id="L653" title="All 2 branches missed.">           if (bindingList == null) {</span>
+<span class="nc" id="L654">           		Utils.println(&quot;% proveExampleAndReturnBindingList: &quot; + head + &quot;:&quot; + ex + &quot;:&quot; + clause);</span>
+<span class="nc" id="L655">           		Utils.error(&quot;%%%%%%%%%%%%%%%%% COULDNT FIND BINDING %%%%%%%%%%%%&quot;);</span>
+<span class="nc" id="L656">           		return null;</span>
+           }
+<span class="nc bnc" id="L658" title="All 2 branches missed.">           else if (clauseBody == null) {</span>
+<span class="nc" id="L659">           		Utils.error(&quot;%%%%%%%%%%%%%%%%% EMPTY BODY %%%%%%%%%%%%&quot;);</span>
+<span class="nc" id="L660">               return null;</span>
+           }
+           else {
+<span class="nc" id="L663">               List&lt;Literal&gt; query = bindingList.applyTheta(clauseBody);</span>
+<span class="nc" id="L664">			   return proveAndReturnBindings(query);</span>
+           }
+<span class="nc" id="L666">       } catch (SearchInterrupted ignored) {</span>
+       }
+<span class="nc" id="L668">       return null;</span>
+   }
+    /* Attempts to prove a single example given clause &lt;code&gt;clause&lt;/code&gt;.
+     *
+     * If an error occurs, this method silently catches the error and returns
+     * false.
+     *
+     * @param clause Clause to evaluate.
+     * @param ex Example to prove.
+     * @return True if the example is true, false otherwise.
+     */
+	boolean proveExample(Clause clause, Example ex) {
+
+        try {
+<span class="fc" id="L682">            Literal head = clause.posLiterals.get(0);</span>
+<span class="fc" id="L683">            List&lt;Literal&gt; clauseBody = clause.negLiterals;</span>
+<span class="fc" id="L684">            BindingList bindingList = unifier.unify(head, ex);</span>
+
+<span class="pc bpc" id="L686" title="1 of 2 branches missed.">            if (bindingList == null) {</span>
+<span class="nc" id="L687">            	Utils.println(&quot;%%%%%% NO BINDINGS %%%%%% for clause head (&quot; + head.numberArgs() + &quot; [head] vs. &quot; + ex.numberArgs() + &quot; [example] args)\n  '&quot; + head + &quot;'\n and example\n  '&quot; + ex + &quot;'.&quot;);</span>
+<span class="nc" id="L688">                return false;</span>
+            }
+<span class="pc bpc" id="L690" title="1 of 2 branches missed.">            else if (clauseBody == null) {</span>
+<span class="nc" id="L691">                return true;</span>
+            }
+            else {
+<span class="fc" id="L694">                List&lt;Literal&gt; query = bindingList.applyTheta(clauseBody);</span>
+<span class="fc" id="L695">				return prove(query);</span>
+			}
+<span class="nc" id="L697">        } catch (SearchInterrupted ignored) {</span>
+        }
+<span class="nc" id="L699">        return false;</span>
+    }
+
+	/*
+	 * If fewer than minWgtedCoverage or more than maxWgtedCoverage, can
+	 * stop and return null since this node is unacceptable.
+	 */
+	private List&lt;Example&gt; collectExamplesCovered(List&lt;Example&gt; examples, SingleClauseNode node) throws SearchInterrupted {
+<span class="pc bpc" id="L707" title="1 of 2 branches missed.">		if (examples == null) { return null; }</span>
+<span class="fc" id="L708">		List&lt;Example&gt; results    = null;</span>
+<span class="fc" id="L709">		List&lt;Literal&gt; clauseBody = node.getClauseBody();</span>
+<span class="fc" id="L710">		Literal       target     = node.getTarget();</span>
+<span class="fc bfc" id="L711" title="All 2 branches covered.">		for (Example ex : examples) {</span>
+<span class="fc bfc" id="L712" title="All 2 branches covered.">			if (node.proveExample(this, target, clauseBody, ex, bindings)) { // AT LEAST LOOK AT THE EX'S ALREADY CANCELED.</span>
+<span class="fc bfc" id="L713" title="All 2 branches covered.">				if (results == null) { results = new ArrayList&lt;&gt;(32); }</span>
+<span class="fc" id="L714">				results.add(ex);</span>
+			}
+<span class="fc" id="L716">		}</span>
+<span class="fc" id="L717">		return results;</span>
+	}
+
+	// Allow the user to choose which seeds (eg, might want to use Condor and let the Condor run # deterministically indicate which seed(s) to select.
+	void selectTheseSeedsByIndex(int[] posSeedIndices, Set&lt;Example&gt; seedPosExamplesUsed, Set&lt;Example&gt; seedNegExamplesUsed) {
+<span class="nc" id="L722">		selectTheseSeedsByIndex(posSeedIndices, null, true, seedPosExamplesUsed, seedNegExamplesUsed);</span>
+<span class="nc" id="L723">	}</span>
+	void selectTheseSeedsByIndex(int[] posSeedIndices, int[] negSeedIndices, boolean complainIfPreviouslyUsed, Set&lt;Example&gt; seedPosExamplesUsed, Set&lt;Example&gt; seedNegExamplesUsed) {
+<span class="fc" id="L725">		int numberOfPosEx = Utils.getSizeSafely(getPosExamples());</span>
+<span class="fc" id="L726">		int numberOfNegEx = Utils.getSizeSafely(getNegExamples());</span>
+
+<span class="pc bpc" id="L728" title="2 of 4 branches missed.">      if ( seedPosExamplesUsed == null || seedNegExamplesUsed == null ) {</span>
+<span class="nc" id="L729">           throw new NullPointerException(&quot;seedPosExamplesUsed and seedNegExamplesUsed must be non-null.&quot;);</span>
+       }
+
+<span class="pc bpc" id="L732" title="2 of 4 branches missed.">        if (posSeedIndices != null &amp;&amp; posSeedIndices.length &gt; 0) {</span>
+<span class="fc" id="L733">			seedPosExamples = new ArrayList&lt;&gt;(posSeedIndices.length);</span>
+<span class="fc bfc" id="L734" title="All 2 branches covered.">			for (int index : posSeedIndices) {</span>
+<span class="pc bpc" id="L735" title="2 of 4 branches missed.">				if (index &lt; 0 || index &gt;= numberOfPosEx) { Utils.error(&quot;Pos seed index &quot; + index + &quot; must be in [0,&quot; + (numberOfPosEx - 1) + &quot;]&quot;); }</span>
+<span class="fc" id="L736">				Example chosenExample = getPosExamples().get(index);</span>
+
+            // TAW: There seems to be a little logic problem here.
+            // It seems like allowPosSeedsToBeReselected and complainIfPreviouslyUsed do the same thing.
+<span class="pc bpc" id="L740" title="3 of 4 branches missed.">				if (complainIfPreviouslyUsed &amp;&amp; seedPosExamplesUsed.contains(chosenExample)) {</span>
+<span class="nc" id="L741">					Utils.error(&quot;Pos seed #&quot; + index + &quot; has already been used.&quot;);</span>
+				}
+<span class="fc" id="L743">				    seedPosExamplesUsed.add(chosenExample);</span>
+<span class="fc" id="L744">				seedPosExamples.add(    chosenExample);</span>
+			}
+		}
+<span class="pc bpc" id="L747" title="2 of 4 branches missed.">		if (negSeedIndices != null &amp;&amp; negSeedIndices.length &gt; 0) {</span>
+<span class="nc" id="L748">			seedNegExamples = new ArrayList&lt;&gt;(negSeedIndices.length);</span>
+<span class="nc bnc" id="L749" title="All 2 branches missed.">			for (int index : negSeedIndices) {</span>
+<span class="nc bnc" id="L750" title="All 4 branches missed.">				if (index &lt; 0 || index &gt;= numberOfNegEx) { Utils.error(&quot;Neg seed index &quot; + index + &quot; must be in [0,&quot; + (numberOfNegEx - 1) + &quot;]&quot;); }</span>
+<span class="nc" id="L751">				Example chosenExample = getNegExamples().get(index);</span>
+
+<span class="nc bnc" id="L753" title="All 4 branches missed.">				if (complainIfPreviouslyUsed &amp;&amp; seedNegExamplesUsed.contains(chosenExample)) {</span>
+<span class="nc" id="L754">					Utils.error(&quot;Neg seed #&quot; + index + &quot; has already been used.&quot;);</span>
+				}
+<span class="nc" id="L756">				    seedNegExamplesUsed.add(chosenExample);</span>
+<span class="nc" id="L757">				seedNegExamples.add(    chosenExample);</span>
+			}
+		}
+<span class="fc" id="L760">		setSeedWgtedCounts();</span>
+<span class="fc" id="L761">	}</span>
+
+
+	private void setSeedWgtedCounts() {
+<span class="fc" id="L765">		totalWeightOnPosSeeds = Example.getWeightOfExamples(seedPosExamples);</span>
+<span class="fc" id="L766">		totalWeightOnNegSeeds = Example.getWeightOfExamples(seedNegExamples);</span>
+<span class="fc" id="L767">	}</span>
+
+	private BindingList proveAndReturnBindings(List&lt;Literal&gt; negatedConjunctiveQuery) throws SearchInterrupted {
+<span class="nc bnc" id="L770" title="All 2 branches missed.">		if (negatedConjunctiveQuery == null) {</span>
+<span class="nc" id="L771">			Utils.error(&quot;Called for null query&quot;);</span>
+<span class="nc" id="L772">			return new BindingList();</span>
+		} // The empty list is really a body that equals the built-in predicate 'true()'.
+<span class="nc" id="L774">		return getProver().proveConjunctiveQueryAndReturnBindings(negatedConjunctiveQuery);</span>
+	}
+
+	boolean prove(List&lt;Literal&gt; negatedConjunctiveQuery) throws SearchInterrupted {
+<span class="pc bpc" id="L778" title="1 of 2 branches missed.">		if (negatedConjunctiveQuery == null) { return true; } // The empty list is really a body that equals the built-in predicate 'true()'.</span>
+<span class="fc" id="L779">		return getProver().proveConjunctiveQuery(negatedConjunctiveQuery);</span>
+	}
+
+    public boolean confirmExample(Literal lit) {
+		// TODO(@hayesall): This method always returns `true`, but also prints warnings.
+		//		The `VARIABLEs in examples` warning could be good to have, but might be better treated as an error.
+
+<span class="fc" id="L786">		int litSize = lit.numberArgs();</span>
+<span class="fc" id="L787">        PredicateNameAndArity pnaa = lit.getPredicateNameAndArity();</span>
+
+<span class="pc bpc" id="L789" title="2 of 4 branches missed.">		if (litSize &gt; 0 &amp;&amp; Utils.getSizeSafely(lit.collectAllVariables()) &gt; 0) {  // TODO - could just like to see if any variables and same some cpu cycles and memory.</span>
+<span class="nc" id="L790">			Utils.severeWarning(&quot;Do you really want to have VARIABLEs in examples?  If so, WILL code needs updating (e.g, in terms of counting coverage, etc.)\n &quot; + lit);</span>
+		}
+
+<span class="fc bfc" id="L793" title="All 2 branches covered.">		if (examplePredicates == null) {</span>
+<span class="fc" id="L794">			examplePredicates          = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L795">			examplePredicateSignatures = new ArrayList&lt;&gt;(1);</span>
+		}
+
+<span class="fc bfc" id="L798" title="All 2 branches covered.">        if (!matchesExistingTargetSpec(lit)) {</span>
+<span class="fc" id="L799">            examplePredicates.add(pnaa);</span>
+<span class="fc" id="L800">            examplePredicateSignatures.add(stringHandler.getSignature(lit.getArguments()));</span>
+        }
+<span class="fc" id="L802">        return true;</span>
+	}
+
+	private boolean matchesExistingTargetSpec(Literal lit) {
+<span class="pc bpc" id="L806" title="1 of 2 branches missed.">		if (examplePredicates == null) { Utils.error(&quot;matchesExistingTargetSpec: examplePredicates = null&quot;); }</span>
+<span class="fc bfc" id="L807" title="All 2 branches covered.">		for (int i = 0; i &lt; examplePredicates.size(); i++) {</span>
+<span class="fc bfc" id="L808" title="All 2 branches covered.">			if (examplePredicates.get(i).equals(lit.getPredicateNameAndArity()) &amp;&amp; </span>
+<span class="pc bpc" id="L809" title="1 of 2 branches missed.">				matchingSignatures(examplePredicateSignatures.get(i), stringHandler.getSignature(lit.getArguments()))) { return true; }</span>
+		}
+<span class="fc" id="L811">		return false;</span>
+	}
+
+	private boolean matchingSignatures(List&lt;Term&gt; terms1, List&lt;Term&gt; terms2) {
+<span class="pc bpc" id="L815" title="1 of 2 branches missed.">		if (terms1 == terms2)                 { return true;  }</span>
+<span class="pc bpc" id="L816" title="2 of 4 branches missed.">		if (terms1 == null || terms2 == null) { return false; }</span>
+<span class="pc bpc" id="L817" title="1 of 2 branches missed.">		if (terms1.size() != terms2.size())   { return false; }</span>
+<span class="fc bfc" id="L818" title="All 2 branches covered.">		for (int i = 0; i &lt; terms1.size(); i++) {</span>
+<span class="pc bpc" id="L819" title="1 of 2 branches missed.">			if (terms1.get(i) != terms2.get(i)) { // If not a direct match, then must be matching functions.</span>
+<span class="nc bnc" id="L820" title="All 4 branches missed.">				if (terms1.get(i) instanceof Function &amp;&amp; terms2.get(i) instanceof Function) {</span>
+<span class="nc bnc" id="L821" title="All 2 branches missed.">					if (!matchingSignatures(((Function) terms1.get(i)).getArguments(),</span>
+<span class="nc" id="L822">											((Function) terms2.get(i)).getArguments())) {</span>
+<span class="nc" id="L823">						return false;</span>
+					}
+<span class="nc" id="L825">				} else { return false; }</span>
+			}
+		}
+<span class="fc" id="L828">		return true;</span>
+	}
+
+<span class="fc" id="L831">	private PredicateName annotationPredName        = null;</span>
+<span class="fc" id="L832">	private PredicateName regressionExamplePredName = null;</span>
+
+	private List&lt;Example&gt; readExamples(Reader examplesReader, String readerDirectoryName) {
+<span class="pc bpc" id="L835" title="1 of 2 branches missed.">		if (examplesReader == null) {</span>
+<span class="nc" id="L836">			Utils.error(&quot;Have no examples reader!&quot;);</span>
+<span class="nc" id="L837">			return null;</span>
+		}
+		List&lt;Sentence&gt; sentences;
+<span class="fc" id="L840">		sentences = getParser().readFOPCreader(examplesReader, readerDirectoryName);</span>
+
+<span class="pc bpc" id="L842" title="1 of 2 branches missed.">		if (sentences == null) { return null; }</span>
+<span class="fc" id="L843">		List&lt;Example&gt; result = new ArrayList&lt;&gt;(Utils.getSizeSafely(sentences));</span>
+
+<span class="fc bfc" id="L845" title="All 2 branches covered.">		if (annotationPredName        == null) { annotationPredName        = stringHandler.getPredicateName(&quot;annotatedExample&quot;); }</span>
+<span class="fc bfc" id="L846" title="All 2 branches covered.">		if (regressionExamplePredName == null) { regressionExamplePredName = stringHandler.getPredicateName(&quot;regressionExample&quot;); }</span>
+<span class="fc bfc" id="L847" title="All 2 branches covered.">		for (Sentence s : sentences) {</span>
+<span class="pc bpc" id="L848" title="1 of 2 branches missed.">			if        (s instanceof Literal) {</span>
+<span class="fc" id="L849">				Literal lit = (Literal) s;</span>
+<span class="fc" id="L850">				Example ex = processReadExample(lit);</span>
+<span class="pc bpc" id="L851" title="1 of 2 branches missed.">				if (ex != null) { result.add(ex); }</span>
+<span class="pc bnc" id="L852" title="All 2 branches missed.">			} else if (s instanceof UniversalSentence) { // Can drop the ForAll since the clausal-form converter converts all variables to universals.</span>
+<span class="nc" id="L853">				Sentence body = ((UniversalSentence) s).body;</span>
+
+				// Having an Example class leads to some extra copying of literals, but seems worth having clean classes (e.g., to catch errors),
+<span class="nc bnc" id="L856" title="All 2 branches missed.">				if (body instanceof Literal) {</span>
+<span class="nc" id="L857">					Literal lit = (Literal) body;</span>
+<span class="nc" id="L858">					Example ex = processReadExample(lit);</span>
+<span class="nc bnc" id="L859" title="All 2 branches missed.">					if (ex != null) { result.add(ex); }</span>
+<span class="nc" id="L860">				} else { Utils.error(&quot;Illegal form of an example: '&quot; + s + &quot;' - should be a single (unnegated) fact.&quot;); }</span>
+<span class="nc" id="L861">			} else     { Utils.error(&quot;Illegal form of an example: '&quot; + s + &quot;' - should be a single (unnegated) fact.&quot;); }</span>
+<span class="fc" id="L862">		}</span>
+<span class="fc" id="L863">		Utils.println(&quot;% Have read &quot; + Utils.comma(result) + &quot; examples from '&quot; + readerDirectoryName + &quot;' [&quot; + getDirectoryName() + &quot;/&quot; + getPrefix() + &quot;*].&quot;);</span>
+<span class="fc" id="L864">		return result;</span>
+	}
+
+	// Note: for regression examples, here is how things are determined:
+	//    predicate(args)   &lt;-- uses the weight on this literal as the output (see FileParser.java) and resets weight to the default value.
+	//    regressionExample(pred(args), outputValue)   &lt;-- uses the 2nd argument
+	//    annotatedPredicate(regressionExample(pred(args), outputValue), annotation)   &lt;-- uses outputValue
+	private Example processReadExample(Literal lit) {
+<span class="pc bpc" id="L872" title="1 of 2 branches missed.">		if (lit.predicateName.name.equals(annotationPredName.name)) { // See if this is annotation of an example.</span>
+<span class="nc bnc" id="L873" title="All 2 branches missed.">			if (lit.numberArgs() != 2) { Utils.error(&quot;Expecting exactly two arguments here: &quot; + lit); }</span>
+<span class="nc" id="L874">			Term arg0 = lit.getArgument(0);</span>
+<span class="nc bnc" id="L875" title="All 2 branches missed.">			if (arg0 instanceof Function) {</span>
+<span class="nc" id="L876">				Function f = (Function) arg0;</span>
+<span class="nc" id="L877">				Literal internalLit = (f).convertToLiteral(stringHandler);</span>
+<span class="nc" id="L878">				return createExample(internalLit);</span>
+			}
+<span class="nc" id="L880">			Utils.error(&quot;Should get a literal posing as a function here, but got: &quot; + arg0);</span>
+<span class="pc" id="L881">		} else { return createExample(lit); } // Grab the outer weight.</span>
+<span class="nc" id="L882">		return null;</span>
+	}
+
+	private Example createExample(Literal lit) {
+<span class="fc bfc" id="L886" title="All 2 branches covered.">		if (regressionTask) {</span>
+<span class="fc" id="L887">			double outputValue = lit.getWeightOnSentence();</span>
+<span class="pc bpc" id="L888" title="1 of 2 branches missed.">			if (lit.predicateName.name.equals(regressionExamplePredName.name)) {</span>
+<span class="pc bpc" id="L889" title="3 of 4 branches missed.">				if (lit.numberArgs() != 2 &amp;&amp; lit.numberArgs() != 3) { Utils.error(&quot;Expecting either two or three arguments here: &quot; + lit); }</span>
+<span class="fc" id="L890">				Term    arg0        = lit.getArgument(0);</span>
+<span class="fc" id="L891">				Literal internalLit = null;</span>
+<span class="fc" id="L892">				StringConstant   sc = null;</span>
+<span class="pc bpc" id="L893" title="1 of 2 branches missed.">				if (arg0 instanceof Function) {</span>
+<span class="fc" id="L894">					Function f = (Function) arg0;</span>
+<span class="fc" id="L895">					internalLit = f.convertToLiteral(stringHandler);</span>
+<span class="pc" id="L896">				} else { Utils.error(&quot;Should get a literal posing as a function here, but got: &quot; + arg0); }</span>
+<span class="fc" id="L897">				Term arg1 = lit.getArgument(1);</span>
+<span class="pc bpc" id="L898" title="1 of 2 branches missed.">				if (arg1 instanceof NumericConstant) {</span>
+<span class="fc" id="L899">					NumericConstant nc = (NumericConstant) arg1;</span>
+<span class="fc" id="L900">					outputValue = nc.value.doubleValue();</span>
+<span class="pc" id="L901">				} else { Utils.error(&quot;Should get a number here, but got: &quot; + arg1); }</span>
+<span class="pc bpc" id="L902" title="1 of 2 branches missed.">				if (lit.numberArgs() &gt; 2) {</span>
+<span class="nc" id="L903">					Term arg2 = lit.getArgument(2);</span>
+<span class="nc bnc" id="L904" title="All 2 branches missed.">					if (arg2 instanceof StringConstant) {</span>
+<span class="nc" id="L905">						sc = (StringConstant) arg2;</span>
+<span class="nc" id="L906">					} else { Utils.error(&quot;Should get a string here, but got: &quot; + arg2); }</span>
+				}
+<span class="pc bpc" id="L908" title="2 of 4 branches missed.">				assert internalLit != null;</span>
+<span class="pc bpc" id="L909" title="1 of 2 branches missed.">				if (!confirmExample(internalLit)) { return null; }</span>
+<span class="pc bpc" id="L910" title="1 of 2 branches missed.">				return new RegressionExample(stringHandler, internalLit, outputValue, &quot;Read from file.&quot;, combineLabels(sc == null ? null : sc.getName()));</span>
+			}
+<span class="nc" id="L912">			lit.setWeightOnSentence(1.0);</span>
+<span class="nc bnc" id="L913" title="All 2 branches missed.">			if (!confirmExample(lit)) { return null; }</span>
+<span class="nc" id="L914">			return new RegressionExample(stringHandler, lit, outputValue, &quot;Read from file.&quot;, null);</span>
+		}
+<span class="pc bpc" id="L916" title="1 of 2 branches missed.">		if (!confirmExample(lit)) { return null; }</span>
+<span class="fc" id="L917">		return new Example(stringHandler, lit, &quot;Read from file.&quot;, null);</span>
+	}
+
+	private String combineLabels(String str2) {
+<span class="fc" id="L921">		return str2;</span>
+	}
+	
+	private Theory readBackgroundTheory(Reader bkReader) {
+<span class="pc bpc" id="L925" title="1 of 2 branches missed.">		if (bkReader == null) { return null; }</span>
+		List&lt;Sentence&gt; sentences;
+		// TODO(@hayesall): Always returns null?
+<span class="fc" id="L928">		Utils.println(&quot;% Reading background theory from dir: &quot; + null);</span>
+<span class="fc" id="L929">		sentences = getParser().readFOPCreader(bkReader, null);</span>
+<span class="pc bpc" id="L930" title="1 of 2 branches missed.">		if (sentences == null) { return null; } // It is possible there are no inference rules, though some modes should have been read.</span>
+<span class="fc" id="L931">		return new Theory(stringHandler, sentences);</span>
+	}
+
+	private List&lt;Sentence&gt; readFacts(Reader factsReader, String readerDirectoryName) {
+<span class="fc" id="L935">		return readFacts(factsReader, readerDirectoryName, false);</span>
+	}
+	private List&lt;Sentence&gt; readFacts(Reader factsReader, String readerDirectoryName, boolean okIfNoFacts) {
+<span class="pc bpc" id="L938" title="3 of 4 branches missed.">		if (factsReader == null &amp;&amp; okIfNoFacts) { return null; }</span>
+		List&lt;Sentence&gt; sentences;
+<span class="fc" id="L940">		sentences = getParser().readFOPCreader(factsReader, readerDirectoryName);</span>
+
+<span class="fc bfc" id="L942" title="All 2 branches covered.">		for (Sentence sentence : sentences) {</span>
+			// These should all be facts, but there is really no way to enforce it.
+			// However, if they are literals we will consider them as facts.
+			// We add the fact predicate/arity to a set so we know that they
+			// came in as facts and can be used as so later.
+<span class="pc bpc" id="L947" title="1 of 2 branches missed.">			if (sentence instanceof Literal) {</span>
+<span class="fc" id="L948">				Literal literal = (Literal) sentence;</span>
+<span class="fc" id="L949">				PredicateNameAndArity pnaa = literal.getPredicateNameAndArity();</span>
+			}
+<span class="fc" id="L951">		}</span>
+
+<span class="fc" id="L953">		return sentences;</span>
+	}
+
+	private void chooseTargetMode() {
+<span class="fc" id="L957">		chooseTargetMode(stringHandler.dontComplainIfMoreThanOneTargetModes);</span>
+		
+<span class="fc" id="L959">	}</span>
+
+	public void chooseTargetMode(boolean dontComplainForMoreThanOneModes) {
+
+<span class="pc bpc" id="L963" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(examplePredicates) &lt; 1) {</span>
+<span class="nc" id="L964">			Utils.severeWarning(&quot;Need to have a target predicate here.&quot;);</span>
+<span class="nc" id="L965">			return;</span>
+		}
+<span class="fc bfc" id="L967" title="All 2 branches covered.">		for (PredicateNameAndArity targetPred : examplePredicates) {</span>
+<span class="fc" id="L968">			int numberOfTargetModes = Utils.getSizeSafely(targetPred.getPredicateName().getTypeList());</span>
+
+<span class="fc bfc" id="L970" title="All 2 branches covered.">			if (numberOfTargetModes &lt;= 0) {</span>
+<span class="fc" id="L971">				Utils.severeWarning(&quot;No target modes were provided for '&quot; + targetPred + &quot;'.&quot;);</span>
+<span class="fc" id="L972">				continue;</span>
+			}
+<span class="fc" id="L974">			List&lt;PredicateSpec&gt; predSpecs = targetPred.getPredicateName().getTypeList();</span>
+
+<span class="fc bfc" id="L976" title="All 2 branches covered.">			if (Utils.getSizeSafely(predSpecs) != 1) {</span>
+<span class="pc bpc" id="L977" title="2 of 4 branches missed.">				if (!(Utils.getSizeSafely(predSpecs) &gt; 1 &amp;&amp; dontComplainForMoreThanOneModes)) {</span>
+<span class="nc" id="L978">					Utils.error(&quot;Should only have ONE predicate spec, but have:\n &quot; + predSpecs);</span>
+				}
+			} // TODO - what if more than 1????
+
+<span class="pc bpc" id="L982" title="1 of 2 branches missed.">			if (targets == null) {</span>
+<span class="fc" id="L983">				targets = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L984">				targetArgSpecs = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L985">				variablesInTargets = new ArrayList&lt;&gt;(1);</span>
+			}
+
+<span class="fc" id="L988">			addToTargetModes(targetPred);</span>
+<span class="fc" id="L989">		}</span>
+<span class="fc" id="L990">	}</span>
+
+	private void addToTargetModes(PredicateNameAndArity targetPred) {
+
+<span class="fc" id="L994">	    PredicateSpec targetArgTypes = targetPred.getPredicateName().getTypeList().get(0);</span>
+
+	    // The signature records the structure of the literal, including functions with arbitrary embedding.
+	    // The typeSpec simply records in a list the types of the 'leaves' in the parser of the literal.
+		// This is a little kludgy, but that is because it grew out of a much simpler design.
+<span class="fc" id="L999">	    List&lt;Term&gt;     targetArguments     = new ArrayList&lt;&gt;(   Utils.getSizeSafely(targetArgTypes.getSignature()));</span>
+<span class="fc" id="L1000">	    List&lt;ArgSpec&gt;  theseTargetArgSpecs = new ArrayList&lt;&gt;(Utils.getSizeSafely(targetArgTypes.getTypeSpecList()));</span>
+<span class="fc" id="L1001">	    List&lt;Term&gt;     theseVars           = new ArrayList&lt;&gt;(   Utils.getSizeSafely(targetArgTypes.getTypeSpecList()));</span>
+<span class="fc" id="L1002">	    traverseSignatureAndAddVariables(targetArgTypes.getSignature(), 0, targetArgTypes.getTypeSpecList(), targetArguments, theseVars, theseTargetArgSpecs);</span>
+
+<span class="fc" id="L1004">	    Literal newTarget = stringHandler.getLiteral(targetPred.getPredicateName(), targetArguments);</span>
+<span class="fc" id="L1005">		checkExamplesToSeeIfTargetArgSpecsShouldBeConstrained(newTarget, theseTargetArgSpecs);</span>
+
+<span class="fc" id="L1007">        boolean targetExists = getTargetAlreadyExists(newTarget, theseTargetArgSpecs);</span>
+<span class="pc bpc" id="L1008" title="1 of 2 branches missed.">        if (!targetExists) {</span>
+<span class="fc" id="L1009">            targets.add(newTarget);</span>
+<span class="fc" id="L1010">            targetArgSpecs.add(theseTargetArgSpecs);</span>
+<span class="fc" id="L1011">            variablesInTargets.add(theseVars);</span>
+
+<span class="fc" id="L1013">			Utils.println(&quot;\n% NEW target:                 &quot; + newTarget);</span>
+<span class="fc" id="L1014">			Utils.println(  &quot;%  targetPred:                &quot; + targetPred);</span>
+<span class="fc" id="L1015">			Utils.println(  &quot;%  targetArgTypes:            &quot; + targetArgTypes);</span>
+<span class="fc" id="L1016">			Utils.println(  &quot;%  targets:                   &quot; + targets);</span>
+<span class="fc" id="L1017">			Utils.println(  &quot;%  targetPredicates:          &quot; + examplePredicates);</span>
+<span class="fc" id="L1018">			Utils.println(  &quot;%  targetArgSpecs:            &quot; + targetArgSpecs);</span>
+<span class="fc" id="L1019">			Utils.println(  &quot;%  variablesInTargets:        &quot; + variablesInTargets);</span>
+
+		}
+        else  {
+<span class="nc" id="L1023">        	Utils.println(&quot;\n% Target variant already exists.  Skipping target:                 &quot; + newTarget + &quot;.&quot;);</span>
+<span class="nc" id="L1024">        	Utils.println(  &quot;%  targetArgTypes:            &quot; + targetArgTypes);</span>
+<span class="nc" id="L1025">        	Utils.println(  &quot;%  targetArgSpecs:            &quot; + targetArgSpecs);</span>
+        }
+<span class="fc" id="L1027">	}</span>
+	
+    private ArgSpec lookupInArgSpecList(List&lt;ArgSpec&gt; specs, Term term) {
+<span class="nc bnc" id="L1030" title="All 2 branches missed.">        for (ArgSpec argSpec : specs) {</span>
+<span class="nc bnc" id="L1031" title="All 2 branches missed.">            if ( argSpec.arg == term ) {</span>
+<span class="nc" id="L1032">                return argSpec;</span>
+            }
+<span class="nc" id="L1034">        }</span>
+<span class="nc" id="L1035">        return null;</span>
+    }
+
+    private boolean getTargetAlreadyExists(Literal newTarget, List&lt;ArgSpec&gt; theseTargetArgSpecs) {
+
+<span class="fc" id="L1040">        boolean found = false;</span>
+
+<span class="pc bpc" id="L1042" title="1 of 2 branches missed.">        for (int j = 0; j &lt; Utils.getSizeSafely(targets); j++) {</span>
+
+<span class="nc" id="L1044">            Literal existingTarget = targets.get(j);</span>
+<span class="nc" id="L1045">            List&lt;ArgSpec&gt; existingArgSpecs = targetArgSpecs.get(j);</span>
+<span class="nc" id="L1046">            List&lt;Term&gt; existingVariables = variablesInTargets.get(j);</span>
+
+<span class="nc" id="L1048">            BindingList bl = new BindingList();</span>
+
+<span class="nc bnc" id="L1050" title="All 2 branches missed.">            if (existingTarget.variants(newTarget, bl) != null) {</span>
+
+<span class="nc bnc" id="L1052" title="All 2 branches missed.">                for (Term term : existingVariables) {</span>
+
+<span class="nc bnc" id="L1054" title="All 2 branches missed.">                    if (term instanceof Variable) {</span>
+<span class="nc" id="L1055">                        Variable existingVar = (Variable) term;</span>
+
+<span class="nc" id="L1057">                        Term matchedTerm = bl.getMapping(existingVar);</span>
+
+<span class="nc bnc" id="L1059" title="All 2 branches missed.">                        if (matchedTerm instanceof Variable) {</span>
+<span class="nc" id="L1060">                            Variable newVariable = (Variable) matchedTerm;</span>
+
+<span class="nc" id="L1062">                            ArgSpec existingArgSpec = lookupInArgSpecList(existingArgSpecs, existingVar);</span>
+<span class="nc" id="L1063">                            ArgSpec newArgSpec = lookupInArgSpecList(theseTargetArgSpecs, newVariable);</span>
+
+<span class="nc bnc" id="L1065" title="All 6 branches missed.">                            if (existingArgSpec != null &amp;&amp; newArgSpec != null &amp;&amp; existingArgSpec.typeSpec.equals(newArgSpec.typeSpec)) {</span>
+<span class="nc" id="L1066">                                found = true;</span>
+<span class="nc" id="L1067">                                break;</span>
+                            }
+                        }
+                    }
+<span class="nc" id="L1071">                }</span>
+            }
+        }
+
+<span class="fc" id="L1075">        return found;</span>
+    }
+
+
+	// There is no need for a target argument to be more general than ALL the examples' corresponding arguments.
+	private void checkExamplesToSeeIfTargetArgSpecsShouldBeConstrained(Literal target, List&lt;ArgSpec&gt; theseTargetArgSpecs) {
+<span class="pc bpc" id="L1081" title="2 of 4 branches missed.">		if (Utils.getSizeSafely(theseTargetArgSpecs) &lt; 1 || target == null) { return; }</span>
+<span class="fc" id="L1082">		List&lt;Example&gt; posEx = getPosExamples();</span>
+<span class="fc" id="L1083">		List&lt;Example&gt; negEx = getNegExamples();</span>
+
+<span class="pc bpc" id="L1085" title="3 of 4 branches missed.">		if (posEx == null &amp;&amp; negEx == null) { Utils.waitHere(&quot;Have no examples yet!&quot;); }</span>
+
+<span class="fc" id="L1087">		int targetPredicateArity = target.numberArgs();</span>
+<span class="fc bfc" id="L1088" title="All 2 branches covered.">		for (int i = 0; i &lt; target.numberArgs(); i++) {</span>
+<span class="fc" id="L1089">			ArgSpec  aSpec = theseTargetArgSpecs.get(i);</span>
+<span class="fc" id="L1090">			TypeSpec tSpec = aSpec.typeSpec;</span>
+<span class="fc" id="L1091">			Type     type  = tSpec.isaType;</span>
+<span class="fc" id="L1092">			Type typeToUse = null;</span>
+<span class="fc" id="L1093">			boolean skipWithThisArgument = false;</span>
+
+<span class="pc bpc" id="L1095" title="2 of 4 branches missed.">			if (posEx != null) for (Example ex : posEx) {</span>
+<span class="pc bpc" id="L1096" title="1 of 4 branches missed.">				if (ex.numberArgs() != targetPredicateArity || ex.predicateName != target.predicateName) { continue; }</span>
+
+<span class="fc" id="L1098">				Term argI = ex.getArgument(i);</span>
+<span class="fc" id="L1099">				List&lt;Type&gt; types = stringHandler.isaHandler.getAllKnownTypesForThisTerm(argI);</span>
+
+<span class="pc bpc" id="L1101" title="1 of 2 branches missed.">				if (types == null)     { skipWithThisArgument = true; typeToUse = null; break; }</span>
+<span class="nc bnc" id="L1102" title="All 2 branches missed.">				if (types.size() != 1) { skipWithThisArgument = true; typeToUse = null; break; } // Not sure what to do with multiple types.</span>
+<span class="nc bnc" id="L1103" title="All 2 branches missed.">				if (typeToUse == null) { typeToUse = types.get(0); }</span>
+				else {
+<span class="nc" id="L1105">					Type newType = types.get(0);</span>
+<span class="nc bnc" id="L1106" title="All 2 branches missed.">					if       (stringHandler.isaHandler.isa(typeToUse, newType)) { typeToUse = newType; } // Keep the more general type.</span>
+<span class="nc bnc" id="L1107" title="All 2 branches missed.">					else if (!stringHandler.isaHandler.isa(newType, typeToUse)) {</span>
+<span class="nc" id="L1108">						skipWithThisArgument = true; typeToUse = null; break; // Could not compare types.</span>
+					}
+				}
+<span class="nc" id="L1111">			}</span>
+<span class="fc bfc" id="L1112" title="All 4 branches covered.">			if (negEx != null) for (Example ex : negEx) {</span>
+<span class="pc bpc" id="L1113" title="5 of 6 branches missed.">				if (skipWithThisArgument || ex.numberArgs() != targetPredicateArity || ex.predicateName != target.predicateName) { continue; }</span>
+<span class="nc" id="L1114">				Term argI = ex.getArgument(i);</span>
+<span class="nc" id="L1115">				List&lt;Type&gt; types = stringHandler.isaHandler.getAllKnownTypesForThisTerm(argI);</span>
+
+<span class="nc bnc" id="L1117" title="All 2 branches missed.">				if (types == null)     { skipWithThisArgument = true; typeToUse = null; break; }</span>
+<span class="nc bnc" id="L1118" title="All 2 branches missed.">				if (types.size() != 1) { skipWithThisArgument = true; typeToUse = null; break; } // Not sure what to do with multiple types.</span>
+<span class="nc bnc" id="L1119" title="All 2 branches missed.">				if (typeToUse == null) { typeToUse = types.get(0); }</span>
+				else {
+<span class="nc" id="L1121">					Type newType = types.get(0);</span>
+<span class="nc bnc" id="L1122" title="All 2 branches missed.">					if       (stringHandler.isaHandler.isa(typeToUse, newType)) { typeToUse = newType; } // Keep the more general type.</span>
+<span class="nc bnc" id="L1123" title="All 2 branches missed.">					else if (!stringHandler.isaHandler.isa(newType, typeToUse)) {</span>
+<span class="nc" id="L1124">						skipWithThisArgument = true; typeToUse = null; break; // Could not compare types.</span>
+					}
+				}
+<span class="nc" id="L1127">			}</span>
+<span class="pc bpc" id="L1128" title="5 of 6 branches missed.">			if (!skipWithThisArgument &amp;&amp; typeToUse != type &amp;&amp; stringHandler.isaHandler.isa(typeToUse, type)) {</span>
+				// If reached here, all the arguments in the examples are know to be more constrained than the target predicate,
+				// so let's constrain the target.  TODO - should we add 'guard literals' to the learned concept?
+<span class="nc" id="L1131">				Utils.waitHere(&quot;Changing the type of argument #&quot; + i + &quot; from '&quot; + type + &quot;' to the more retrictive '&quot; + typeToUse + &quot;' because all the training examples are of this latter type.&quot;);</span>
+<span class="nc" id="L1132">				tSpec.isaType = typeToUse; // NOTE: this is a destructive change, so hopefully the caller is not impacted by this ...</span>
+			}
+		}
+<span class="fc" id="L1135">	}</span>
+
+	private void traverseSignatureAndAddVariables(List&lt;Term&gt; signature, int counter, List&lt;TypeSpec&gt; typeSpecs, List&lt;Term&gt; targetArguments, List&lt;Term&gt; theseVars, List&lt;ArgSpec&gt; theseTargetArgSpecs) {
+<span class="pc bpc" id="L1138" title="1 of 2 branches missed.">		if (signature == null) { return; }</span>
+<span class="fc bfc" id="L1139" title="All 2 branches covered.">		for (Term arg : signature) {</span>
+<span class="pc bpc" id="L1140" title="1 of 2 branches missed.">			if (arg instanceof Constant) {</span>
+<span class="fc" id="L1141">				int positionToFill = Utils.getSizeSafely(theseTargetArgSpecs);</span>
+<span class="pc bpc" id="L1142" title="1 of 2 branches missed.">				if (positionToFill != counter) { Utils.error(&quot;positionToFill = &quot; + positionToFill + &quot; != counter = &quot; + counter); }</span>
+<span class="fc" id="L1143">				TypeSpec typeSpec = typeSpecs.get(positionToFill);</span>
+				Term newTerm;
+<span class="fc" id="L1145">                newTerm = stringHandler.getNewNamedGeneratedVariable();</span>
+<span class="fc" id="L1146">                theseTargetArgSpecs.add(new ArgSpec(newTerm, typeSpec));</span>
+<span class="fc" id="L1147">				targetArguments.add(newTerm);</span>
+<span class="fc" id="L1148">				theseVars.add(newTerm);</span>
+<span class="fc" id="L1149">				counter++;</span>
+<span class="pc bnc" id="L1150" title="All 2 branches missed.">    		} else if (arg instanceof Function) {</span>
+<span class="nc" id="L1151">                Function f = (Function) arg;</span>
+<span class="nc" id="L1152">                List&lt;Term&gt; newArguments = new ArrayList&lt;&gt;(f.numberArgs());</span>
+<span class="nc" id="L1153">                traverseSignatureAndAddVariables(f.getArguments(), counter, typeSpecs, newArguments, theseVars, theseTargetArgSpecs);</span>
+<span class="nc" id="L1154">                targetArguments.add(stringHandler.getFunction(f.functionName, newArguments, f.getTypeSpec()));</span>
+<span class="nc" id="L1155">                counter += f.countLeaves();</span>
+<span class="nc" id="L1156">            } else { Utils.error(&quot;Unexpected argument in a signature: &quot; + arg); }</span>
+<span class="fc" id="L1157">		}</span>
+<span class="fc" id="L1158">	}</span>
+
+	// This method helps select constants to fill arguments of type # during ILP search.
+	void collectConstantBindings(List&lt;Term&gt; args) {
+<span class="fc bfc" id="L1162" title="All 2 branches covered.">		if (collectedConstantBindings == null) { collectedConstantBindings = new ArrayList&lt;&gt;(8); }</span>
+<span class="pc bpc" id="L1163" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(collectedConstantBindings) &gt;= 1000) { return; } // In case there are a huge number of constants, limit to 1000.  Ideally would collect a random set, but that doesn't seem worth the effort.</span>
+<span class="fc" id="L1164">		int len1 = Utils.getSizeSafely(args);</span>
+<span class="fc bfc" id="L1165" title="All 2 branches covered.">		for (List&lt;Term&gt; entry : collectedConstantBindings) {</span>
+<span class="pc bpc" id="L1166" title="1 of 2 branches missed.">			if (len1 != Utils.getSizeSafely(entry)) { continue; } // Should be the same size, but check anyway.</span>
+<span class="fc" id="L1167">			boolean foundDifference = false;</span>
+<span class="fc bfc" id="L1168" title="All 2 branches covered.">			for (ListIterator&lt;Term&gt; terms1 = args.listIterator(), terms2 = entry.listIterator(); terms1.hasNext(); ) {</span>
+<span class="fc" id="L1169">				Term term1 = terms1.next();</span>
+<span class="fc" id="L1170">				Term term2 = terms2.next();</span>
+
+<span class="fc bfc" id="L1172" title="All 2 branches covered.">				if (!term1.equals(term2)) { foundDifference = true; break; }</span>
+<span class="fc" id="L1173">			}</span>
+<span class="fc bfc" id="L1174" title="All 2 branches covered.">			if (!foundDifference) { return; } // Have found a matching list, so this is a duplicate and can be ignored.</span>
+
+<span class="fc" id="L1176">		}</span>
+<span class="fc" id="L1177">		collectedConstantBindings.add(args); // Should check for duplicates!</span>
+<span class="fc" id="L1178">	}</span>
+
+	private void setDirectoryName(String dir) {
+<span class="fc" id="L1181">		getParser().setDirectoryName(dir);</span>
+<span class="fc" id="L1182">	}</span>
+	private String getDirectoryName() {
+<span class="fc" id="L1184">		return getParser().getDirectoryName();</span>
+	}
+
+	private void setPrefix(String prefix) {
+<span class="fc" id="L1188">		getParser().setPrefix(prefix);</span>
+<span class="fc" id="L1189">	}</span>
+	private String getPrefix() {
+<span class="fc" id="L1191">		return getParser().getPrefix();</span>
+	}
+
+    void setPosExamples(List&lt;Example&gt; posExamples) {
+<span class="fc" id="L1195">        this.posExamples = posExamples;</span>
+        
+<span class="pc bpc" id="L1197" title="1 of 2 branches missed.">        if (this.posExamples == null) { this.posExamples = new ArrayList&lt;&gt;(0); } // Use an empty list (rather than null) so we know this has been called.</span>
+
+        // We should probably count the weights and stuff here...
+<span class="fc" id="L1200">        totalPosWeight = Example.getWeightOfExamples(posExamples);</span>
+<span class="fc" id="L1201">    }</span>
+
+    void setNegExamples(List&lt;Example&gt; negExamples) {
+<span class="fc" id="L1204">        this.negExamples = negExamples;</span>
+
+        // We should probably count the weights and stuff here...
+<span class="fc" id="L1207">        totalNegWeight = Example.getWeightOfExamples(negExamples);</span>
+<span class="fc" id="L1208">    }</span>
+
+    int getNumberOfPosExamples() {
+<span class="pc bpc" id="L1211" title="1 of 2 branches missed.">        return posExamples == null ? 0 : posExamples.size();</span>
+    }
+
+    int getNumberOfNegExamples() {
+<span class="pc bpc" id="L1215" title="1 of 2 branches missed.">        return negExamples == null ? 0 : negExamples.size();</span>
+    }
+
+    private void setInlineManager(InlineManager inliner) {
+<span class="fc" id="L1219">		this.inlineHandler = inliner;</span>
+<span class="fc" id="L1220">	}</span>
+
+	InlineManager getInlineManager() {
+<span class="fc" id="L1223">		return inlineHandler;</span>
+	}
+
+	List&lt;List&lt;Literal&gt;&gt; getOptimizedClauseBodies(Literal target, List&lt;Literal&gt; clauseBody) {
+<span class="fc" id="L1227">		return stringHandler.getClauseOptimizer().bodyToBodies(target, clauseBody);</span>
+	}
+
+    public HornClauseContext getContext() {
+<span class="fc" id="L1231">        return context;</span>
+    }
+
+	double getTotalPosWeight() {
+<span class="fc" id="L1235">		return totalPosWeight;</span>
+	}
+
+	double getTotalNegWeight() {
+<span class="fc" id="L1239">		return totalNegWeight;</span>
+	}
+
+	boolean isaTreeStructuredTask() {
+<span class="fc" id="L1243">		return isaTreeStructuredTask;</span>
+	}
+
+	void  setIsaTreeStructuredTask(boolean value) {
+<span class="fc" id="L1247">		isaTreeStructuredTask = value;</span>
+<span class="fc" id="L1248">	}</span>
+
+	List&lt;ModeConstraint&gt; getModeConstraints() {
+		// TODO(@hayesall): Always returns an empty list.
+<span class="fc" id="L1252">		return Collections.emptyList();</span>
+	}
+
+
+
+<span class="fc" id="L1257">    private List&lt;Literal&gt;        backup_targets                   = null; // These are the actual targets determined from the examplePredicates.</span>
+<span class="fc" id="L1258">	private List&lt;List&lt;ArgSpec&gt;&gt;  backup_targetArgSpecs            = null; // The info about the target argument being used and the variables matched with their types.</span>
+<span class="fc" id="L1259">	private List&lt;List&lt;Term&gt;&gt;     backup_variablesInTargets        = null; // These are really 'arguments' since it is possible a mode specifies a constant be used.</span>
+
+	public void setTargetAs(String target, boolean dontAddOtherTargetModes, String addPrefix) {
+		// Check if we have already backed up the literals.
+<span class="fc bfc" id="L1263" title="All 2 branches covered.">		if (backup_targets == null) {</span>
+<span class="fc" id="L1264">			backup_targets            = targets;</span>
+<span class="fc" id="L1265">			backup_targetArgSpecs     = targetArgSpecs;</span>
+<span class="fc" id="L1266">			backup_variablesInTargets = variablesInTargets;</span>
+		}
+<span class="fc" id="L1268">		int selectedTarget = -1;</span>
+<span class="fc bfc" id="L1269" title="All 2 branches covered.">		for (int i = 0; i &lt; Utils.getSizeSafely(backup_targets); i++) {</span>
+<span class="fc" id="L1270">			PredicateNameAndArity predName = backup_targets.get(i).getPredicateNameAndArity();</span>
+<span class="pc bpc" id="L1271" title="1 of 2 branches missed.">			if (predName.getPredicateName().name.equals(target)) {</span>
+<span class="fc" id="L1272">				bodyModes.remove(predName);</span>
+<span class="pc bpc" id="L1273" title="1 of 2 branches missed.">				if (addPrefix != null) {</span>
+<span class="nc bnc" id="L1274" title="All 2 branches missed.">					if (!targetModes.contains(predName)) { targetModes.add(predName); }</span>
+				}
+<span class="fc" id="L1276">				selectedTarget = i;</span>
+			} else {
+<span class="nc bnc" id="L1278" title="All 2 branches missed.">				if (dontAddOtherTargetModes) {</span>
+<span class="nc" id="L1279">					bodyModes.remove(predName);</span>
+				} else {
+<span class="nc bnc" id="L1281" title="All 2 branches missed.">					if (!bodyModes.contains(predName)) { bodyModes.add(backup_targets.get(i).getPredicateNameAndArity()); }</span>
+				}
+			}
+		}
+<span class="fc" id="L1285">		targets            = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L1286">		targetArgSpecs     = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L1287">		variablesInTargets = new ArrayList&lt;&gt;();</span>
+		
+<span class="pc bpc" id="L1289" title="1 of 2 branches missed.">		if (addPrefix != null) {</span>
+			// TODO(?): Unknown
+<span class="nc" id="L1291">			String multiPred = addPrefix + target;</span>
+<span class="nc bnc" id="L1292" title="All 2 branches missed.">			for (PredicateNameAndArity pnaa : bodyModes) {</span>
+<span class="nc bnc" id="L1293" title="All 2 branches missed.">				if (pnaa.getPredicateName().name.equals(multiPred)) {</span>
+<span class="nc" id="L1294">					addToTargetModes(pnaa);</span>
+<span class="nc" id="L1295">					break;</span>
+				}
+<span class="nc" id="L1297">			}</span>
+<span class="nc" id="L1298">		} else {</span>
+<span class="pc bpc" id="L1299" title="1 of 2 branches missed.">			if (selectedTarget == -1) {</span>
+<span class="nc" id="L1300">				Utils.error(&quot;Didn't find target '&quot; + target + &quot;' in: &quot; + backup_targets);</span>
+			}
+
+<span class="fc" id="L1303">			targets.add(           backup_targets.get(           selectedTarget));</span>
+<span class="fc" id="L1304">			targetArgSpecs.add(    backup_targetArgSpecs.get(    selectedTarget));</span>
+<span class="fc" id="L1305">			variablesInTargets.add(backup_variablesInTargets.get(selectedTarget));</span>
+		}
+<span class="fc" id="L1307">	}</span>
+
+	public List&lt;PredicateNameAndArity&gt; getTargetModes() {
+<span class="fc" id="L1310">		return targetModes;</span>
+	}
+
+	public Set&lt;PredicateNameAndArity&gt; getBodyModes() {
+<span class="fc" id="L1314">		return bodyModes;</span>
+	}
+
+	void setBodyModes(Set&lt;PredicateNameAndArity&gt; bodyModes) {
+<span class="nc" id="L1318">		this.bodyModes = bodyModes;</span>
+<span class="nc" id="L1319">		countOfSearchesPerformedWithCurrentModes = 0; </span>
+<span class="nc" id="L1320">	}</span>
+
+    void resetAll() {
+<span class="fc" id="L1323">		resetAllForReal();</span>
+<span class="fc bfc" id="L1324" title="All 2 branches covered.">		if (seedPosExamples != null) { seedPosExamples.clear(); }</span>
+<span class="pc bpc" id="L1325" title="1 of 2 branches missed.">		if (seedNegExamples != null) { seedNegExamples.clear(); }</span>
+<span class="pc bpc" id="L1326" title="1 of 2 branches missed.">		if (collectedConstantBindings != null) { collectedConstantBindings.clear(); }</span>
+<span class="fc" id="L1327">	}</span>
+
+    public FileParser getParser() {
+<span class="fc" id="L1330">        return parser;</span>
+    }
+
+	public List&lt;Literal&gt; getTargets() {
+<span class="fc" id="L1334">		return targets;</span>
+}
+
+	private void closeWithoutException(Reader posExamplesReader) {
+<span class="pc bpc" id="L1338" title="1 of 2 branches missed.">        if (posExamplesReader != null) {</span>
+            try {
+<span class="fc" id="L1340">                posExamplesReader.close();</span>
+<span class="nc" id="L1341">            } catch (IOException ignored) {</span>
+<span class="fc" id="L1342">            }</span>
+        }
+<span class="fc" id="L1344">    }</span>
+
+    ILPSearchAction fireOuterLoopStarting(ILPouterLoop outerLoop) {
+<span class="fc" id="L1347">        ILPSearchAction action = ILPSearchAction.PERFORM_LOOP;</span>
+
+<span class="fc" id="L1349">        Object[] listeners = searchListenerList.getListenerList();</span>
+<span class="pc bpc" id="L1350" title="1 of 2 branches missed.">        for (int i = 0; i &lt; listeners.length; i+=2) {</span>
+<span class="nc" id="L1351">            Class c = (Class)listeners[i];</span>
+<span class="nc bnc" id="L1352" title="All 2 branches missed.">            if ( ILPSearchListener.class.isAssignableFrom(c)) {</span>
+<span class="nc" id="L1353">                ILPSearchListener listener = (ILPSearchListener)listeners[i+1];</span>
+
+<span class="nc" id="L1355">                ILPSearchAction aAction = listener.outerLoopStarting(outerLoop);</span>
+<span class="nc" id="L1356">                action = ILPSearchAction.getHigherPrecedenceAction(action, aAction);</span>
+            }
+        }
+<span class="fc" id="L1359">        return action;</span>
+    }
+
+    void fireOuterLoopFinished(ILPouterLoop outerLoop) {
+<span class="fc" id="L1363">        Object[] listeners = searchListenerList.getListenerList();</span>
+<span class="pc bpc" id="L1364" title="1 of 2 branches missed.">        for (int i = 0; i &lt; listeners.length; i+=2) {</span>
+<span class="nc" id="L1365">            Class c = (Class)listeners[i];</span>
+<span class="nc bnc" id="L1366" title="All 2 branches missed.">            if ( ILPSearchListener.class.isAssignableFrom(c)) {</span>
+<span class="nc" id="L1367">                ILPSearchListener listener = (ILPSearchListener)listeners[i+1];</span>
+
+<span class="nc" id="L1369">                listener.outerLoopFinished(outerLoop);</span>
+            }
+        }
+<span class="fc" id="L1372">    }</span>
+
+    private ILPSearchAction fireInnerLoopStarting(LearnOneClause innerLoop) {
+<span class="fc" id="L1375">        ILPSearchAction action = ILPSearchAction.PERFORM_LOOP;</span>
+
+<span class="fc" id="L1377">        Object[] listeners = searchListenerList.getListenerList();</span>
+<span class="pc bpc" id="L1378" title="1 of 2 branches missed.">        for (int i = 0; i &lt; listeners.length; i+=2) {</span>
+<span class="nc" id="L1379">            Class c = (Class)listeners[i];</span>
+<span class="nc bnc" id="L1380" title="All 2 branches missed.">            if ( ILPSearchListener.class.isAssignableFrom(c)) {</span>
+<span class="nc" id="L1381">                ILPSearchListener listener = (ILPSearchListener)listeners[i+1];</span>
+
+<span class="nc" id="L1383">                ILPSearchAction aAction = listener.innerLoopStarting(innerLoop);</span>
+<span class="nc" id="L1384">                action = ILPSearchAction.getHigherPrecedenceAction(action, aAction);</span>
+            }
+        }
+<span class="fc" id="L1387">        return action;</span>
+    }
+
+    private void fireInnerLoopFinished(LearnOneClause innerLoop) {
+<span class="fc" id="L1391">        Object[] listeners = searchListenerList.getListenerList();</span>
+<span class="pc bpc" id="L1392" title="1 of 2 branches missed.">        for (int i = 0; i &lt; listeners.length; i+=2) {</span>
+<span class="nc" id="L1393">            Class c = (Class)listeners[i];</span>
+<span class="nc bnc" id="L1394" title="All 2 branches missed.">            if ( ILPSearchListener.class.isAssignableFrom(c)) {</span>
+<span class="nc" id="L1395">                ILPSearchListener listener = (ILPSearchListener)listeners[i+1];</span>
+
+<span class="nc" id="L1397">                listener.innerLoopFinished(innerLoop);</span>
+            }
+        }
+<span class="fc" id="L1400">    }</span>
+
+	void setMlnRegressionTask(boolean val) {
+        // TODO(hayesall): This might explain why MLN regression has been so poorly behaved.
+<span class="fc" id="L1404">		mlnRegressionTask = val;</span>
+<span class="fc" id="L1405">	}</span>
+
+    RegressionInfoHolder getNewRegressionHolderForTask() {
+<span class="fc bfc" id="L1408" title="All 2 branches covered.">		if (mlnRegressionTask) {</span>
+<span class="fc" id="L1409">			return new RegressionInfoHolderForMLN();</span>
+		} else {
+<span class="fc" id="L1411">            return new RegressionInfoHolderForRDN();</span>
+        }
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

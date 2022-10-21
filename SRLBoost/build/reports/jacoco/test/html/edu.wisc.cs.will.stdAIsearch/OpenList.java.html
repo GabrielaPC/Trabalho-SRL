@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OpenList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.stdAIsearch</a> &gt; <span class="el_source">OpenList.java</span></div><h1>OpenList.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.stdAIsearch;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.LinkedList;
+
+/*
+ * Keep an ordered list of search nodes being considered.
+ * Method for inserting new items depends on the search strategy being used.
+ * @author shavlik
+ *
+ */
+public class OpenList&lt;T extends SearchNode&gt; extends LinkedList&lt;T&gt; {
+
+    private static final long serialVersionUID = 1L;
+
+    private final StateBasedSearchTask task;
+
+<span class="fc" id="L19">    public OpenList(StateBasedSearchTask task) {</span>
+<span class="fc" id="L20">        this.task = task;</span>
+<span class="fc" id="L21">    }</span>
+
+    private void recordNodeCreation(T node) {
+<span class="fc" id="L24">        task.nodesCreated++;</span>
+<span class="fc" id="L25">        task.nodesCreatedThisIteration++;</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (task.closed != null &amp;&amp; task.addNodesToClosedListWhenCreated) {</span>
+<span class="fc" id="L27">            task.closed.addNodeToClosed(node);</span>
+        }
+<span class="fc" id="L29">    }</span>
+
+    public T popOpenList() {
+<span class="fc" id="L32">        T popped = pop();</span>
+
+<span class="fc" id="L34">        task.nodesConsidered++;</span>
+<span class="fc" id="L35">        task.nodesConsideredThisIteration++;</span>
+<span class="fc" id="L36">        return popped;</span>
+    }
+
+    @Override
+    public boolean add(T node) {
+<span class="nc" id="L41">        throw new UnsupportedOperationException(&quot;Programmer error: Do not use add() to add to the open list.  Use a method that also informs the search monitor.&quot;);</span>
+    }
+
+    public void addToEndOfOpenList(T node) {
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if (node == null) {</span>
+<span class="nc" id="L46">            Utils.error(&quot;Cannot have node=null!&quot;);</span>
+        }
+<span class="pc bpc" id="L48" title="3 of 4 branches missed.">        if (task.closed != null &amp;&amp; task.closed.alreadyInClosedList(node)) {</span>
+<span class="nc" id="L49">            return;</span>
+        }
+<span class="fc" id="L51">        super.add(node);</span>
+<span class="fc" id="L52">        recordNodeCreation(node);</span>
+
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (task.beamWidth &gt; 0) {</span>
+<span class="nc" id="L55">            checkBeamWidth();</span>
+        }
+<span class="fc" id="L57">    }</span>
+
+    public void addToFrontOfOpenList(T node) {
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">        if (node == null) {</span>
+<span class="nc" id="L61">            Utils.error(&quot;Cannot have node=null!&quot;);</span>
+        }
+<span class="pc bpc" id="L63" title="3 of 4 branches missed.">        if (task.closed != null &amp;&amp; task.closed.alreadyInClosedList(node)) {</span>
+<span class="nc" id="L64">            return;</span>
+        }
+<span class="fc" id="L66">        super.add(0, node);</span>
+<span class="fc" id="L67">        recordNodeCreation(node);</span>
+
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (task.beamWidth &gt; 0) {</span>
+<span class="nc" id="L70">            checkBeamWidth();</span>
+        }
+<span class="fc" id="L72">    }</span>
+
+    private void insertByScoreIntoOpenList(T node, double minAcceptableScore, boolean tiesOK) throws SearchInterrupted {
+        // HIGHER SCORES ARE BETTER (since that is the convention in heuristic search).
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (node == null) {</span>
+<span class="nc" id="L77">            Utils.error(&quot;Cannot have node=null!&quot;);</span>
+        }
+<span class="pc bpc" id="L79" title="1 of 4 branches missed.">        if (task.closed != null &amp;&amp; task.closed.alreadyInClosedList(node)) {</span>
+<span class="fc" id="L80">            return;</span>
+        }
+<span class="fc" id="L82">        double score = task.scorer.scoreThisNode(node);</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (score &lt; minAcceptableScore) {</span>
+<span class="nc" id="L84">            return;</span>
+        }
+<span class="pc bpc" id="L86" title="3 of 4 branches missed.">        if (!tiesOK &amp;&amp; score &lt;= minAcceptableScore) {</span>
+<span class="nc" id="L87">            return;</span>
+        }
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (Double.isNaN(score)) {</span>
+            // Allow scorers to return NaN to indicate 'do not keep.'
+<span class="nc" id="L91">            return;</span>
+        }
+
+        // Used to play tricks when inserting into OPEN, but where the &quot;real&quot; score should be provided to the search monitor.
+<span class="fc" id="L95">        double bonusScore = task.scorer.computeBonusScoreForThisNode(node);</span>
+
+<span class="fc" id="L97">        double totalScore = score + bonusScore;</span>
+
+        // See if this node is an acceptable for setting 'bestScoreSeenSoFar.'
+<span class="fc" id="L100">        boolean acceptable = true;</span>
+
+        // Don't tell the monitor if pruned, since the monitor may want to compute something
+        // cpu-intensive for a node that is being rejected.
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (task.searchMonitor != null) {</span>
+            // TODO(?): also pass in the bonus so the monitor can see if if it wants.
+
+            // Use 'real' score for the search monitor.
+<span class="fc" id="L108">            acceptable = task.searchMonitor.recordNodeBeingScored(node, score);</span>
+        }
+
+<span class="fc bfc" id="L111" title="All 4 branches covered.">        if (acceptable &amp;&amp; score &gt; task.bestScoreSeenSoFar) {</span>
+            // TODO(?): allow '&lt;' and '&lt;=' the best score
+            // Do not use BONUS here, since that should only impact sorting in the list.
+<span class="fc" id="L114">            task.bestScoreSeenSoFar = score;</span>
+        }
+
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (node.dontActuallyAddToOpen()) {</span>
+<span class="fc" id="L118">            return;</span>
+        }
+
+<span class="fc" id="L121">        node.score = score;</span>
+<span class="fc" id="L122">        node.bonusScore = bonusScore;</span>
+
+<span class="fc" id="L124">        int position = 0;</span>
+<span class="fc" id="L125">        boolean found = false;</span>
+<span class="fc" id="L126">        boolean tiesInFront = task.inOpenListPutNewTiesInFront;</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        for (SearchNode currentNode : this) {</span>
+<span class="fc" id="L128">            double currentTotalScore = currentNode.score + currentNode.bonusScore;</span>
+<span class="pc bpc" id="L129" title="4 of 8 branches missed.">            if ((tiesInFront &amp;&amp; totalScore &gt;= currentTotalScore) || (!tiesInFront &amp;&amp; totalScore &gt; currentTotalScore)) {</span>
+<span class="fc" id="L130">                found = true;</span>
+<span class="fc" id="L131">                super.add(position, node);</span>
+<span class="fc" id="L132">                recordNodeCreation(node);</span>
+<span class="fc" id="L133">                break;</span>
+            }
+<span class="fc" id="L135">            position++;</span>
+<span class="fc" id="L136">        }</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (!found) {</span>
+            // Don't forget this might need to be the LAST item.
+<span class="fc" id="L139">            super.add(node);</span>
+<span class="fc" id="L140">            recordNodeCreation(node);</span>
+        }
+
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (task.beamWidth &gt; 0) {</span>
+<span class="fc" id="L144">            checkBeamWidth();</span>
+        }
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (task.verbosity &gt; 3) {</span>
+            // TODO(@hayesall): `reportOpenListScores` is the only thing that may need `task.verbosity`
+<span class="nc" id="L148">            reportOpenListScores();</span>
+        }
+<span class="fc" id="L150">    }</span>
+
+    public void insertByScoreIntoOpenList(T node) throws SearchInterrupted {
+<span class="fc" id="L153">        this.insertByScoreIntoOpenList(node, task.minAcceptableScore, task.allowToTieMinAcceptableScore);</span>
+<span class="fc" id="L154">    }</span>
+
+    private void checkBeamWidth() {
+<span class="pc bpc" id="L157" title="1 of 4 branches missed.">        if (task.beamWidth &gt; 0 &amp;&amp; size() &gt; task.beamWidth) {</span>
+<span class="fc" id="L158">            int excess = size() - task.beamWidth;</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            for (int i = 0; i &lt; excess; i++) {</span>
+<span class="fc" id="L160">                removeLast();</span>
+            }
+        }
+<span class="fc" id="L163">    }</span>
+
+    private void reportOpenListScores() {
+<span class="nc" id="L166">        Utils.print(&quot;  OPEN = [&quot;);</span>
+<span class="nc" id="L167">        boolean firstTime = true;</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        for (SearchNode currentNode : this) {</span>
+<span class="nc" id="L170">            double score = currentNode.score;</span>
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            if (firstTime) {</span>
+<span class="nc" id="L173">                firstTime = false;</span>
+            }
+            else {
+<span class="nc" id="L176">                Utils.print(&quot;, &quot;);</span>
+            }
+<span class="nc" id="L178">            Utils.print(&quot;score(&quot; + currentNode + &quot;) = &quot; + score);</span>
+<span class="nc" id="L179">        }</span>
+<span class="nc" id="L180">        Utils.println(&quot;]&quot;);</span>
+<span class="nc" id="L181">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

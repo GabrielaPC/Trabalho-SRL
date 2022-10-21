@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.stdAIsearch</a> &gt; <span class="el_source">SearchNode.java</span></div><h1>SearchNode.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.stdAIsearch;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.IOException;
+import java.io.Serializable;
+
+/*
+ * @author shavlik
+ */
+public abstract class SearchNode implements Serializable {
+
+	private final SearchNode parentNode;
+
+	// Provide a back pointer.
+	transient public StateBasedSearchTask task;
+
+	// Depth in the search tree (root is 0).
+<span class="fc" id="L19">	public int depth = 0;</span>
+
+	// Used for heuristic searches.
+<span class="fc" id="L22">	public double score = 0;</span>
+
+	// Used if we want to 'tweak' the score of a node to manipulate the ordering of the OPEN list.
+<span class="fc" id="L25">	double bonusScore = 0;</span>
+
+<span class="fc" id="L27">	private boolean dontAddMeToOPEN = false;</span>
+
+	/*
+	 * Create the root node, since it connects nodes to the search task.
+	 */
+<span class="fc" id="L32">	protected SearchNode(StateBasedSearchTask task) {</span>
+<span class="fc" id="L33">		this.task = task;</span>
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">		if (task == null) {</span>
+<span class="nc" id="L35">			Utils.error(&quot;Creating a search node but have task=null.&quot;);</span>
+		}
+<span class="fc" id="L37">		this.parentNode = null;		</span>
+<span class="fc" id="L38">	}</span>
+
+<span class="fc" id="L40">	protected SearchNode(SearchNode parentNode) {</span>
+<span class="fc" id="L41">		task = parentNode.task;</span>
+<span class="fc" id="L42">		this.parentNode = parentNode;</span>
+<span class="fc" id="L43">		depth  = parentNode.depth + 1;</span>
+<span class="fc" id="L44">	}</span>
+	
+	boolean dontActuallyAddToOpen() {
+<span class="fc" id="L47">		return dontAddMeToOPEN;</span>
+	}
+
+	// The next two are only needed when dealing with CLOSED lists.
+	// Remember that if two search nodes are equal, then their hash codes also need to be equal.
+
+	public boolean equals(Object otherNode) {
+		// Leave this here as a reminder to override if needed.
+<span class="nc" id="L55">		return super.equals(otherNode); </span>
+	}
+
+   /*
+	* Methods for reading a Object cached to disk.
+    */
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+		// TODO(@hayesall): The same method is also in `SearchMonitor.java`
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (!(in instanceof StateBasedSearchInputStream)) {</span>
+<span class="nc" id="L64">            throw new IllegalArgumentException(getClass().getCanonicalName() + &quot;.readObject() input stream must support FOPCObjectInputStream interface&quot;);</span>
+        }
+
+<span class="nc" id="L67">        in.defaultReadObject();</span>
+
+<span class="nc" id="L69">        StateBasedSearchInputStream stateBasedSearchInputStream = (StateBasedSearchInputStream) in;</span>
+
+<span class="nc" id="L71">        this.task = stateBasedSearchInputStream.getStateBasedSearchTask();</span>
+<span class="nc" id="L72">    }</span>
+
+    public SearchNode getParentNode() {
+<span class="fc" id="L75">        return parentNode;</span>
+    }
+
+	public void setDontAddMeToOPEN(boolean dontAddMeToOPEN) {
+<span class="fc" id="L79">		this.dontAddMeToOPEN = dontAddMeToOPEN;</span>
+<span class="fc" id="L80">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DepthFirstSearch.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.stdAIsearch</a> &gt; <span class="el_source">DepthFirstSearch.java</span></div><h1>DepthFirstSearch.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.stdAIsearch;
+
+import java.util.List;
+
+/*
+ * Implements a depth-first search.
+ * 
+ * @author shavlik
+ */
+public class DepthFirstSearch extends SearchStrategy {
+
+<span class="fc" id="L12">    public DepthFirstSearch() {}</span>
+
+    /*
+     * Adds the children to the front of the open list so that the search
+     * proceeds depth-first.
+     * 
+     * @see edu.wisc.cs.will.stdAIsearch.SearchStrategy#addChildrenToOpenList(edu.wisc.cs.will.stdAIsearch.OpenList,
+     *      java.util.List)
+     */
+    public &lt;T extends SearchNode&gt; void addChildrenToOpenList(OpenList&lt;T&gt; open, List&lt;T&gt; children) {
+
+        // Could use addAll, which would maintain order, but by adding one at a time,
+        // the addToOpenList can watch what is happening.  So to maintain &quot;left-to-right&quot; order in OPEN,
+        // need to reverse.
+
+        // For depth-first search, add new nodes to FRONT of list.  Be sure to maintain order of the children.
+<span class="pc bpc" id="L28" title="1 of 4 branches missed.">        if (children != null) for (int i = children.size() - 1; i &gt;= 0; i-- ) {</span>
+<span class="fc" id="L29">            open.addToFrontOfOpenList(children.get(i));</span>
+        }
+<span class="fc" id="L31">    }</span>
+
+    public String toString() {
+<span class="nc" id="L34">        return &quot;depth-first search&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

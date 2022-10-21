@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=edge"/>
+<title>Test results - RDNInferenceTestUWCSETest</title>
+<link href="../css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="../css/style.css" rel="stylesheet" type="text/css"/>
+<script src="../js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>RDNInferenceTestUWCSETest</h1>
+<div class="breadcrumbs">
+<a href="../index.html">all</a> &gt; 
+<a href="../packages/edu.wisc.cs.will.html">edu.wisc.cs.will</a> &gt; RDNInferenceTestUWCSETest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">1</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">0</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="ignored">
+<div class="counter">0</div>
+<p>ignored</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">1.163s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox success" id="successRate">
+<div class="percent">100%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Tests</a>
+</li>
+<li>
+<a href="#tab1">Standard output</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Duration</th>
+<th>Result</th>
+</tr>
+</thead>
+<tr>
+<td class="success">testUWCSEInferenceFromModels()</td>
+<td class="success">1.163s</td>
+<td class="success">passed</td>
+</tr>
+</table>
+</div>
+<div id="tab1" class="tab">
+<h2>Standard output</h2>
+<span class="code">
+<pre>
+% Starting an INFERENCE run of bRDN.
+
+% Switching to VarIndicator = uppercase.
+
+% Unset'ing VarIndicator.
+
+Resetting the LazyGroundNthArgumentClauseIndex.
+
+% Calling ILPouterLoop from createRegressionOuterLooper.
+
+% getInputArgWithDefaultValue: args=[data/uwcse_infer/test/test_pos.txt, data/uwcse_infer/test/test_neg.txt, data/uwcse_infer/test/test_bk.txt, data/uwcse_infer/test/test_facts.txt]
+%  for N=0: args[N]=data/uwcse_infer/test/test_pos.txt
+
+% getInputArgWithDefaultValue: args=[data/uwcse_infer/test/test_pos.txt, data/uwcse_infer/test/test_neg.txt, data/uwcse_infer/test/test_bk.txt, data/uwcse_infer/test/test_facts.txt]
+%  for N=1: args[N]=data/uwcse_infer/test/test_neg.txt
+
+% getInputArgWithDefaultValue: args=[data/uwcse_infer/test/test_pos.txt, data/uwcse_infer/test/test_neg.txt, data/uwcse_infer/test/test_bk.txt, data/uwcse_infer/test/test_facts.txt]
+%  for N=2: args[N]=data/uwcse_infer/test/test_bk.txt
+
+% getInputArgWithDefaultValue: args=[data/uwcse_infer/test/test_pos.txt, data/uwcse_infer/test/test_neg.txt, data/uwcse_infer/test/test_bk.txt, data/uwcse_infer/test/test_facts.txt]
+%  for N=3: args[N]=data/uwcse_infer/test/test_facts.txt
+
+% Welcome to the WILL ILP/SRL systems.
+
+% Reading background theory from dir: null
+
+% Switching to VarIndicator = uppercase.
+
+***** Warning: % Since this is the first setting of the notation for variables, will keep:
+%   variableIndicator = uppercase *****
+
+% [ LazyGroundClauseIndex ]  Building full index for mode/1 with 1 assertions.
+
+%  Read the facts.
+%  Have read 465 facts.
+% Have read 16 examples from 'data/uwcse_infer/test' [data/uwcse_infer/test/test*].
+% Have read 2.385 examples from 'data/uwcse_infer/test' [data/uwcse_infer/test/test*].
+
+%  LearnOneClause initialized.
+
+% The outer looper has been created.
+
+% Initializing the ILP inner looper.
+
+% NEW target:                 advisedby(A, B)
+%  targetPred:                advisedby/2
+%  targetArgTypes:            signature = [const, const], types = [+person, +person]
+%  targets:                   [advisedby(A, B)]
+%  targetPredicates:          [advisedby/2]
+%  targetArgSpecs:            [[A[+person], B[+person]]]
+%  variablesInTargets:        [[A, B]]
+
+% Started collecting constants
+
+% Collecting the types of constants.
+
+% Looking at the training examples to see if any types of new constants can be inferred.
+% Time to collect constants: 8 milliseconds
+
+% Read 16 pos examples and 2.385 neg examples.
+% Time to init learnOneClause: 10 milliseconds
+% Old dirdata/uwcse_infer/models/
+
+% Have 16 'raw' positive examples and kept 16.
+% Have 2.385 'raw' negative examples and kept 2.385.
+
+% processing backup's for advisedby
+%  POS EX = 16
+%  NEG EX = 2.385
+
+% Memory usage by WILLSetup (just counts # targets?):
+%  |backupPosExamples| = 1
+%  |backupNegExamples| = 1
+%  |predicatesAsFacts| = 0
+%  |addedToFactBase|   = 0
+
+% Getting bRDN's target predicates.
+% Did not learn a model for 'advisedby' this run.
+%   loadModel (#0): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree0.tree
+%   loadModel (#1): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree1.tree
+%   loadModel (#2): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree2.tree
+%   loadModel (#3): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree3.tree
+%   loadModel (#4): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree4.tree
+%   loadModel (#5): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree5.tree
+%   loadModel (#6): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree6.tree
+%   loadModel (#7): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree7.tree
+%   loadModel (#8): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree8.tree
+%   loadModel (#9): data/uwcse_infer/models/bRDNs/Trees/advisedbyTree9.tree
+%  Done loading 10 models.
+
+% for advisedby |lookupPos| = 16
+% for advisedby |lookupNeg| = 2.385
+% getJointExamples: |pos| = 16, |neg| = 2.385
+
+% Starting inference in bRDN.
+% Trees = 10
+
+% Starting getMarginalProbabilities.
+% [ LazyGroundClauseIndex ]  Building full index for professor/1 with 13 assertions.
+% [ LazyGroundClauseIndex ]  Building full index for student/1 with 36 assertions.
+% [ LazyGroundClauseIndex ]  Building full index for hasposition/2 with 9 assertions.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 0:  Building full index for tempadvisedby/2.
+% [ LazyGroundClauseIndex ]  Building full index for yearsinprogram/2 with 21 assertions.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for publication/2.
+% [ LazyGroundClauseIndex ]  Building full index for inphase/2 with 21 assertions.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for projectmember/2.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for tempadvisedby/2.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for taughtby/3.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for ta/3.
+% [ LazyGroundClauseIndex ]  Building full index for courselevel/2 with 28 assertions.
+ (Arithmetic) Mean Probability Assigned to Correct Output Class: 2.118,845/2.401,00 = 0,882484
+
+ The weighted count of positive examples = 16,000 and the weighted count of negative examples = 2.385,000
+
+printExamples: Writing out predictions (for Tuffy?) on 2.401 examples for 'advisedby' to:
+  data/uwcse_infer/test/results_advisedby.db
+ and to:
+  data/uwcse_infer/test/query_advisedby.db
+
+% Computing Area Under Curves.
+%Pos=16
+%Neg=2385
+%LL:-6.342973743562285
+%LL:-362.53987096715986
+Best F1 = 1.0
+% F1 = 1.0
+% Threshold = 0.3108671968567343
+
+%   AUC ROC   = 0,977516
+%   AUC PR    = 0,154092
+%   CLL	      = -0,150995
+%   Precision = 0,127273 at threshold = 0,500
+%   Recall    = 0,875000
+%   F1        = 0,222222
+
+% Total inference time (10 trees): 1,160 seconds.
+</pre>
+</span>
+</div>
+</div>
+<div id="footer">
+<p>
+<div>
+<label class="hidden" id="label-for-line-wrapping-toggle" for="line-wrapping-toggle">Wrap lines
+<input id="line-wrapping-toggle" type="checkbox" autocomplete="off"/>
+</label>
+</div>Generated by 
+<a href="http://www.gradle.org">Gradle 7.4.2</a> at 20 de out de 2022 14:10:47</p>
+</div>
+</div>
+</body>
+</html>

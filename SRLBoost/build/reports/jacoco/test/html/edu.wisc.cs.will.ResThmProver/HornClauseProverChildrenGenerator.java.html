@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HornClauseProverChildrenGenerator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ResThmProver</a> &gt; <span class="el_source">HornClauseProverChildrenGenerator.java</span></div><h1>HornClauseProverChildrenGenerator.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ResThmProver;
+
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.ChildrenNodeGenerator;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+
+/*
+ * @author shavlik
+ *
+ */
+<span class="pc bpc" id="L16" title="1 of 2 branches missed.">public class HornClauseProverChildrenGenerator extends ChildrenNodeGenerator&lt;HornSearchNode&gt; {</span>
+
+    private final HornClauseContext context;
+
+    private final BindingList bindingList; // Use this repeatedly to save some &quot;new'ing.&quot;
+
+<span class="fc" id="L22">    private long maxOpen = 0;</span>
+
+    private final Unifier unifier;
+
+    /* Literal that tracks where we need to cut to when encountered.
+     *
+     * The cutLiteral is created the first time a cut is encountered
+     * for a given Literal expansion.  It holds a copy of the
+     * appropriate CutMarkerNode.
+     * &lt;p&gt;
+     * As clauses are added to the list of negated literals, their
+     * actual cut Literals (if any) are replaced by this special Literal.
+     * &lt;p&gt;
+     * During SLD resolution, if this CutLiteral is expanded,
+     * the nodes of the task's openList will popped until the
+     * appropriate CutMarkerNode is encountered.  The CutMarkerNode is
+     * not removed during this process since multiple cut in the same clause
+     * could result in multiple clearing of the open list.
+     * &lt;p&gt;
+     * The cutLiteral is reset to null at the beginning of each literal
+     * expansion via the resetCutMarkerAndCounters() method.
+     */
+<span class="fc" id="L44">    private CutLiteral cutLiteral = null;</span>
+
+    /* Search Node holding the place to be cut to when a cut is encountered.
+     *
+     * The cutMarkerNode is created the first time a cut is encountered
+     * for a given Literal expansion.  It is held by the corresponding
+     * CutLiteral.
+     * &lt;p&gt;
+     * When a cut literal is expanded, all nodes between the head of the
+     * task's open list and the CutMarkerNode are removed.  The CutMarkerNode
+     * is not removed during this process.
+     * &lt;P&gt;
+     * When expanded during SLD resolution, the cutMarkerNode is simply
+     * discarded.
+     * &lt;p&gt;
+     * The cutMarkerNode is reset to null at the beginning of each literal
+     * expansion via the resetCutMarkerAndCounters() method.
+     *
+     */
+<span class="fc" id="L63">    private CutMarkerNode cutMarkerNode = null;</span>
+
+    /* Tracks whether the cutMarker has already been added during the expansion of the current literal.
+     *
+     * Only want to add CutMarkerNode per expansion of a single literal.
+     * &lt;p&gt;
+     * The cutMarkerAdded is reset to false at the beginning of each literal
+     * expansion via the resetCutMarkerAndCounters() method.
+     */
+    private boolean cutMarkerAdded;
+
+    /* Tracks the expansion we are on.
+     *
+     * Use getNextExpansion() to get the next expansion.
+     * &lt;P&gt;
+     * The nextExpansion is reset to 0 by resetCutMarkerAndCounters() at
+     * the beginning of each collectChildren call.
+     */
+    private int nextExpansion;
+
+    /* Tracks the current proof step counter.
+     *
+     * Each time a literal is evaluated (it's expanded to include it's children),
+     * this counter is increased by 1.
+     * &lt;P&gt;
+     * Since the children generator can remain around over the course of many proofs,
+     * this number can get quite large.  The HornClauseProver could probably reset
+     * this number occasionally if this become a problem.
+     */
+<span class="fc" id="L92">    static long proofCounter = 0;</span>
+
+    HornClauseProverChildrenGenerator(HornClauseProver task, HornClauseContext context) {
+<span class="fc" id="L95">        super(task);</span>
+
+<span class="fc" id="L97">        this.context = context;</span>
+
+        // Reuse this since for many cases the result will be the empty binding list or null.
+<span class="fc" id="L100">        bindingList = new BindingList();</span>
+<span class="fc" id="L101">        unifier = Unifier.UNIFIER;</span>
+
+<span class="fc" id="L103">        HandleFOPCstrings stringHandler = context.getStringHandler();</span>
+
+<span class="fc" id="L105">    }</span>
+
+    @Override
+    public List&lt;HornSearchNode&gt; collectChildren(HornSearchNode hornSearchNode) throws RuntimeException {
+
+        // TODO(hayesall): I pulled a bunch of spy and trace calls out of here. I don't think `printVariableCounters` does anything now.
+
+<span class="fc" id="L112">        boolean oldPrintVars = getStringHandler().printVariableCounters;</span>
+
+        // Do the actual work right here...
+<span class="fc" id="L115">        List&lt;HornSearchNode&gt; result = collectChildrenActual(hornSearchNode);</span>
+
+<span class="fc" id="L117">        maxOpen = Math.max(getTask().open.size(), maxOpen);</span>
+
+<span class="fc" id="L119">        getStringHandler().printVariableCounters = oldPrintVars;</span>
+
+<span class="fc" id="L121">        proofCounter++;</span>
+<span class="fc" id="L122">        return result;</span>
+    }
+
+    private List&lt;HornSearchNode&gt; collectChildrenActual(HornSearchNode hornSearchNode) throws RuntimeException {
+
+
+        // Grab the first negated literal in this node, and find all &quot;rules&quot; in the theory that unify with it.
+        // Each &quot;resolvent&quot; is a new node.  E.g., if node = (!P v !A v ... v !H) and the theory contains (P v !R v ... !Z)
+        // then resolving P and !P produces (!A v ... v !H v !R v ... !Z) where theta=unify(P, P') is applied to the result.
+
+<span class="fc" id="L132">        resetCutMarkerAndCounters();</span>
+
+<span class="fc" id="L134">        List&lt;Literal&gt; queryLiterals = hornSearchNode.clause.negLiterals;</span>
+<span class="fc" id="L135">        Literal negatedLiteral = queryLiterals.get(0);</span>
+<span class="fc" id="L136">        HornClauseProver thisTask = (HornClauseProver) this.task;</span>
+<span class="fc" id="L137">        PredicateName negatedLiteralPredName = negatedLiteral.predicateName;</span>
+
+<span class="fc" id="L139">        List&lt;HornSearchNode&gt; children = null;  // Collect the children nodes.</span>
+
+        boolean noPredArgMatchFound;
+
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">        if (thisTask.predefinedPredicateNamesUsedByChildCollector.contains(negatedLiteralPredName)) {</span>
+            // TODO(hayesall): These should not be reachable
+<span class="nc" id="L145">            throw new RuntimeException(&quot;This code should not be reachable.&quot;);</span>
+        }
+
+        // TODO(hayesall): Each of these refer to a ProcedurallyDefinedPredicateHandler, or a &quot;user provided&quot; version.
+
+        // See if there is a special procedurally defined predicate, and if so, call its handler.
+<span class="fc" id="L151">        int arity = negatedLiteral.numberArgs();</span>
+<span class="fc" id="L152">        ProcedurallyDefinedPredicateHandler userProcedurallyDefinedPredicateHandlerInstance = getClausebase().getUserProcedurallyDefinedPredicateHandler();</span>
+<span class="pc bpc" id="L153" title="1 of 4 branches missed.">        if (userProcedurallyDefinedPredicateHandlerInstance != null &amp;&amp; userProcedurallyDefinedPredicateHandlerInstance.canHandle(negatedLiteralPredName, arity)) {</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">            if (bindingList.theta.size() &gt; 0) {</span>
+<span class="nc" id="L155">                bindingList.theta.clear();</span>
+            } // Revert to the empty binding list.
+<span class="fc" id="L157">            BindingList theta = userProcedurallyDefinedPredicateHandlerInstance.handle(negatedLiteral, bindingList);</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">            if (theta != null) {</span>
+<span class="fc" id="L159">                HornSearchNode newNode = createChildWithNoNewLiterals(hornSearchNode, queryLiterals, theta.copy());</span>
+
+<span class="fc" id="L161">                children = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L162">                children.add(newNode);</span>
+<span class="fc" id="L163">                return children;</span>
+            }
+<span class="fc" id="L165">            return null;  // If the procedurally defined predicate failed, then this search path has failed.</span>
+        }
+
+        // If we get here, there is no special handling to do.  Just look the literal up in the clause base and
+        // handle it appropriately.
+
+        // Use a newer style of background/fact lookup that is hopefully faster.
+<span class="fc" id="L172">        boolean predIsInBackgroundKnowledge = getClausebase().checkForPossibleMatchingBackgroundKnowledge(negatedLiteralPredName, arity);</span>
+<span class="fc" id="L173">        boolean predIsInFacts = getClausebase().checkForPossibleMatchingFacts(negatedLiteralPredName, arity);</span>
+
+<span class="pc bpc" id="L175" title="3 of 4 branches missed.">        noPredArgMatchFound = (!predIsInBackgroundKnowledge &amp;&amp; !predIsInFacts);</span>
+
+        // Handle the cases where there are only facts, only background knowledge, and where
+        // the two are mixed together...
+<span class="pc bpc" id="L179" title="2 of 4 branches missed.">        if (predIsInFacts &amp;&amp; !predIsInBackgroundKnowledge) {</span>
+<span class="nc" id="L180">            children = createChildrenForFactsOnly(hornSearchNode, negatedLiteral, queryLiterals);</span>
+        }
+<span class="pc bpc" id="L182" title="3 of 4 branches missed.">        else if (predIsInFacts || predIsInBackgroundKnowledge) {</span>
+<span class="fc" id="L183">            children = createChildrenForMixedBackgroundAndFacts(hornSearchNode, negatedLiteral, queryLiterals);</span>
+        }
+
+<span class="pc bpc" id="L186" title="3 of 4 branches missed.">        if (noPredArgMatchFound &amp;&amp; !negatedLiteralPredName.canBeAbsent(arity)) {</span>
+<span class="nc" id="L187">            Utils.waitHereErr(&quot;There is no fact nor clause nor built-in predicate matching: '&quot; + negatedLiteralPredName + &quot;/&quot; + arity + &quot;'.\n  Possibly a typo?  If not, add to the BK file:   okIfUnknown: &quot; + negatedLiteralPredName + &quot;/&quot; + arity + &quot;.&quot;);</span>
+
+<span class="nc" id="L189">            negatedLiteralPredName.setCanBeAbsent(arity);</span>
+        }
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">        if (cutMarkerNode != null) {</span>
+<span class="nc bnc" id="L192" title="All 4 branches missed.">            assert children != null;</span>
+<span class="nc" id="L193">            children.add(children.size(), cutMarkerNode);</span>
+        }
+<span class="fc" id="L195">        return children;</span>
+    }
+
+    private List&lt;HornSearchNode&gt; createChildrenForFactsOnly(HornSearchNode hornSearchNode, Literal negatedLiteral, List&lt;Literal&gt; queryLiterals) {
+<span class="nc" id="L199">        List&lt;HornSearchNode&gt; children = null;</span>
+
+<span class="nc" id="L201">        negatedLiteral.numberArgs();</span>
+
+<span class="nc" id="L203">        Iterable&lt;Literal&gt; matchingFacts = getClausebase().getPossibleMatchingFacts(negatedLiteral, null);</span>
+
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        if (matchingFacts != null) {</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            for (Literal fact : matchingFacts) {</span>
+
+<span class="nc" id="L208">                BindingList theta = unify(negatedLiteral, fact, new BindingList());</span>
+
+<span class="nc bnc" id="L210" title="All 4 branches missed.">                if (theta != null &amp;&amp; fact.containsFreeVariablesAfterSubstitution(theta)) { // If any variables in the fact are unbound, need to rename then rebind.</span>
+                    // TAW: I don't think that facts are supposed to have free variables.  However,
+                    // TAW: we only print a warning and don't restrict it, so I guess we need to do this step.
+<span class="nc" id="L213">                    Utils.println(&quot;Since variables in the fact remain after unification, need to rename '&quot; + fact + &quot;'.&quot;);</span>
+<span class="nc" id="L214">                    fact = (Literal) fact.copyAndRenameVariables();</span>
+<span class="nc" id="L215">                    bindingList.theta.clear();</span>
+<span class="nc" id="L216">                    theta = unify(negatedLiteral, fact, new BindingList());</span>
+                }
+
+<span class="nc bnc" id="L219" title="All 2 branches missed.">                if (theta != null) {</span>
+<span class="nc" id="L220">                    HornSearchNode newNode = createChildWithNoNewLiterals(hornSearchNode, queryLiterals, theta);</span>
+
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                    if (children == null) {</span>
+<span class="nc" id="L223">                        children = new ArrayList&lt;&gt;();</span>
+                    }
+<span class="nc" id="L225">                    children.add(newNode); // Do NOT return here.</span>
+                }
+<span class="nc" id="L227">            }</span>
+        }
+
+<span class="nc" id="L230">        return children;</span>
+    }
+
+    private List&lt;HornSearchNode&gt; createChildrenForMixedBackgroundAndFacts(HornSearchNode hornSearchNode, Literal negatedLiteral, List&lt;Literal&gt; queryLiterals) {
+<span class="fc" id="L234">        List&lt;HornSearchNode&gt; children = null;</span>
+
+<span class="fc" id="L236">        negatedLiteral.numberArgs();</span>
+
+<span class="fc" id="L238">        Collection&lt;DefiniteClause&gt; possibleMatchingAssertions = getClausebase().getPossibleMatchingAssertions(negatedLiteral, null);</span>
+
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">        if (possibleMatchingAssertions != null) {</span>
+
+<span class="fc bfc" id="L242" title="All 2 branches covered.">            for (DefiniteClause definiteClause : possibleMatchingAssertions) {  //Utils.println(&quot;Consider: &quot; + clause);</span>
+<span class="fc" id="L243">                Literal ruleHead = definiteClause.getDefiniteClauseHead();</span>
+
+<span class="fc" id="L245">                BindingList theta = unify(negatedLiteral, ruleHead, new BindingList());</span>
+
+<span class="pc bpc" id="L247" title="3 of 6 branches missed.">                if (theta != null &amp;&amp; !definiteClause.isDefiniteClauseFact() &amp;&amp; definiteClause.containsFreeVariablesAfterSubstitution(theta)) { // If any variables in the clause are unbound (even in the BODY!), need to rename then rebind.</span>
+<span class="nc" id="L248">                    definiteClause = (DefiniteClause) definiteClause.getDefiniteClauseAsClause().copyAndRenameVariables();</span>
+<span class="nc" id="L249">                    ruleHead = definiteClause.getDefiniteClauseHead();</span>
+
+                    // We have to rebind theta since the clause is a copy...
+<span class="nc" id="L252">                    theta = unify(negatedLiteral, ruleHead, new BindingList());</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">                    if (theta == null) {</span>
+<span class="nc" id="L254">                        Utils.println(&quot;Since variables in the new clause remain after unification, need to rename '&quot; + definiteClause + &quot;'.&quot;);</span>
+<span class="nc" id="L255">                        Utils.println(&quot;  renamed clause: &quot; + definiteClause.getDefiniteClauseAsClause().toPrettyString(&quot;     &quot;, Integer.MAX_VALUE, null));</span>
+<span class="nc" id="L256">                        Utils.println(&quot;  negatedLiteral= &quot; + negatedLiteral);</span>
+<span class="nc" id="L257">                        Utils.println(&quot;  ruleHead      = &quot; + ruleHead);</span>
+<span class="nc" id="L258">                        Utils.println(&quot;  theta         = &quot; + null);</span>
+<span class="nc" id="L259">                        Utils.error(&quot;What happened to theta???&quot;);</span>
+                    }
+                }
+
+<span class="fc bfc" id="L263" title="All 2 branches covered.">                if (theta != null) {</span>
+<span class="fc" id="L264">                    List&lt;Literal&gt; ruleBody = definiteClause.getDefiniteClauseBody();</span>
+
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">                    if (definiteClause.isDefiniteClauseRule()) {</span>
+<span class="nc" id="L267">                        Clause clause = definiteClause.getDefiniteClauseAsClause();</span>
+<span class="nc bnc" id="L268" title="All 4 branches missed.">                        if (!cutMarkerAdded &amp;&amp; clause.getBodyContainsCut()) {</span>
+<span class="nc" id="L269">                            createCutMarkerNode(hornSearchNode, negatedLiteral);</span>
+                        }
+<span class="nc bnc" id="L271" title="All 2 branches missed.">                        if (clause.getBodyContainsCut()) {</span>
+<span class="nc" id="L272">                            ruleBody = markCutsInClauseWithCurrentCutMarker(ruleBody);</span>
+                        }
+                    }
+
+                    HornSearchNode newNode;
+<span class="pc bpc" id="L277" title="1 of 2 branches missed.">                    if (ruleBody == null) {</span>
+<span class="nc" id="L278">                        newNode = createChildWithNoNewLiterals(hornSearchNode, queryLiterals, theta);</span>
+                    }
+                    else {
+<span class="fc" id="L281">                        newNode = createChildWithMultipleNewLiterals(hornSearchNode, ruleBody, queryLiterals, theta);</span>
+                    }
+
+<span class="fc bfc" id="L284" title="All 2 branches covered.">                    if (children == null) {</span>
+<span class="fc" id="L285">                        children = new ArrayList&lt;&gt;();</span>
+                    }
+<span class="fc" id="L287">                    children.add(newNode);</span>
+                }
+<span class="fc" id="L289">            }</span>
+        }
+
+<span class="fc" id="L292">        return children;</span>
+    }
+
+    private BindingList unify(Literal lit1, Literal lit2, BindingList bindingList) {
+<span class="fc" id="L296">        return unifier.unify(lit1, lit2, bindingList);</span>
+    }
+
+    private void resetCutMarkerAndCounters() {
+<span class="fc" id="L300">        cutMarkerAdded = false;</span>
+<span class="fc" id="L301">        cutLiteral     = null;</span>
+<span class="fc" id="L302">        cutMarkerNode  = null; </span>
+
+<span class="fc" id="L304">        nextExpansion = 0;</span>
+<span class="fc" id="L305">    }</span>
+
+    private void createCutMarkerNode(HornSearchNode hornSearchNode, Literal literalBeingCut) {
+<span class="nc bnc" id="L308" title="All 2 branches missed.">        if (!cutMarkerAdded) {</span>
+<span class="nc" id="L309">            cutMarkerAdded = true;</span>
+<span class="nc" id="L310">            cutMarkerNode = new CutMarkerNode(hornSearchNode, literalBeingCut, proofCounter);</span>
+<span class="nc" id="L311">            cutLiteral    = new CutLiteral(getStringHandler(), cutMarkerNode);</span>
+        }
+<span class="nc" id="L313">    }</span>
+
+    /*
+     * Create a new list, where all the cuts are replaced by new cuts that have the argument cutMarkerLiteralAsTerm.
+     */
+    private List&lt;Literal&gt; markCutsInClauseWithCurrentCutMarker(List&lt;Literal&gt; ruleBody) {
+<span class="nc" id="L319">        List&lt;Literal&gt; newRuleBody = new ArrayList&lt;&gt;(ruleBody.size());</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        for (Literal lit : ruleBody) {</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">            if (lit.predicateName == getStringHandler().standardPredicateNames.cut) {</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">            	if (cutLiteral == null) { Utils.waitHere(); }</span>
+<span class="nc" id="L323">                newRuleBody.add(cutLiteral);</span>
+            }
+            else {
+<span class="nc" id="L326">                newRuleBody.add(lit);</span>
+            }
+<span class="nc" id="L328">        }</span>
+<span class="nc" id="L329">        return newRuleBody;</span>
+    }
+
+    private int getNextExpansion() {
+<span class="fc" id="L333">        return nextExpansion++;</span>
+    }
+
+    @Override
+    public void clearAnySavedInformation() {
+        // We want the theory to persist across searches.
+<span class="fc" id="L339">    }</span>
+
+    private HandleFOPCstrings getStringHandler() {
+<span class="fc" id="L342">        return context.getStringHandler();</span>
+    }
+
+    private HornClausebase getClausebase() {
+<span class="fc" id="L346">        return context.getClausebase();</span>
+    }
+
+    private HornClauseProver getTask() {
+<span class="fc" id="L350">        return (HornClauseProver) task;</span>
+    }
+
+    private List&lt;Literal&gt; getQueryRemainder(List&lt;Literal&gt; queryLiterals, BindingList bindingList) {
+<span class="fc" id="L354">        int querySize = queryLiterals.size();</span>
+<span class="fc" id="L355">        List&lt;Literal&gt; queryRemainder = new LinkedList&lt;&gt;();</span>
+
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">        if (querySize &gt; 0) {</span>
+
+<span class="fc bfc" id="L359" title="All 2 branches covered.">            for (int i = 1; i &lt; querySize; i++) {</span>
+<span class="fc" id="L360">                Literal lit = queryLiterals.get(i);</span>
+<span class="pc bpc" id="L361" title="1 of 2 branches missed.">                if (bindingList != null) {</span>
+<span class="fc" id="L362">                    lit = lit.applyTheta(bindingList.theta);</span>
+                }
+<span class="fc" id="L364">                queryRemainder.add(lit);</span>
+            }
+        }
+<span class="fc" id="L367">        return queryRemainder;</span>
+    }
+
+    private HornSearchNode createChildWithMultipleNewLiterals(HornSearchNode hornSearchNode, List&lt;Literal&gt; newLiterals, List&lt;Literal&gt; queryLiterals, BindingList bindingList) {
+
+<span class="fc" id="L372">        int expansion = getNextExpansion();</span>
+
+<span class="fc" id="L374">        List&lt;Literal&gt; newQueryLiterals = getQueryRemainder(queryLiterals, bindingList);</span>
+
+<span class="pc bpc" id="L376" title="1 of 2 branches missed.">        if (bindingList != null) {</span>
+<span class="fc" id="L377">            bindingList = bindingList.copy();</span>
+        }
+
+<span class="pc bpc" id="L380" title="1 of 2 branches missed.">        if (newLiterals != null) {</span>
+<span class="pc bpc" id="L381" title="1 of 2 branches missed.">            for (int i = newLiterals.size() - 1; i &gt;= 0; i--) {</span>
+<span class="nc" id="L382">                Literal newLit = newLiterals.get(i);</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">                if (bindingList != null) {</span>
+<span class="nc" id="L384">                    newLit = newLit.applyTheta(bindingList.theta);</span>
+                }
+<span class="nc" id="L386">                newQueryLiterals.add(0, newLit);</span>
+            }
+        }
+
+<span class="fc" id="L390">        return new HornSearchNode(hornSearchNode, getStringHandler().getClause(newQueryLiterals, false), bindingList);</span>
+    }
+
+    private HornSearchNode createChildWithNoNewLiterals(HornSearchNode hornSearchNode, List&lt;Literal&gt; queryLiterals, BindingList bindingList) {
+<span class="fc" id="L394">        int expansion = getNextExpansion();</span>
+
+<span class="pc bpc" id="L396" title="1 of 2 branches missed.">        if (bindingList != null) {</span>
+<span class="fc" id="L397">            bindingList = bindingList.copy();</span>
+        }
+
+<span class="fc" id="L400">        List&lt;Literal&gt; newQueryLiterals = getQueryRemainder(queryLiterals, bindingList);</span>
+
+<span class="fc" id="L402">        return new HornSearchNode(hornSearchNode, getStringHandler().getClause(newQueryLiterals, false), bindingList);</span>
+    }
+
+    protected static class CutMarkerNode extends HornSearchNode {
+
+        private final CutMarkerLiteral cutMarkerLiteral;
+
+        CutMarkerNode(HornSearchNode parentNode, Literal literalBeingCut, long proofCounterOfCutClause) {
+<span class="nc" id="L410">            super(parentNode, null, null);</span>
+
+<span class="nc" id="L412">            this.cutMarkerLiteral = new CutMarkerLiteral(literalBeingCut.getStringHandler(), literalBeingCut, proofCounterOfCutClause);</span>
+<span class="nc" id="L413">            this.clause = literalBeingCut.getStringHandler().getClause(null, this.cutMarkerLiteral);</span>
+<span class="nc" id="L414">        }</span>
+
+        CutMarkerNode(HornClauseProver task, Literal literalBeingCut, long proofCounterOfCutClause) {
+<span class="nc" id="L417">            super(task, null);</span>
+
+<span class="nc" id="L419">            this.cutMarkerLiteral = new CutMarkerLiteral(literalBeingCut.getStringHandler(), literalBeingCut, proofCounterOfCutClause);</span>
+<span class="nc" id="L420">            this.clause = literalBeingCut.getStringHandler().getClause(null, this.cutMarkerLiteral);</span>
+<span class="nc" id="L421">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L425">            return cutMarkerLiteral.toString();</span>
+        }
+
+        Literal getLiteralBeingCut() {
+<span class="nc" id="L429">            return cutMarkerLiteral.getLiteralBeingCut();</span>
+        }
+
+        long getProofCounterOfCutClause() {
+<span class="nc" id="L433">            return cutMarkerLiteral.getProofCounterOfCutClause();</span>
+        }
+    }
+
+    protected static class CutMarkerLiteral extends Literal {
+
+        /* Head of the clause that contained the cut.
+         *
+         * This is just for debugging purpose, never used in the actual resolution.
+         *
+         */
+        private final Literal literalBeingCut;
+
+        private final long proofCounterOfCutClause;
+
+        CutMarkerLiteral(HandleFOPCstrings stringHandler, Literal literalBeingCut, long proofCounterOfCutClause) {
+<span class="nc" id="L449">            super(stringHandler, stringHandler.standardPredicateNames.cutMarker);</span>
+<span class="nc" id="L450">            this.literalBeingCut = literalBeingCut;</span>
+<span class="nc" id="L451">            this.proofCounterOfCutClause = proofCounterOfCutClause;</span>
+<span class="nc" id="L452">        }</span>
+
+        @Override
+        public String toString(int precedenceOfCaller) {
+<span class="nc" id="L456">            return &quot;CutMarker [Cut of [&quot; + getProofCounterOfCutClause() + &quot;.*] &quot; + literalBeingCut + &quot;]&quot;;</span>
+        }
+
+        Literal getLiteralBeingCut() {
+<span class="nc" id="L460">            return literalBeingCut;</span>
+        }
+
+        long getProofCounterOfCutClause() {
+<span class="nc" id="L464">            return proofCounterOfCutClause;</span>
+        }
+    }
+
+    protected static class CutLiteral extends Literal {
+
+        /** Head of the clause that contained the cut.
+         *
+         */
+        private final CutMarkerNode cutMarkerNode;
+
+        CutLiteral(HandleFOPCstrings stringHandler, CutMarkerNode cutMarkerNode) {
+<span class="nc" id="L476">            super(stringHandler, stringHandler.standardPredicateNames.cut);</span>
+<span class="nc" id="L477">            this.cutMarkerNode = cutMarkerNode;</span>
+<span class="nc" id="L478">        }</span>
+
+        @Override
+        public String toString(int precedenceOfCaller) {
+<span class="nc" id="L482">            return &quot;! [Cut to marker [&quot; + cutMarkerNode.getProofCounterOfCutClause() + &quot;.*] &quot; + cutMarkerNode.getLiteralBeingCut() + &quot;]&quot;;</span>
+        }
+
+        @Override
+        public String toPrettyString() {
+<span class="nc" id="L487">            return toString();</span>
+        }
+
+        @Override
+        public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L492">            return toString();</span>
+        }
+
+        @Override
+        public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L497">            return toString();</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

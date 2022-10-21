@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegressionTree.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Trees</a> &gt; <span class="el_source">RegressionTree.java</span></div><h1>RegressionTree.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Trees;
+
+import edu.wisc.cs.will.Boosting.RDN.WILLSetup;
+import edu.wisc.cs.will.FOPC.Clause;
+import edu.wisc.cs.will.FOPC.Literal;
+import edu.wisc.cs.will.FOPC.PredicateName;
+import edu.wisc.cs.will.FOPC.Sentence;
+
+import java.util.Collection;
+
+public class RegressionTree extends ClauseBasedTree {
+
+	// Meta information about each clause. For e.g. # +ve examples
+	// Used for one class classification
+
+	public RegressionTree(WILLSetup setup) {
+<span class="fc" id="L17">		super(setup);</span>
+<span class="fc" id="L18">	} </span>
+
+	/*
+	 * This function adds the predicates that are used in this tree ie
+	 * the parents for the head predicate.
+	 * @param preds - Adds the parent predicate to this collection
+	 * Duplicate detection is responsibility of the caller
+	 */
+	public void getParentPredicates(Collection&lt;PredicateName&gt; preds) {
+<span class="fc bfc" id="L27" title="All 2 branches covered.">		for (Clause cl : regressionClauses) {</span>
+
+<span class="pc bpc" id="L29" title="1 of 4 branches missed.">			if (cl == null || cl.negLiterals == null)</span>
+<span class="fc" id="L30">				continue;</span>
+			// Body literals
+<span class="fc bfc" id="L32" title="All 2 branches covered.">			for(Literal lit: cl.negLiterals) {</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">				if (lit != null) {</span>
+<span class="fc" id="L34">					addToPredicates(lit, preds);</span>
+				} else {
+<span class="nc" id="L36">					preds.add(lit.predicateName);</span>
+				}
+<span class="fc" id="L38">			}</span>
+<span class="fc" id="L39">		}</span>
+<span class="fc" id="L40">	}</span>
+
+	private void addToPredicates(Sentence sentenceA,
+			Collection&lt;PredicateName&gt; preds) {
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">		if(sentenceA == null) {</span>
+<span class="nc" id="L45">			return;</span>
+		}
+<span class="fc bfc" id="L47" title="All 2 branches covered.">		for (Literal lit : sentenceA.getNegatedQueryClause().negLiterals) {</span>
+<span class="fc" id="L48">			preds.add(lit.predicateName);</span>
+<span class="fc" id="L49">		}</span>
+<span class="fc" id="L50">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

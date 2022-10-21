@@ -1,0 +1,12 @@
+usePrologVariables: true.
+setParam: maxTreeDepth=4.
+setParam: nodeSize= 2.
+setParam: numOfClauses=8.
+setParam: recursion=true
+queryPred: trusts/2.
+
+mode: trusts(+person,+person).
+mode: knows(+person,-person).
+mode: knows(-person,+person).
+mode: prior(+person).
+

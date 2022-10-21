@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PredicateSpec.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">PredicateSpec.java</span></div><h1>PredicateSpec.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+<span class="pc bpc" id="L10" title="1 of 2 branches missed.">public class PredicateSpec extends AllOfFOPC implements Serializable {</span>
+	private List&lt;Term&gt;     signature;
+	private List&lt;TypeSpec&gt; typeSpecList;
+	private PredicateName  owner;
+	private boolean        isaILPmode; // If true, then can be used to generate children in an ILP search.
+
+	
+	private PredicateSpec() {		
+	}
+
+<span class="fc" id="L20">	PredicateSpec(List&lt;Term&gt; signature, List&lt;TypeSpec&gt; typeSpecList, PredicateName owner) {</span>
+<span class="fc" id="L21">		this.signature    = signature;</span>
+<span class="fc" id="L22">		this.typeSpecList = typeSpecList;</span>
+<span class="fc" id="L23">		this.owner        = owner;</span>
+<span class="fc" id="L24">		this.isaILPmode   = true;</span>
+<span class="fc" id="L25">	}</span>
+	
+	// Create a copy, but without all the type specifications.
+	PredicateSpec strip() {
+<span class="fc" id="L29">		PredicateSpec newSpec = new PredicateSpec();</span>
+<span class="fc" id="L30">		newSpec.typeSpecList = new ArrayList&lt;&gt;(this.typeSpecList.size());</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">		for (TypeSpec tspec : typeSpecList) {</span>
+<span class="fc" id="L32">			newSpec.typeSpecList.add(new TypeSpec(tspec.isaType, tspec.stringHandler));</span>
+<span class="fc" id="L33">		}</span>
+<span class="fc" id="L34">		newSpec.owner        = this.owner;</span>
+<span class="fc" id="L35">		newSpec.isaILPmode   = this.isaILPmode;</span>
+<span class="fc" id="L36">		newSpec.signature    = this.signature;</span>
+<span class="fc" id="L37">		return newSpec;</span>
+	}
+
+	// Stick these arguments in the leaf nodes of this spec's signature.
+	public List&lt;Term&gt; applyArgsToSignature(HandleFOPCstrings stringHandler, List&lt;Term&gt; args) {
+<span class="fc" id="L42">		return help_applyArgsToSignature(stringHandler, signature, 0, args);</span>
+	}
+
+	private List&lt;Term&gt; help_applyArgsToSignature(HandleFOPCstrings stringHandler, List&lt;Term&gt; sig, int counter, List&lt;Term&gt; args) {
+<span class="pc bpc" id="L46" title="2 of 4 branches missed.">		assert args != null;</span>
+<span class="pc bpc" id="L47" title="2 of 4 branches missed.">		assert sig != null;</span>
+
+<span class="fc" id="L49">		List&lt;Term&gt; result = new ArrayList&lt;&gt;(sig.size());</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">		if (args.size() != sig.size()) { Utils.error(&quot;Have args = &quot; + args + &quot; but sig = &quot; + sig); }</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">		for (Term item : sig) {</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">			if (item instanceof Constant) {</span>
+<span class="fc" id="L53">				result.add(args.get(counter));</span>
+<span class="fc" id="L54">				counter++;</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">			} else if (item instanceof Function) {</span>
+<span class="nc" id="L56">				Function f = (Function) item;</span>
+<span class="nc" id="L57">				result.add(stringHandler.getFunction(f.functionName, help_applyArgsToSignature(stringHandler, f.getArguments(), counter, args), f.typeSpec));</span>
+<span class="nc" id="L58">				counter += f.countLeaves();				</span>
+<span class="nc" id="L59">			} else { Utils.error(&quot;Should not have item=&quot; + item + &quot; sig=&quot; + sig + &quot; args=&quot; + args); }</span>
+<span class="fc" id="L60">		}</span>
+<span class="fc" id="L61">		return result;</span>
+	}
+	
+	public List&lt;Term&gt; getSignature() {
+<span class="fc" id="L65">		return signature;</span>
+	}
+
+	public List&lt;TypeSpec&gt; getTypeSpecList() {
+<span class="fc" id="L69">		return typeSpecList;</span>
+	}
+
+    public TypeSpec getTypeSpec(int argument) {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (typeSpecList == null) {</span>
+<span class="nc" id="L74">            return null;</span>
+        }
+        else {
+<span class="nc" id="L77">            return typeSpecList.get(argument);</span>
+        }
+    }
+
+	public int getArity() {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (typeSpecList == null) {</span>
+<span class="nc" id="L83">            return 0;</span>
+        }
+<span class="fc" id="L85">        return typeSpecList.size();</span>
+    }
+
+	public boolean isaILPmode() {
+<span class="fc" id="L89">		return isaILPmode;</span>
+	}
+
+	@Override
+	public int hashCode() { // Need to have equal objects produce the same hash code.
+<span class="nc" id="L94">		final int prime = 31;</span>
+<span class="nc" id="L95">		int result = 1;</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">		result = prime * result + ((owner        == null) ? 0 : owner.hashCode());</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">		result = prime * result + ((typeSpecList == null) ? 0 : typeSpecList.hashCode());</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">		result = prime * result + ((signature    == null) ? 0 : signature.hashCode());</span>
+<span class="nc" id="L99">		return result;</span>
+	}
+
+    @Override
+	public boolean equals(Object otherAsObject) {
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">		if (!(otherAsObject instanceof PredicateSpec)) { return false; }</span>
+<span class="fc" id="L105">		PredicateSpec other = (PredicateSpec) otherAsObject;</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">		if (owner        != other.owner)         { return false; }</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">		if (typeSpecList == other.typeSpecList)  { return true;  } // This will handle case where both are null.</span>
+<span class="pc bpc" id="L108" title="2 of 4 branches missed.">		if (typeSpecList == null || other.typeSpecList == null) { return false; }</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">		if (typeSpecList.size() != other.typeSpecList.size())   { return false; }</span>
+<span class="fc" id="L110">		int size = typeSpecList.size();</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">		for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc" id="L112">			TypeSpec one = typeSpecList.get(i);</span>
+<span class="fc" id="L113">			TypeSpec two = other.typeSpecList.get(i);</span>
+<span class="pc bpc" id="L114" title="2 of 4 branches missed.">			if (one == null || two == null) { </span>
+<span class="nc bnc" id="L115" title="All 4 branches missed.">				if (one == null &amp;&amp; two == null) { continue; }</span>
+<span class="nc" id="L116">				return false;</span>
+			}
+<span class="fc bfc" id="L118" title="All 2 branches covered.">			if (!one.equals(two)) { return false; }</span>
+		}
+<span class="fc" id="L120">		return true;</span>
+	}
+
+    @Override
+	public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L125">		return &quot;signature = &quot; + signature + &quot;, types = &quot; + typeSpecList;</span>
+	}
+
+    @Override
+	public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="fc" id="L130">		return &quot;signature = &quot; + signature + &quot;, types = &quot; + typeSpecList;</span>
+	}
+
+	@Override
+	public PredicateSpec applyTheta(Map&lt;Variable, Term&gt; bindings) {
+<span class="nc" id="L135">		return this;</span>
+	}
+
+	@Override
+	public int countVarOccurrencesInFOPC(Variable v) {
+<span class="nc" id="L140">		return 0;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

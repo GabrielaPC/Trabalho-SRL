@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProcedurallyDefinedPredicateHandler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">ProcedurallyDefinedPredicateHandler.java</span></div><h1>ProcedurallyDefinedPredicateHandler.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import java.util.List;
+import java.util.Set;
+
+/*
+ * This handler manages built-in's like equals, different, &lt;, &gt;, &lt;=, &gt;=, etc.
+ * @author twalker
+ */
+public abstract class ProcedurallyDefinedPredicateHandler {
+
+<span class="fc" id="L12">    protected ProcedurallyDefinedPredicateHandler() {}</span>
+
+    public boolean canHandle(PredicateName predicateName, int arity) {
+<span class="nc" id="L15">        return canHandle(new PredicateNameAndArity(predicateName, arity));</span>
+    }
+    
+    private boolean canHandle(PredicateNameAndArity predicateNameAndArity) {
+<span class="nc" id="L19">        return false;</span>
+    }
+
+    /* Handle evaluation of the literal.
+     *
+     * canHandle should be called previous to this to determine if this
+     * ProcedurallyDefinedPredicateHandler can handle the predicate
+     * defined by this literal.
+     * @param literal Literal to handle.
+     * @param unifier Unifier to use.
+     * @param bindingList Binding list, initially empty, that will contain the bindings generated during handling.
+     * @return The binding list, or null if evaluation of the literal failed.
+     * @throws SearchInterrupted Thrown if an error occurs which interpts the evaluation of the literal.
+     */
+    public abstract BindingList handle(Literal literal, BindingList bindingList);
+
+    protected boolean confirmAllVarsAreBound(List&lt;Term&gt; args) {
+<span class="pc bpc" id="L36" title="2 of 6 branches missed.">		if (args != null) for (Term arg : args) if (arg instanceof Variable) {</span>
+<span class="nc" id="L37">            return false;</span>
+		}
+<span class="fc" id="L39">		return true;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

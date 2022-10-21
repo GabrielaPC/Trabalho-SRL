@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClauseBasedTree.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Trees</a> &gt; <span class="el_source">ClauseBasedTree.java</span></div><h1>ClauseBasedTree.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Trees;
+
+import edu.wisc.cs.will.Boosting.RDN.RegressionRDNExample;
+import edu.wisc.cs.will.Boosting.RDN.WILLSetup;
+import edu.wisc.cs.will.Boosting.Utils.BoostingUtils;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.DataSetUtils.RegressionExample;
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.Utils.RegressionValueOrVector;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.Utils.condor.CondorFileWriter;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class ClauseBasedTree  {
+
+	WILLSetup setup;
+	final ArrayList&lt;Clause&gt; regressionClauses;
+	private final ArrayList&lt;Clause&gt; suppClauses;
+	private boolean breakAfterFirstMatch;
+	private final boolean addLeafId;
+
+<span class="fc" id="L27">	ClauseBasedTree(WILLSetup setup) {</span>
+<span class="fc" id="L28">		regressionClauses = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L29">		suppClauses = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L30">		breakAfterFirstMatch = true;</span>
+<span class="fc" id="L31">		addLeafId = false;</span>
+<span class="fc" id="L32">		setSetup(setup);</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">		if (setup.learnClauses) {</span>
+<span class="fc" id="L34">			breakAfterFirstMatch = false;</span>
+		}
+<span class="fc" id="L36">	}</span>
+
+	/*
+	 * Computes the regression value for an example returned by this tree 
+	 * @param ex - Example to be evaluated
+	 * @return the regression value. Note: This is the value for just ONE tree.
+	 */
+	public RegressionValueOrVector getRegressionValue(Example ex) {
+<span class="fc" id="L44">		RegressionValueOrVector sum = null;</span>
+<span class="fc" id="L45">		int id = 0;</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">		for (Clause clause : regressionClauses) {</span>
+<span class="fc" id="L47">			id++;</span>
+<span class="fc" id="L48">			RegressionValueOrVector wt = getRegressionClauseWt(clause, ex);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">			if (wt != null) {</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">				if (sum != null) {</span>
+<span class="fc" id="L51">					sum.addValueOrVector(wt);</span>
+				} else {
+<span class="fc" id="L53">					sum = wt;</span>
+				}
+<span class="fc bfc" id="L55" title="All 2 branches covered.">				if (breakAfterFirstMatch) {</span>
+<span class="pc bpc" id="L56" title="3 of 4 branches missed.">					if (addLeafId &amp;&amp; ex instanceof RegressionExample) {</span>
+<span class="nc" id="L57">						RegressionExample rex = (RegressionExample)ex;</span>
+<span class="nc" id="L58">						rex.leafId = rex.leafId + id + &quot;_&quot;;</span>
+<span class="nc" id="L59">					}</span>
+					break;
+				}
+			}
+<span class="fc" id="L63">		}</span>
+		// Possible for inference using mlns
+<span class="fc bfc" id="L65" title="All 2 branches covered.">		if (sum == null) {</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">			if (ex instanceof RegressionRDNExample) {</span>
+<span class="fc" id="L67">				RegressionRDNExample rex = (RegressionRDNExample)ex;</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">				if (!rex.isHasRegressionVector()) {</span>
+<span class="fc" id="L69">					sum = new RegressionValueOrVector(0.0);</span>
+				} else {
+<span class="nc" id="L71">					int size = rex.getOutputVector().length;</span>
+<span class="nc" id="L72">					double[] sumVec = new double[size];</span>
+<span class="nc" id="L73">					Arrays.fill(sumVec, 0.0);</span>
+<span class="nc" id="L74">					sum = new RegressionValueOrVector(sumVec);</span>
+				}
+			}
+		}
+<span class="fc" id="L78">		return sum;</span>
+	}
+
+	/*
+	 * 
+	 * @param clause - the clause to evaluate against
+	 * @param ex - the example to evaluate
+	 * @return the regression value for this clause. Return a NaN if the example doesn't satisfy the clause.
+	 */
+	RegressionValueOrVector getRegressionClauseWt(Clause clause, Example ex) {
+	
+		// If the last argument is a constant
+<span class="fc" id="L90">		Literal head = clause.posLiterals.get(0);</span>
+<span class="fc" id="L91">		Term    y    = head.getArgument(head.numberArgs() - 1);</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">		if (! ( y instanceof Variable)) {</span>
+<span class="fc" id="L93">			RegressionValueOrVector value = BoostingUtils.getRegressionValueOrVectorFromTerm(y);</span>
+			
+<span class="fc" id="L95">			List&lt;Literal&gt; new_body = clause.getDefiniteClauseBody();</span>
+	
+			// Remove cuts
+<span class="fc bfc" id="L98" title="All 2 branches covered.">			if (new_body.size() &gt; 0 &amp;&amp;</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">					new_body.get(new_body.size()-1).equals(setup.getHandler().cutLiteral)) {</span>
+<span class="fc" id="L100">				new_body.remove(new_body.size() - 1);</span>
+			}
+			
+			// Remove the negation by failure literals
+<span class="fc bfc" id="L104" title="All 2 branches covered.">			for (int i = 0; i &lt; new_body.size(); i++) {</span>
+<span class="fc" id="L105">				Literal lit = new_body.get(i);</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">				if(lit.predicateName.equals(setup.getHandler().standardPredicateNames.negationByFailure)) {</span>
+<span class="nc" id="L107">					new_body.remove(i);</span>
+<span class="nc" id="L108">					i--;</span>
+				}
+			}
+			// Remove the last argument of the head(regression value)
+<span class="fc" id="L112">			Literal new_head_lit = head.copy(false);</span>
+<span class="fc" id="L113">			new_head_lit.removeArgument(y);</span>
+			
+<span class="fc" id="L115">			List&lt;Literal&gt; new_head = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L116">			new_head.add(new_head_lit);</span>
+			
+<span class="fc" id="L118">			Clause cl = new Clause(setup.getHandler(), new_head, new_body);</span>
+	
+<span class="fc bfc" id="L120" title="All 2 branches covered.">			if (setup.getOuterLooper().proveExample(cl, ex)) {</span>
+<span class="fc" id="L121">				return value;</span>
+			}
+			
+<span class="fc" id="L124">			return null;</span>
+		}
+	
+		// Variable so do a substitution. NEVER TESTED
+<span class="nc" id="L128">		Utils.waitHere(&quot;Not tested the code for variable as regression value used in &quot; + clause);</span>
+<span class="nc" id="L129">		BindingList theta  = setup.getInnerLooper().proveExampleAndReturnBindingList(clause, ex);</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">		if (theta == null) {</span>
+<span class="nc" id="L131">			ex.removeArgument(setup.getHandler().getExternalVariable(&quot;OutputVarTreeLeaf&quot;));</span>
+<span class="nc" id="L132">			return null;</span>
+		}
+<span class="nc" id="L134">		Term val = theta.lookup((Variable)y);</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">		if(val==null) {</span>
+<span class="nc" id="L136">			Utils.error(&quot;Unexpected: &quot; + clause + &quot;:&quot; + ex + &quot;:&quot; + theta);</span>
+		}
+<span class="nc" id="L138">		ex.removeArgument(setup.getHandler().getExternalVariable(&quot;OutputVarTreeLeaf&quot;));</span>
+<span class="nc" id="L139">		return BoostingUtils.getRegressionValueOrVectorFromTerm(val);</span>
+	}
+
+	public void reparseRegressionTrees() {
+	
+<span class="nc bnc" id="L144" title="All 2 branches missed.">		for (int i = 0; i &lt; regressionClauses.size(); i++) {</span>
+<span class="nc" id="L145">			Clause cl2=null;</span>
+<span class="nc" id="L146">			Clause cl = regressionClauses.get(i);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">			if (cl!=null)  { </span>
+<span class="nc" id="L148">				cl2 = setup.convertFactToClause(cl + &quot;.&quot;);</span>
+			}
+<span class="nc" id="L150">			regressionClauses.set(i, cl2);</span>
+		}
+<span class="nc bnc" id="L152" title="All 2 branches missed.">		for (Clause suppClause : suppClauses) {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">			if (suppClause !=null)  { </span>
+<span class="nc" id="L154">				Clause cl2 = setup.convertFactToClause(suppClause + &quot;.&quot;);</span>
+<span class="nc" id="L155">				setup.getInnerLooper().getContext().getClausebase().assertBackgroundKnowledge(cl2);</span>
+			}
+	
+<span class="nc" id="L158">		}</span>
+<span class="nc" id="L159">	}</span>
+
+	public void saveToFile(String filename) throws IOException {
+<span class="fc" id="L162">		Utils.ensureDirExists(filename);</span>
+		// Create a new file.
+<span class="fc" id="L164">		BufferedWriter wr = new BufferedWriter(new CondorFileWriter(filename, false));</span>
+<span class="fc" id="L165">		saveToStream(wr);</span>
+<span class="fc" id="L166">		wr.close();</span>
+<span class="fc" id="L167">	}</span>
+
+	private void saveToStream(BufferedWriter wr) throws IOException {
+<span class="fc" id="L170">		boolean oldAnon = setup.getHandler().underscoredAnonymousVariables;</span>
+<span class="fc" id="L171">		setup.getHandler().underscoredAnonymousVariables=false;</span>
+	
+<span class="fc" id="L173">		wr.write(setup.getInnerLooper().getStringHandler().getStringToIndicateStringCaseSensitivity() + &quot;\n&quot;);</span>
+		// Assume we don't change the variable indicator mid-run.
+<span class="fc" id="L175">		wr.write(setup.getHandler().getStringToIndicateCurrentVariableNotation()+ &quot;\n\n&quot;);</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">		for (Clause cl : regressionClauses) {</span>
+<span class="fc" id="L177">			wr.write(cl.toString() + &quot;.&quot;);</span>
+<span class="fc" id="L178">			wr.newLine();</span>
+<span class="fc" id="L179">		}</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">		for (Clause cl : suppClauses) {</span>
+<span class="nc" id="L181">			wr.write(cl.toPrettyString() + &quot;.&quot;);</span>
+<span class="nc" id="L182">			wr.newLine();</span>
+<span class="nc" id="L183">		}</span>
+<span class="fc" id="L184">		setup.getHandler().underscoredAnonymousVariables=oldAnon;</span>
+<span class="fc" id="L185">	}</span>
+
+	public void loadFromFile(String filename) {
+<span class="fc" id="L188">		List&lt;Sentence&gt; sentences = setup.getInnerLooper().getParser().readFOPCfile(filename);</span>
+<span class="fc" id="L189">		help_load(sentences);</span>
+<span class="fc" id="L190">	}</span>
+
+	private void help_load(List&lt;Sentence&gt; sentences) {
+<span class="fc bfc" id="L193" title="All 2 branches covered.">		for (Sentence sentence : sentences) {</span>
+<span class="fc" id="L194">			List&lt;Clause&gt; clauses = sentence.convertToClausalForm();</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">			if (clauses.size() == 1) {</span>
+<span class="fc" id="L196">				Clause cl = clauses.get(0);</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">				if (cl.getDefiniteClauseHead().predicateName.name.contains(&quot;invented&quot;)) {</span>
+<span class="nc" id="L198">					addSupportingClause(cl);</span>
+<span class="nc" id="L199">					setup.getInnerLooper().getContext().getClausebase().assertBackgroundKnowledge(cl);</span>
+				} else {
+<span class="fc" id="L201">					regressionClauses.add(cl);</span>
+				}
+<span class="fc" id="L203">			} else {</span>
+<span class="nc" id="L204">				Utils.error(&quot;Not parsed as one clause. : &quot; + clauses);</span>
+			}
+<span class="fc" id="L206">		}</span>
+<span class="fc" id="L207">	}</span>
+
+	public void setSetup(WILLSetup setup) {
+<span class="fc" id="L210">		this.setup = setup;</span>
+<span class="fc" id="L211">	}</span>
+
+	void addClause(Clause regressionClause) {
+<span class="fc" id="L214">		regressionClauses.add(regressionClause);</span>
+<span class="fc" id="L215">	}</span>
+
+	void addSupportingClause(Clause regressionClause) {
+<span class="nc" id="L218">		suppClauses.add(regressionClause);</span>
+<span class="nc" id="L219">	}</span>
+
+	public ArrayList&lt;Clause&gt; getRegressionClauses() {
+<span class="fc" id="L222">		return regressionClauses;</span>
+	}
+
+	void setBreakAfterFirstMatch(boolean breakAfterFirstMatch) {
+<span class="fc" id="L226">		this.breakAfterFirstMatch = breakAfterFirstMatch;</span>
+<span class="fc" id="L227">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

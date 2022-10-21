@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LazyHornClausebase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ResThmProver</a> &gt; <span class="el_source">LazyHornClausebase.java</span></div><h1>LazyHornClausebase.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ResThmProver;
+
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.*;
+
+/*
+ *
+ * @author twalker
+ */
+public class LazyHornClausebase implements HornClausebase {
+
+    /* Set of all asserted sentences.
+     *
+     * To maintain prolog semantics, we need to have all assertions in order,
+     * independent of whether they are facts (definite clauses with no body, stored
+     * as bare Literals) or rules (definite clauses with one or more Literals in
+     * the body, stored as DefiniteClauses).
+     */
+<span class="fc" id="L21">    private MapOfDefiniteClauseLists assertions = null;</span>
+
+    private HandleFOPCstrings stringHandler;
+
+    // TODO(@hayesall): Drop the `LazyHornClausebase.DEBUG`
+    static final int DEBUG = 0;
+
+    /* Index for all assertions.
+     *
+     * This should never be used directly.  Always use the accessor method since
+     * indices are build lazily and the index may not yet be built if you use this
+     * directly.
+     *
+     * Guaranteed to be non-null.
+     */
+    private LazyHornClausebaseIndexer indexerForAllAssertions;
+
+    private ProcedurallyDefinedPredicateHandler userProcedurallyDefinedPredicateHandler;
+
+<span class="fc" id="L40">    private int duplicateRuleCount = 0;</span>
+
+<span class="fc" id="L42">    public LazyHornClausebase(HandleFOPCstrings stringHandler) {</span>
+<span class="fc" id="L43">        initializeClausebase(stringHandler);</span>
+<span class="fc" id="L44">    }</span>
+
+    private void initializeClausebase(HandleFOPCstrings stringHandler) {
+<span class="fc" id="L47">        this.stringHandler = stringHandler;</span>
+<span class="fc" id="L48">        this.userProcedurallyDefinedPredicateHandler = null;</span>
+<span class="fc" id="L49">        setupDataStructures();</span>
+<span class="fc" id="L50">    }</span>
+
+    /* Initializes the clausebase. */
+    private void setupDataStructures() {
+<span class="fc" id="L54">        assertions = new MapOfDefiniteClauseLists();</span>
+        // Check to see if the indexers are null, since someone might have tried to use other indexing class
+        // if they knew something specific about their data.
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (indexerForAllAssertions == null) {</span>
+<span class="fc" id="L58">            indexerForAllAssertions = new LazyHornClausebaseIndexer(this);</span>
+        }
+<span class="fc" id="L60">        resetIndexes();</span>
+<span class="fc" id="L61">    }</span>
+
+    @Override
+    public void assertBackgroundKnowledge(DefiniteClause definiteClause) throws IllegalArgumentException {
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (definiteClause.isDefiniteClause()) {</span>
+<span class="fc" id="L66">            Clause clause = definiteClause.getDefiniteClauseAsClause();</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">            if (checkRule(clause)) {</span>
+<span class="fc" id="L68">                assertions.add(clause.getDefiniteClauseHead().getPredicateNameAndArity(), definiteClause);</span>
+<span class="fc" id="L69">                indexerForAllAssertions.indexAssertion(clause);</span>
+            }
+<span class="fc" id="L71">        }</span>
+        else {
+<span class="nc" id="L73">            throw new IllegalArgumentException(&quot;Attempted to assert non-definite clause into the HornClauseFactBase: &quot; + definiteClause);</span>
+        }
+<span class="fc" id="L75">    }</span>
+
+    @Override
+    public void assertFact(Literal literal) {
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        if (checkFact(literal)) {</span>
+<span class="fc" id="L80">            assertions.add(literal.getPredicateNameAndArity(), literal);</span>
+<span class="fc" id="L81">            indexerForAllAssertions.indexAssertion(literal);</span>
+        }
+<span class="fc" id="L83">    }</span>
+
+    private void removeClauses(Collection&lt;DefiniteClause&gt; clausesToRemove) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (clausesToRemove != null) {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">            for (DefiniteClause definiteClause : clausesToRemove) {</span>
+<span class="nc" id="L88">                removeClause(definiteClause);</span>
+<span class="nc" id="L89">            }</span>
+        }
+<span class="nc" id="L91">    }</span>
+
+    private void removeClause(DefiniteClause clauseToRemove) {
+<span class="nc" id="L94">        PredicateNameAndArity pnaa = clauseToRemove.getDefiniteClauseHead().getPredicateNameAndArity();</span>
+<span class="nc" id="L95">        assertions.removeValue(pnaa, clauseToRemove);</span>
+<span class="nc" id="L96">        removeFromIndexes(clauseToRemove);</span>
+<span class="nc" id="L97">    }</span>
+
+    @Override
+    public void retractAllClausesWithUnifyingBody(DefiniteClause definiteClause) {
+<span class="fc" id="L101">        Literal clauseHead = definiteClause.getDefiniteClauseHead();</span>
+<span class="fc" id="L102">        Collection&lt;DefiniteClause&gt; matchAssertions = getAssertions(clauseHead.predicateName, clauseHead.numberArgs());</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        if (matchAssertions != null) {</span>
+<span class="nc" id="L104">            Iterator&lt;DefiniteClause&gt; it = matchAssertions.iterator();</span>
+<span class="nc" id="L105">            DefiniteClauseList clausesToRemove = null;</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">            while (it.hasNext()) {</span>
+<span class="nc" id="L107">                DefiniteClause aClause = it.next();</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">                if (definiteClause.unifyDefiniteClause(aClause, null) != null) {</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                    if (clausesToRemove == null) {</span>
+<span class="nc" id="L110">                        clausesToRemove = new DefiniteClauseList();</span>
+                    }
+<span class="nc" id="L112">                    clausesToRemove.add(aClause);</span>
+                }
+<span class="nc" id="L114">            }</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">            if (clausesToRemove != null) {</span>
+<span class="nc" id="L116">                removeClauses(clausesToRemove);</span>
+            }
+        }
+<span class="fc" id="L119">    }</span>
+
+    /* Checks to fact to make sure we should add it.
+     *
+     * Depending on the settings stringHandler.variantFactHandling settings, various checks will be performed.
+     *
+     * @param newFact Clause to check.
+     * @return True if the fact is okay to add to the fact base.  False otherwise.
+     */
+    private boolean checkFact(Literal newFact) {
+<span class="fc" id="L129">        boolean keep = true;</span>
+<span class="fc" id="L130">        boolean ground = newFact.isGrounded();</span>
+        // Report facts with variables in them.
+<span class="fc" id="L132">        VariantClauseAction action = getStringHandler().variantFactHandling;</span>
+<span class="fc" id="L133">        boolean duplicate = false;</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (action.isCheckRequired()) {</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">            if (ground) {</span>
+<span class="nc" id="L136">                duplicate = isFactAsserted(newFact);</span>
+            }
+            else {
+<span class="nc" id="L139">                Iterable&lt;Literal&gt; matching = getPossibleMatchingFacts(newFact, null);</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                if (matching != null) {</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">                    for (Literal literal : matching) {</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                        if (literal.isVariant(newFact)) {</span>
+<span class="nc" id="L143">                            duplicate = true;</span>
+<span class="nc" id="L144">                            break;</span>
+                        }
+<span class="nc" id="L146">                    }</span>
+                }
+            }
+        }
+
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">        if (duplicate) {</span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">            if (action.isRemoveEnabled()) {</span>
+<span class="nc" id="L153">                keep = false;</span>
+            }
+        }
+<span class="fc" id="L156">        return keep;</span>
+    }
+
+    /* Checks to fact to make sure we should add it.
+     *
+     * Depending on the settings stringHandler.variantFactHandling settings, various checks will be performed.
+     *
+     * @param newRule Literal to check.
+     * @return True if the fact is okay to add to the fact base.  False otherwise.
+     */
+    private boolean checkRule(Clause newRule) {
+<span class="fc" id="L167">        boolean keep = true;</span>
+<span class="fc" id="L168">        VariantClauseAction action = getStringHandler().variantRuleHandling;</span>
+<span class="fc" id="L169">        boolean duplicate = false;</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (action.isCheckRequired()) {</span>
+<span class="fc" id="L171">            Iterable&lt;Clause&gt; matching = getPossibleMatchingBackgroundKnowledge(newRule.getDefiniteClauseHead(), null);</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">            if (matching != null) {</span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">                for (Clause clause : matching) {</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                    if (clause.isVariant(newRule)) {</span>
+<span class="nc" id="L175">                        duplicate = true;</span>
+<span class="nc" id="L176">                        break;</span>
+                    }
+<span class="nc" id="L178">                }</span>
+            }
+        }
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">        if (duplicate) {</span>
+<span class="nc" id="L182">            duplicateRuleCount++;</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">            if (action.isWarnEnabled()) {</span>
+<span class="nc bnc" id="L184" title="All 2 branches missed.">                Utils.println(&quot;% Duplicate rule #&quot; + Utils.comma(++duplicateRuleCount) + &quot;: '&quot; + newRule + (action.isRemoveEnabled() ? &quot;'  It will be deleted.&quot; : &quot;'  (It will be kept.  Manually delete if you wish it removed.)&quot;));</span>
+            }
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            if (action.isRemoveEnabled()) {</span>
+<span class="nc" id="L187">                keep = false;</span>
+            }
+        }
+<span class="fc" id="L190">        return keep;</span>
+    }
+
+    /* Resets the indexes.
+     *
+     * The indexes are built lazily, as needed.
+     */
+    private void resetIndexes() {
+<span class="fc" id="L198">        indexerForAllAssertions.resetIndex();</span>
+<span class="fc" id="L199">    }</span>
+
+    private void removeFromIndexes(DefiniteClause definiteClause) {
+<span class="nc" id="L202">        indexerForAllAssertions.removeAssertion(definiteClause);</span>
+<span class="nc" id="L203">    }</span>
+
+    @Override
+    public DefiniteClauseList getPossibleMatchingAssertions(Literal clauseHead, BindingList currentBinding) {
+<span class="fc" id="L207">        return getIndexerForAllAssertions().getPossibleMatchingAssertions(clauseHead, currentBinding);</span>
+    }
+
+    @Override
+    public Iterable&lt;Clause&gt; getPossibleMatchingBackgroundKnowledge(Literal clauseHead, BindingList currentBinding) {
+<span class="fc" id="L212">        DefiniteClauseList list = getIndexerForAllAssertions().getPossibleMatchingAssertions(clauseHead, currentBinding);</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        return list == null ? null : list.getClauseIterable();</span>
+    }
+
+    @Override
+    public Iterable&lt;Literal&gt; getPossibleMatchingFacts(Literal clauseHead, BindingList currentBinding) {
+<span class="nc" id="L218">        DefiniteClauseList list = getIndexerForAllAssertions().getPossibleMatchingAssertions(clauseHead, currentBinding);</span>
+<span class="nc bnc" id="L219" title="All 2 branches missed.">        return list == null ? null : list.getFactIterable();</span>
+    }
+
+    public MapOfDefiniteClauseLists getAssertionsMap() {
+<span class="fc" id="L223">        return assertions;</span>
+    }
+
+    private DefiniteClauseList getAssertions(PredicateName predName, int arity) {
+<span class="fc" id="L227">        return getIndexerForAllAssertions().getPossibleMatchingAssertions(predName, arity);</span>
+    }
+
+    @Override
+    public boolean checkForPossibleMatchingFacts(PredicateName predName, int arity) {
+<span class="fc" id="L232">        DefiniteClauseList possibleMatches = getIndexerForAllAssertions().getPossibleMatchingAssertions(predName, arity);</span>
+<span class="pc bpc" id="L233" title="2 of 4 branches missed.">        return (possibleMatches != null &amp;&amp; possibleMatches.size() &gt; 0);</span>
+    }
+
+    @Override
+    public boolean checkForPossibleMatchingBackgroundKnowledge(PredicateName predName, int arity) {
+<span class="fc" id="L238">        return assertions.containsKey( new PredicateNameAndArity(predName, arity));</span>
+    }
+
+    @Override
+    public Iterable&lt;Clause&gt; getBackgroundKnowledge() {
+<span class="fc" id="L243">        return new DefiniteClauseToClauseIterable(assertions);</span>
+    }
+
+    @Override
+    public HandleFOPCstrings getStringHandler() {
+<span class="fc" id="L248">        return stringHandler;</span>
+    }
+
+    @Override
+    public ProcedurallyDefinedPredicateHandler getUserProcedurallyDefinedPredicateHandler() {
+<span class="fc" id="L253">        return userProcedurallyDefinedPredicateHandler;</span>
+    }
+
+    @Override
+    public void setUserProcedurallyDefinedPredicateHandler(ProcedurallyDefinedPredicateHandler userProcedurallyDefinedPredicateHandler) {
+<span class="fc" id="L258">        this.userProcedurallyDefinedPredicateHandler = userProcedurallyDefinedPredicateHandler;</span>
+<span class="fc" id="L259">    }</span>
+
+    @Override
+    public boolean isOnlyInFacts(PredicateName predName, int arity) {
+
+<span class="fc" id="L264">        DefiniteClauseList list = indexerForAllAssertions.getPossibleMatchingAssertions(predName, arity);</span>
+
+<span class="pc bpc" id="L266" title="2 of 4 branches missed.">        return list != null &amp;&amp; list.containsOnlyFacts();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L271">        return &quot;LazyHornClauseFactbase:\n&quot; +</span>
+                &quot;\nAll assertions indexer:\n&quot; +
+                indexerForAllAssertions;
+    }
+
+    private boolean isFactAsserted(Literal literal) {
+<span class="nc" id="L277">        Iterable&lt;Literal&gt; possibleMatchingFacts = getPossibleMatchingFacts(literal, null);</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        if (possibleMatchingFacts != null) {</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">            for (Literal anotherFact : possibleMatchingFacts) {</span>
+<span class="nc" id="L280">                BindingList bl = new BindingList();</span>
+<span class="nc bnc" id="L281" title="All 2 branches missed.">                if (literal.variants(anotherFact, bl) != null) {</span>
+<span class="nc" id="L282">                    return true;</span>
+                }
+<span class="nc" id="L284">            }</span>
+        }
+<span class="nc" id="L286">        return false;</span>
+    }
+
+    /* Returns the index for all assertions.
+     *
+     * If the index is not built yet, this method will build it.
+     *
+     * @return the indexerForAllAssertions
+     */
+    private LazyHornClausebaseIndexer getIndexerForAllAssertions() {
+<span class="fc" id="L296">        return indexerForAllAssertions;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

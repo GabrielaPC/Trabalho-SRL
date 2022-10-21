@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AnnotatedLiteral.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">AnnotatedLiteral.java</span></div><h1>AnnotatedLiteral.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.FOPC.*;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/*
+ * @author shavlik
+ *
+ *  This class allows for annotated literals.
+ *  
+ */
+public class AnnotatedLiteral extends Literal implements Serializable {
+	private final Map&lt;Term,Type&gt; newTerms; // Record terms that are NEW in this literal.
+
+	AnnotatedLiteral(HandleFOPCstrings stringHandler, PredicateName predName, List&lt;Term&gt; args, Map&lt;Term, Type&gt; newTerms) {
+<span class="fc" id="L20">		super(stringHandler, predName, args);</span>
+<span class="fc" id="L21">		this.newTerms = newTerms;</span>
+<span class="fc" id="L22">	}</span>
+	
+	@Override
+	public int hashCode() { // Need to have equal objects produce the same hash code.
+<span class="nc" id="L26">		final int prime = 31;</span>
+<span class="nc" id="L27">		int result = 1;</span>
+<span class="nc bnc" id="L28" title="All 2 branches missed.">		result = prime * result + (getArguments() == null ? 0 : getArguments().hashCode());</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">		result = prime * result + (newTerms       == null ? 0 : newTerms.hashCode());</span>
+<span class="nc" id="L30">		return result;</span>
+	}	
+	// See if these two literals are equivalent EXCEPT where they introduce new variables.
+	// E.g., p(x,y) and p(x,z) are equivalent iff BOTH y and z are new variables.
+	// Note: p(x,y,y) and p(x,z,w) are NOT equivalent even if y, z, and w are all new variables.
+	boolean equals(Literal other, Map&lt;Term, Type&gt; newTermsInOtherLiteral) {
+<span class="fc bfc" id="L36" title="All 2 branches covered.">		if (predicateName != other.predicateName) { return false; }</span>
+<span class="fc" id="L37">		int len1 =       numberArgs();</span>
+<span class="fc" id="L38">		int len2 = other.numberArgs();</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">		if (len1 != len2) { return false; }</span>
+<span class="fc" id="L40">		Map&lt;Variable,Variable&gt; newVarsFound = null;</span>
+		
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">		for (int i = 0; i &lt; len1; i++) { // Should do with a dual-for loop, but this is easier-to-read code and the argument lists shouldn't be too long.</span>
+<span class="fc" id="L43">			Term term1 =       getArgument(i);</span>
+<span class="fc" id="L44">			Term term2 = other.getArgument(i);</span>
+			
+<span class="pc bpc" id="L46" title="1 of 8 branches missed.">			if (term1.equals(term2) &amp;&amp; term1 instanceof Variable &amp;&amp; newTerms != null &amp;&amp; newTerms.containsKey(term1)) {  // If the two terms are equivalent and NOT a new term, that is great.</span>
+<span class="fc" id="L47">				continue;</span>
+			}
+			// Otherwise must both be new variables.
+<span class="pc bpc" id="L50" title="3 of 10 branches missed.">			if (term1 instanceof Variable &amp;&amp; newTerms               != null &amp;&amp;               newTerms.containsKey(term1) &amp;&amp; // Otherwise they must both be new variables of the same type.</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">				term2 instanceof Variable &amp;&amp; newTermsInOtherLiteral != null &amp;&amp; newTermsInOtherLiteral.containsKey(term2) &amp;&amp;</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">				newTerms.get(term1) == newTermsInOtherLiteral.get(term2)) {   // Can use == here since type strings are uniquely mapped to type instances.</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">				if (newVarsFound == null) { newVarsFound = new HashMap&lt;&gt;(4); }</span>
+<span class="fc" id="L54">				Variable var1    = (Variable) term1;</span>
+<span class="fc" id="L55">				Variable var2    = (Variable) term2;</span>
+<span class="fc" id="L56">				Variable lookup1 = newVarsFound.get(var1);</span>
+<span class="fc" id="L57">				Variable lookup2 = newVarsFound.get(var2);</span>
+<span class="pc bpc" id="L58" title="2 of 4 branches missed.">				if (lookup1 == null &amp;&amp; lookup2 == null) { // Neither variable seen yet.  Record that they have been matched.</span>
+<span class="fc" id="L59">					newVarsFound.put(var1, var1);</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">					if (var2 != var1) { newVarsFound.put(var2, var1); }</span>
+					continue;
+				}
+<span class="nc bnc" id="L63" title="All 4 branches missed.">				else if (lookup2 != null &amp;&amp; lookup1 == lookup2) { // Both variables mapped to the same variable.</span>
+<span class="nc" id="L64">					continue;</span>
+				}
+<span class="nc" id="L66">				else { return false; } // One variable but not both have already been seen (or both have been seen but map to different variables).</span>
+			}
+<span class="fc" id="L68">			return false;</span>
+		}
+<span class="nc" id="L70">		return true; // Successfully matched all the terms.</span>
+	}
+	
+	public String toString() {
+<span class="nc bnc" id="L74" title="All 2 branches missed.">		if (newTerms == null) { return  super.toString(); }</span>
+<span class="nc" id="L75">		return super.toString() + &quot; [newVterms=&quot; + newTerms + &quot;]&quot;;</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

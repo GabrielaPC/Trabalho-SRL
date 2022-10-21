@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InferRegressionTrees.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Regression</a> &gt; <span class="el_source">InferRegressionTrees.java</span></div><h1>InferRegressionTrees.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Regression;
+
+import edu.wisc.cs.will.Boosting.Common.SRLInference;
+import edu.wisc.cs.will.Boosting.RDN.JointRDNModel;
+import edu.wisc.cs.will.Boosting.RDN.RegressionRDNExample;
+import edu.wisc.cs.will.Boosting.RDN.WILLSetup;
+import edu.wisc.cs.will.Boosting.Utils.CommandLineArguments;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+/*
+ * @author tkhot
+ */
+class InferRegressionTrees {
+	private final CommandLineArguments cmdArgs;
+	private final WILLSetup            setup;
+	
+<span class="fc" id="L23">	InferRegressionTrees(CommandLineArguments cmdArgs, WILLSetup setup) {</span>
+<span class="fc" id="L24">		this.cmdArgs = cmdArgs;</span>
+<span class="fc" id="L25">		this.setup   = setup;</span>
+<span class="fc" id="L26">	}</span>
+
+	void runInference(JointRDNModel fullModel) {
+<span class="fc" id="L29">		Map&lt;String,List&lt;RegressionRDNExample&gt;&gt; jointExamples = setup.getJointExamples(fullModel.keySet());</span>
+		
+<span class="fc bfc" id="L31" title="All 2 branches covered.">		for (String  pred : jointExamples.keySet()) {</span>
+<span class="fc" id="L32">			SRLInference regSampler = new RegressionTreeInference(fullModel.get(pred), setup);</span>
+<span class="fc" id="L33">			regSampler.getProbabilities(jointExamples.get(pred));</span>
+<span class="fc" id="L34">			double squaredError = 0;</span>
+<span class="fc" id="L35">			int counter = 0;</span>
+			try {
+<span class="fc" id="L37">				BufferedWriter writer = new BufferedWriter(new FileWriter(getResultsFile(pred)));</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">				for (RegressionRDNExample ex : jointExamples.get(pred)) {</span>
+<span class="fc" id="L39">					squaredError += Math.pow(ex.getProbOfExample().getProbOfBeingTrue() - ex.originalRegressionOrProbValue, 2);</span>
+<span class="fc" id="L40">					counter++;</span>
+<span class="fc" id="L41">					writer.write(ex + &quot;\t&quot; + ex.getProbOfExample() + &quot;\t&quot; + ex.originalRegressionOrProbValue);</span>
+<span class="fc" id="L42">					writer.newLine();</span>
+<span class="fc" id="L43">				}</span>
+<span class="fc" id="L44">				Utils.println(pred);</span>
+<span class="fc" id="L45">				Utils.println(&quot;SquaredError = &quot; + squaredError);</span>
+<span class="fc" id="L46">				Utils.println(&quot;MeanSquaredError = &quot; + (squaredError/counter));</span>
+<span class="fc" id="L47">				writer.close();</span>
+<span class="nc" id="L48">			} catch (IOException e) {</span>
+<span class="nc" id="L49">				e.printStackTrace();</span>
+<span class="fc" id="L50">			}</span>
+<span class="fc" id="L51">		}</span>
+<span class="fc" id="L52">	}</span>
+	
+	private String getResultsFile(String target) {
+<span class="fc" id="L55">		String suff = &quot;&quot;;</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">		if (cmdArgs.getModelFileVal() != null) {</span>
+<span class="nc" id="L57">			suff = cmdArgs.getModelFileVal() + &quot;_&quot;;</span>
+		}
+<span class="fc" id="L59">		return setup.getOuterLooper().getWorkingDirectory() + &quot;/results_&quot; + suff + target + &quot;.db&quot;;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

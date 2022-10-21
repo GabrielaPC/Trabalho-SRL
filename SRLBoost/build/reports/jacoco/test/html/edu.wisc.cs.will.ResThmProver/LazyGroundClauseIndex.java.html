@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LazyGroundClauseIndex.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ResThmProver</a> &gt; <span class="el_source">LazyGroundClauseIndex.java</span></div><h1>LazyGroundClauseIndex.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ResThmProver;
+
+import edu.wisc.cs.will.FOPC.DefiniteClause;
+import edu.wisc.cs.will.FOPC.Literal;
+import edu.wisc.cs.will.FOPC.PredicateNameAndArity;
+import edu.wisc.cs.will.FOPC.Term;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+// TODO(@hayesall): Lots of duplicated code with `LazyGroundNthArgumentClauseIndex`
+
+/* This is an index of definite clauses (either Clauses or Literal or a mix of both) with ground heads.
+ *
+ * @author twalker
+ */
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">public class LazyGroundClauseIndex {</span>
+
+    private final HornClausebase clausebase;
+
+<span class="fc" id="L24">    private static int maximumIndexSizeDefault = 150;</span>
+<span class="fc" id="L25">    private final int maximumIndexSize        = maximumIndexSizeDefault;</span>
+	public  static void setMaximumIndexSize(int maximumIndexSizeToUse) {
+<span class="fc" id="L27">		maximumIndexSizeDefault = maximumIndexSizeToUse;</span>
+<span class="fc" id="L28">	}</span>
+
+<span class="fc" id="L30">	private int indicesConstructed = 0;</span>
+
+<span class="fc" id="L32">    private int indicesRemoved = 0;</span>
+
+<span class="fc" id="L34">    private final Map&lt;PredicateNameAndArity, Map&lt;List&lt;Term&gt;, DefiniteClauseList&gt;&gt; definiteClausesAllArgsIndex = new LRUMap();</span>
+
+    /* Store clauses in which one or more of the args is not ground.
+     *
+     * This is used to as a starting place for new definiteClause lists indexed by the
+     * all args.  This is necessary to make sure unseen term combinations
+     * start with the unground clauses in their index.
+     */
+<span class="fc" id="L42">    private final Map&lt;PredicateNameAndArity, DefiniteClauseList&gt; definiteClausesWithUngroundArgs = new HashMap&lt;&gt;();</span>
+
+<span class="fc" id="L44">    public LazyGroundClauseIndex(HornClausebase clausebase) {</span>
+<span class="fc" id="L45">        this.clausebase = clausebase;</span>
+<span class="fc" id="L46">    }</span>
+
+    void indexDefiniteClause(PredicateNameAndArity key, DefiniteClause definiteClause) {
+
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (definiteClausesAllArgsIndex.containsKey(key)) {</span>
+<span class="fc" id="L51">            Literal headLiteral = definiteClause.getDefiniteClauseHead();</span>
+
+<span class="fc" id="L53">            Map&lt;List&lt;Term&gt;, DefiniteClauseList&gt; mapForKey = definiteClausesAllArgsIndex.get(key);</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            if (mapForKey == null) {</span>
+<span class="nc" id="L55">                mapForKey = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L56">                definiteClausesAllArgsIndex.put(key, mapForKey);</span>
+
+<span class="nc" id="L58">                Utils.println(&quot;% [ LazyGroundClauseIndex ]  Creating ground clause index for &quot; + key + &quot;.&quot;);</span>
+            }
+
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">            if (headLiteral.isGrounded()) {</span>
+
+<span class="fc" id="L63">                DefiniteClauseList definiteClauseList = mapForKey.get(headLiteral.getArguments());</span>
+
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">                if (definiteClauseList == null) {</span>
+<span class="fc" id="L66">                    definiteClauseList = new DefiniteClauseList(getDefiniteClausesSeedList(key));</span>
+<span class="fc" id="L67">                    mapForKey.put(headLiteral.getArguments(), definiteClauseList);</span>
+                }
+
+<span class="fc" id="L70">                definiteClauseList.add(definiteClause);</span>
+<span class="fc" id="L71">            }</span>
+            else {
+
+                // This is an non-ground literal, so we just need to throw into all of the appropriate
+                // places was well as the seed list.
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                for (DefiniteClauseList list : mapForKey.values()) {</span>
+<span class="nc" id="L77">                    list.add(definiteClause);</span>
+<span class="nc" id="L78">                }</span>
+
+<span class="nc" id="L80">                addDefiniteClausesSeedDefiniteClause(key, definiteClause);</span>
+            }
+        }
+
+<span class="fc" id="L84">    }</span>
+
+    void removeDefiniteClause(PredicateNameAndArity key, DefiniteClause definiteClause) {
+
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (definiteClausesAllArgsIndex.containsKey(key)) {</span>
+<span class="nc" id="L89">            Literal headLiteral = definiteClause.getDefiniteClauseHead();</span>
+
+<span class="nc" id="L91">            Map&lt;List&lt;Term&gt;, DefiniteClauseList&gt; mapForKey = definiteClausesAllArgsIndex.get(key);</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (mapForKey != null) {</span>
+
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                if (headLiteral.isGrounded()) {</span>
+<span class="nc" id="L95">                    DefiniteClauseList definiteClauseList = mapForKey.get(headLiteral.getArguments());</span>
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                    if (definiteClauseList != null) {</span>
+<span class="nc" id="L98">                        definiteClauseList.remove(definiteClause);</span>
+                    }
+
+<span class="nc bnc" id="L101" title="All 4 branches missed.">                    assert definiteClauseList != null;</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                    if (definiteClauseList.isEmpty()) {</span>
+<span class="nc" id="L103">                        mapForKey.remove(headLiteral.getArguments());</span>
+                    }
+<span class="nc" id="L105">                }</span>
+                else {
+                    // This is an non-ground literal, so we just need to throw into all of the appropriate
+                    // places was well as the seed list.
+<span class="nc bnc" id="L109" title="All 2 branches missed.">                    for (DefiniteClauseList list : mapForKey.values()) {</span>
+<span class="nc" id="L110">                        list.remove(definiteClause);</span>
+<span class="nc" id="L111">                    }</span>
+
+<span class="nc" id="L113">                    removeDefiniteClausesSeedDefiniteClause(key, definiteClause);</span>
+                }
+            }
+        }
+<span class="nc" id="L117">    }</span>
+
+    DefiniteClauseList lookupDefiniteClauses(Literal lookupLiteral) {
+<span class="pc bpc" id="L120" title="2 of 4 branches missed.">        if (lookupLiteral != null &amp;&amp; lookupLiteral.isGrounded()) {</span>
+<span class="fc" id="L121">            PredicateNameAndArity key = lookupLiteral.getPredicateNameAndArity();</span>
+<span class="fc" id="L122">            Map&lt;List&lt;Term&gt;, DefiniteClauseList&gt; mapForKey = definiteClausesAllArgsIndex.get(key);</span>
+
+
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            if (mapForKey == null) {</span>
+                // We haven't had DefiniteClause build the index for this guy yet...we should probably do that.
+<span class="fc" id="L127">                mapForKey = buildIndexForKey(key);</span>
+            }
+
+<span class="fc" id="L130">            DefiniteClauseList definiteClauseList = mapForKey.get(lookupLiteral.getArguments());</span>
+
+            // If we got this far, than we know that the predicate/arity does have entries.
+            // So, if definiteClauseList is null, then there must be no completions and we
+            // should return an empty list.
+<span class="fc bfc" id="L135" title="All 2 branches covered.">            if (definiteClauseList == null) {</span>
+<span class="fc" id="L136">                return getDefiniteClausesSeedList(key);</span>
+            }
+            else {
+<span class="fc" id="L139">                return definiteClauseList;</span>
+            }
+        }
+
+<span class="nc" id="L143">        return null;</span>
+    }
+
+    private DefiniteClauseList getDefiniteClausesSeedList(PredicateNameAndArity key) {
+
+<span class="fc" id="L148">        DefiniteClauseList definiteClausesForKey = definiteClausesWithUngroundArgs.get(key);</span>
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (definiteClausesForKey != null) {</span>
+<span class="nc" id="L150">            return definiteClausesForKey;</span>
+        }
+        else {
+<span class="fc" id="L153">            return new DefiniteClauseList();</span>
+        }
+    }
+
+    private void addDefiniteClausesSeedDefiniteClause(PredicateNameAndArity key, DefiniteClause definiteClause) {
+<span class="nc" id="L158">        DefiniteClauseList definiteClausesForKey = definiteClausesWithUngroundArgs.get(key);</span>
+
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        if (definiteClausesForKey == null) {</span>
+<span class="nc" id="L161">            definiteClausesForKey = new DefiniteClauseList();</span>
+<span class="nc" id="L162">            definiteClausesWithUngroundArgs.put(key, definiteClausesForKey);</span>
+        }
+
+<span class="nc" id="L165">        definiteClausesForKey.add(definiteClause);</span>
+<span class="nc" id="L166">    }</span>
+
+    private void removeDefiniteClausesSeedDefiniteClause(PredicateNameAndArity key, DefiniteClause definiteClause) {
+<span class="nc" id="L169">        DefiniteClauseList definiteClausesForKey = definiteClausesWithUngroundArgs.get(key);</span>
+
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (definiteClausesForKey != null) {</span>
+<span class="nc" id="L172">            definiteClausesForKey.remove(definiteClause);</span>
+
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            if (definiteClausesForKey.isEmpty()) {</span>
+<span class="nc" id="L175">                definiteClausesWithUngroundArgs.remove(key);</span>
+            }
+        }
+<span class="nc" id="L178">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L182">        return &quot;LazyGroundClauseIndex:\n&quot; +</span>
+                &quot;  maximumIndexSize  : &quot; + maximumIndexSize + &quot;.\n&quot; +
+<span class="nc" id="L184">                &quot;  currentIndexSize  : &quot; + definiteClausesAllArgsIndex.size() + &quot;.\n&quot; +</span>
+                &quot;  indicesConstructed: &quot; + indicesConstructed + &quot;.\n&quot; +
+                &quot;  indicesRemoved    : &quot; + indicesRemoved + &quot;.\n&quot;;
+    }
+
+    private Map&lt;List&lt;Term&gt;, DefiniteClauseList&gt; buildIndexForKey(PredicateNameAndArity key) {
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">        if (definiteClausesAllArgsIndex.containsKey(key)) {</span>
+<span class="nc" id="L191">            throw new IllegalStateException(&quot;LazyGroundClauseIndex.buildIndexForKey(): Predicate &quot; + key + &quot; already indexed.&quot;);</span>
+        }
+
+<span class="fc" id="L194">        indicesConstructed++;</span>
+
+
+<span class="fc" id="L197">        MapOfDefiniteClauseLists assertions = clausebase.getAssertionsMap();</span>
+<span class="fc" id="L198">        DefiniteClauseList clauses = assertions.getValues(key);</span>
+
+        Map&lt;List&lt;Term&gt;, DefiniteClauseList&gt; mapForKey;
+
+<span class="fc" id="L202">        Utils.println(&quot;% [ LazyGroundClauseIndex ]  Building full index for &quot; + key + &quot; with &quot; + Utils.comma(clauses) + &quot; assertions.&quot;);</span>
+
+<span class="fc" id="L204">        mapForKey = new HashMap&lt;&gt;((int) Math.max(16, clauses.size() / 0.75 + 10));</span>
+
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        for (DefiniteClause definiteClause : clauses) {</span>
+<span class="fc" id="L207">            Literal headLiteral = definiteClause.getDefiniteClauseHead();</span>
+
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">            if (headLiteral.isGrounded()) {</span>
+<span class="fc" id="L210">                DefiniteClauseList definiteClauseList = mapForKey.get(headLiteral.getArguments());</span>
+
+<span class="fc bfc" id="L212" title="All 2 branches covered.">                if (definiteClauseList == null) {</span>
+<span class="fc" id="L213">                    definiteClauseList = new DefiniteClauseList(getDefiniteClausesSeedList(key));</span>
+<span class="fc" id="L214">                    mapForKey.put(headLiteral.getArguments(), definiteClauseList);</span>
+                }
+
+<span class="fc" id="L217">                definiteClauseList.add(definiteClause);</span>
+<span class="fc" id="L218">            }</span>
+            else {
+                // This is an non-ground literal, so we just need to throw into all of the appropriate
+                // places was well as the seed list.
+<span class="nc bnc" id="L222" title="All 2 branches missed.">                for (DefiniteClauseList list : mapForKey.values()) {</span>
+<span class="nc" id="L223">                    list.add(definiteClause);</span>
+<span class="nc" id="L224">                }</span>
+
+<span class="nc" id="L226">                addDefiniteClausesSeedDefiniteClause(key, definiteClause);</span>
+            }
+<span class="fc" id="L228">        }</span>
+
+<span class="fc" id="L230">        definiteClausesAllArgsIndex.put(key, mapForKey);</span>
+
+<span class="fc" id="L232">        return mapForKey;</span>
+    }
+
+<span class="fc" id="L235">    private class LRUMap extends LinkedHashMap&lt;PredicateNameAndArity, Map&lt;List&lt;Term&gt;, DefiniteClauseList&gt;&gt; {</span>
+
+    	protected boolean removeEldestEntry(Map.Entry&lt;PredicateNameAndArity, Map&lt;List&lt;Term&gt;, DefiniteClauseList&gt;&gt; eldest) {     	
+        	
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">            if (size() &gt; maximumIndexSize) {          	</span>
+
+<span class="nc" id="L241">                definiteClausesWithUngroundArgs.remove(eldest.getKey());</span>
+<span class="nc" id="L242">                indicesRemoved++;</span>
+<span class="nc" id="L243">                return true;</span>
+            }
+            else {
+<span class="fc" id="L246">                return false;</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

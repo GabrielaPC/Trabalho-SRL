@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringConstant.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">StringConstant.java</span></div><h1>StringConstant.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC.visitors.TermVisitor;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.Serializable;
+
+/*
+ * @author shavlik
+ *
+ */
+<span class="pc bpc" id="L12" title="1 of 2 branches missed.">public class StringConstant extends Constant implements Serializable {</span>
+<span class="fc" id="L13">    private String name = null;</span>
+
+<span class="fc" id="L15">    private boolean alwaysUseDoubleQuotes = false;</span>
+
+<span class="fc" id="L17">    private StringConstant() {</span>
+<span class="fc" id="L18">        checkIfQuoteMarksNeeded();  // 'name' not set, so don't need this, but keep it in case we later change the code.</span>
+<span class="fc" id="L19">    }</span>
+
+    StringConstant(HandleFOPCstrings stringHandler, String name, boolean alwaysUseDoubleQuotes, TypeSpec typeSpec) {
+<span class="fc" id="L22">    	this();</span>
+<span class="fc" id="L23">    	this.name = name; // DON'T CALL THESE DIRECTLY.  GO VIA HandleFOPCstrings.</span>
+<span class="pc bpc" id="L24" title="3 of 8 branches missed.">        while (name != null &amp;&amp; name.length() &gt; 1 &amp;&amp; name.charAt(0) == '&quot;' &amp;&amp; name.charAt(name.length() - 1) == '&quot;' ) { </span>
+<span class="nc" id="L25">        	name = name.substring(1, name.length() - 1);  // We'll add these back on if needed.</span>
+        }
+<span class="fc" id="L27">        this.stringHandler = stringHandler;</span>
+<span class="fc" id="L28">        this.setTypeSpec(typeSpec);</span>
+        //	variablesStartWithQuestionMarks_valueAtCreationTime = variablesStartWithQuestionMarks;  TODO - if these are ever turned back on, use the VarIndicator enum
+        //	lowercaseMeansVariable_valueAtCreationTime          = lowercaseMeansVariable;
+<span class="pc bpc" id="L31" title="1 of 4 branches missed.">        if (name != null &amp;&amp; name.equalsIgnoreCase(&quot;-inf&quot;)) {</span>
+<span class="nc" id="L32">            Utils.error(&quot;Where did this come from? &quot;);</span>
+        }
+<span class="fc" id="L34">        this.alwaysUseDoubleQuotes = alwaysUseDoubleQuotes;</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (!alwaysUseDoubleQuotes) { checkIfQuoteMarksNeeded(); }</span>
+<span class="fc" id="L36">    }</span>
+
+    public boolean freeVariablesAfterSubstitution(BindingList theta) {
+<span class="nc" id="L39">        return false;</span>
+    }
+
+    private void checkIfQuoteMarksNeeded() {
+<span class="fc" id="L43">    	alwaysUseDoubleQuotes     = false;</span>
+<span class="fc" id="L44">    	boolean containsNonNumber = false;</span>
+<span class="fc bfc" id="L45" title="All 4 branches covered.">        if (name != null) for (int i = 0; i &lt; name.length(); i++) {</span>
+<span class="fc" id="L46">        	char chr = name.charAt(i);</span>
+<span class="pc bpc" id="L47" title="2 of 6 branches missed.">        	if (!(Character.isLetterOrDigit(chr) || (i &gt; 0 &amp;&amp; chr == '_'))) {// Should we quote if the FIRST char is a digit?</span>
+<span class="nc" id="L48">        		alwaysUseDoubleQuotes = true; // CHECK IF CHAR IS ONE THAT FileParser's tokenizer does not handle.</span>
+<span class="nc" id="L49">        		break; </span>
+<span class="pc bpc" id="L50" title="3 of 4 branches missed.">        	} else if (chr &gt;= '\u00AA' &amp;&amp; chr &lt;= '\u00FF') { // SOME THINGS WERE SLIPPING THROUGH (eg, Beioncé), SO DO THIS      DONT DO THIS BOTH HERE AND IN StreamTokenizeTAW (though not harmful - would just add more quote marks than are necessary).</span>
+<span class="nc" id="L51">        		alwaysUseDoubleQuotes = true;</span>
+<span class="nc" id="L52">        		break;</span>
+        	}
+<span class="pc bpc" id="L54" title="1 of 4 branches missed.">        	if (!containsNonNumber &amp;&amp; Character.isLetter(chr)) { containsNonNumber = true; }</span>
+        } 
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (!containsNonNumber) { alwaysUseDoubleQuotes = true; } // If something was a string of numbers, we want it quoted (for later parsing as a StringConstant rather than as a NumericConstant).</span>
+<span class="fc" id="L57">    }</span>
+
+    public String getName() {
+<span class="fc" id="L60">    	String safeName = makeSureNameIsSafe(name);</span>
+<span class="pc bpc" id="L61" title="2 of 4 branches missed.">        assert safeName != null;</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (safeName.isEmpty()) { return &quot;\&quot;\&quot;&quot;; } // Need something here so the string can be 'seen' (e.g., parsed back in).</span>
+<span class="pc bpc" id="L63" title="3 of 6 branches missed.">    	if (safeName.length() &gt;  1 &amp;&amp; safeName.charAt(0) == '&quot;' &amp;&amp; safeName.charAt(safeName.length() - 1) == '&quot;') { return safeName; } // Already quoted.</span>
+<span class="pc bpc" id="L64" title="1 of 4 branches missed.">    	if (safeName.length() == 1 &amp;&amp; safeName.charAt(0) == '&quot;')  { return '&quot;' + '\\' + safeName + '&quot;'; }</span>
+<span class="pc bpc" id="L65" title="1 of 4 branches missed.">    	if (safeName.length() == 1 &amp;&amp; safeName.charAt(0) == '\'') { return '&quot;' +        safeName + '&quot;'; } // This line might not be needed.</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        return (stringHandler.isaConstantType(name)</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">                ? (alwaysUseDoubleQuotes ? '&quot;' + safeName + '&quot;' : safeName)</span>
+<span class="nc" id="L68">                : '&quot;' + safeName + '&quot;'); // Need to override by quoting.  Note that if safeName started with quote marks, it would have been caught above.</span>
+    }
+
+    /* Returns the name without any quoting or escaping of characters.
+     *
+     * Sometime we need the name of a StringConstant without the quoting
+     * and escaping of characters.  This is necessary when we are going to
+     * do custom printing (aka the PrettyPrinter) or when we want to do
+     * processing of the name prior to quoting.
+     */
+    public String getBareName() {
+<span class="fc" id="L79">        return name;</span>
+    }
+
+    private static String makeSureNameIsSafe(String name) {
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        if (name == null) { return null; }</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">    	if (name.isEmpty()) { return name; }</span>
+    	
+<span class="fc" id="L86">    	StringBuilder    result = new StringBuilder(name.length());</span>
+<span class="fc" id="L87">    	boolean startsWithQuote = false, endsWithQuote = false;</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">    	if (name.charAt(0)                 == '&quot;') { startsWithQuote = true; }</span>
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">    	if (name.charAt(name.length() - 1) == '&quot;') {   endsWithQuote = true; }    	</span>
+    	
+<span class="pc bpc" id="L91" title="3 of 4 branches missed.">    	if (startsWithQuote &amp;&amp; endsWithQuote) { result.append('&quot;');  }</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">    	else if (startsWithQuote)             { result.append('\\').append('&quot;'); } // Seems more readable than using :  result.append(&quot;\\\&quot;&quot;);</span>
+
+<span class="fc" id="L94">		boolean nextCharEscaped = false;</span>
+<span class="pc bpc" id="L95" title="2 of 6 branches missed.">    	for (int i = (startsWithQuote ? 1 : 0); i &lt; name.length() - (endsWithQuote ? 1 : 0); i++) {</span>
+<span class="fc" id="L96">    		char chr = name.charAt(i);</span>
+    		// For quotes
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">    		if (chr == '&quot;') {</span>
+    			// If prev character wasn't \, escape it
+<span class="nc bnc" id="L100" title="All 2 branches missed.">    			if (!nextCharEscaped) {</span>
+<span class="nc" id="L101">    				result.append('\\');</span>
+    			} 
+    		} 
+<span class="pc bpc" id="L104" title="2 of 4 branches missed.">    		if (chr != '&quot;' &amp;&amp; chr != '\\') {</span>
+    			// A character apart from &quot; was escaped=&gt; add an extra slash
+    			// Handle's cases such as \n, \t
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">    			if (nextCharEscaped) {</span>
+<span class="nc" id="L108">    				result.append('\\');</span>
+    			}
+    		}
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">    		if (chr =='\\') {</span>
+    			// If there is a slash before, already escaped but the next character is not
+                // The next character is escaped by this slash
+<span class="nc bnc" id="L114" title="All 2 branches missed.">                nextCharEscaped = !nextCharEscaped;</span>
+    		} else {
+    			// Set this to false for any other character
+<span class="fc" id="L117">    			nextCharEscaped = false;</span>
+    		}
+
+<span class="fc" id="L120">    		result.append(chr);</span>
+    	}
+    	// The string may end with a slash.
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">    	if (nextCharEscaped) { result.append('\\'); }</span>
+    	
+<span class="pc bpc" id="L125" title="3 of 4 branches missed.">    	if (startsWithQuote &amp;&amp; endsWithQuote) { result.append('&quot;');  }</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">    	else if (endsWithQuote)               { result.append('\\').append('&quot;'); }</span>
+
+<span class="fc" id="L128">    	return result.toString();</span>
+    }
+
+    public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="nc" id="L132">        return toString(precedenceOfCaller, bindingList);</span>
+    }
+
+    protected String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="fc" id="L136">        String prefix = &quot;&quot;;</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (name == null) {</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (typeSpec == null) {</span>
+<span class="nc" id="L139">                Utils.error(&quot;Have a stringConstant with name=null and typeSpec=null&quot;);</span>
+            }
+<span class="nc" id="L141">            return prefix + typeSpec.getModeString() + typeSpec.isaType.typeName;  // Sometimes anonymous string constants are used (e.g., to pass around typeSpec's).</span>
+        }
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">        if (stringHandler.doVariablesStartWithQuestionMarks()) {</span>
+<span class="nc bnc" id="L144" title="All 4 branches missed.">            if (!alwaysUseDoubleQuotes &amp;&amp; name.charAt(0) == '?') {</span>
+<span class="nc" id="L145">                Utils.error(&quot;How did a variable get into a constant? &quot; + getName());</span>
+            }
+<span class="nc" id="L147">            return prefix + getName();</span>
+        }
+<span class="fc" id="L149">        return prefix + getName();</span>
+    }
+
+    public Clause asClause() {
+<span class="nc" id="L153">        return stringHandler.getClause(stringHandler.getLiteral( stringHandler.getPredicateName(name)), true);</span>
+    }
+
+    @Override
+    public Literal asLiteral() {
+<span class="nc" id="L158">        return stringHandler.getLiteral( stringHandler.getPredicateName(name));</span>
+    }
+
+    @Override
+    public BindingList isEquivalentUptoVariableRenaming(Term that, BindingList bindings) {
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        if (!(that instanceof StringConstant)) {</span>
+<span class="nc" id="L164">            return null;</span>
+        }
+
+<span class="nc" id="L167">        StringConstant stringConstant = (StringConstant) that;</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (!this.name.equals(stringConstant.name)) {</span>
+<span class="nc" id="L170">            return null;</span>
+        }
+
+<span class="nc" id="L173">        return bindings;</span>
+    }
+
+    /* Replace with the cached version from stringHandler.
+     */
+    private Object readResolve() {
+<span class="nc" id="L179">        return stringHandler.getStringConstant(typeSpec, name, true);</span>
+    }
+
+    @Override
+    public &lt;Return, Data&gt; Return accept(TermVisitor&lt;Return, Data&gt; visitor, Data data) {
+<span class="fc" id="L184">        return visitor.visitStringConstant(this);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

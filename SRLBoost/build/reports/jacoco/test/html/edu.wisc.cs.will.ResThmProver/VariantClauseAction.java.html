@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>VariantClauseAction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ResThmProver</a> &gt; <span class="el_source">VariantClauseAction.java</span></div><h1>VariantClauseAction.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ResThmProver;
+
+/*
+ * @author twalker
+ */
+<span class="fc" id="L6">public enum VariantClauseAction {</span>
+
+<span class="fc" id="L8">    SILENTLY_KEEP_VARIANTS(&quot;noAction&quot;, false, false),</span>
+<span class="fc" id="L9">    WARN_AND_REMOVE_VARIANTS(&quot;remove&quot;, true, true);</span>
+
+    private final String parameterSetting;
+    private final boolean warn;
+    private final boolean remove;
+
+<span class="fc" id="L15">    VariantClauseAction(String parameterSetting, boolean warn, boolean remove) {</span>
+<span class="fc" id="L16">        this.parameterSetting = parameterSetting;</span>
+<span class="fc" id="L17">        this.warn = warn;</span>
+<span class="fc" id="L18">        this.remove = remove;</span>
+<span class="fc" id="L19">    }</span>
+
+    @Override
+    public String toString() {
+<span class="nc" id="L23">        return parameterSetting;</span>
+    }
+
+    public boolean isRemoveEnabled() {
+<span class="nc" id="L27">        return remove;</span>
+    }
+
+    public boolean isWarnEnabled() {
+<span class="nc" id="L31">        return warn;</span>
+    }
+
+    public boolean isCheckRequired() {
+<span class="pc bpc" id="L35" title="1 of 4 branches missed.">        return warn || remove;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

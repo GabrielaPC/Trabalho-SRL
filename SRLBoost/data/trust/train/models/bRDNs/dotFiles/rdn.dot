@@ -1,0 +1,5 @@
+digraph RDN{
+0[style="filled" label="trusts(person,person)" color="gray52"];
+1 -> 0[label="" style=solid];
+1[style="filled" label="knows(person,person)" color="gray92"];
+}

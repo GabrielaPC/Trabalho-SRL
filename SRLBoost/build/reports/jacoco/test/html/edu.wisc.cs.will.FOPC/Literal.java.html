@@ -1,0 +1,650 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Literal.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.FOPC</a> &gt; <span class="el_source">Literal.java</span></div><h1>Literal.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.FOPC;
+
+import edu.wisc.cs.will.FOPC.visitors.SentenceVisitor;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.Serializable;
+import java.util.*;
+
+/*
+ * @author shavlik
+ */
+public class Literal extends Sentence implements Serializable, DefiniteClause, LiteralOrFunction {
+	
+    public PredicateName predicateName;
+    private List&lt;Term&gt;   arguments;     // Note: should not directly manipulate.  Instead use addArgument(), removeArgument(), and setArguments().
+    private List&lt;String&gt; argumentNames; // (Optional) names of the arguments.
+
+<span class="fc" id="L18">    private int containsVariables = -1; // Only set to false if CHECKED.  (Key: -1 = unknown, 0 = false, 1 = true.)</span>
+<span class="fc" id="L19">    private int cached_arity      = -1;</span>
+
+<span class="fc" id="L21">    protected Literal() {</span>
+<span class="fc" id="L22">    }</span>
+
+    protected Literal(HandleFOPCstrings stringHandler, PredicateName pred) {
+<span class="fc" id="L25">    	this();</span>
+<span class="fc" id="L26">        predicateName      = pred;</span>
+<span class="fc" id="L27">        this.stringHandler = stringHandler;</span>
+<span class="fc" id="L28">        this.arguments     = null;</span>
+<span class="fc" id="L29">        this.argumentNames = null;</span>
+<span class="fc" id="L30">    }</span>
+    /* Create a Literal given a predicate name and list of terms.
+     *
+     * TAW: This uses the varargs semantics common in C.  It allows the user to
+     * specify a list of terms to be used as arguments without wrapping it in a List
+     * or array.  For example, I can do this:
+     *
+     * 	new Literal(someHandler, &quot;myPredName&quot;, Term1, Term2, Term3)
+     *
+     * Java boxes up the Term1, Term2, Term3 into a Term array.  So arguments will
+     * be of type Term[] or null if there were no Terms passed in.
+     *
+     * @param stringHandler string handler for this predicate
+     * @param pred predicate name
+     * @param arguments Terms to be arguments of the predicate
+     */
+<span class="fc" id="L46">    protected Literal(HandleFOPCstrings stringHandler, PredicateName pred, List&lt;Term&gt; arguments) {</span>
+<span class="fc" id="L47">        predicateName      = pred;</span>
+<span class="fc" id="L48">        this.arguments     = arguments;</span>
+<span class="fc" id="L49">        this.argumentNames = null;</span>
+<span class="fc" id="L50">        this.stringHandler = stringHandler;</span>
+<span class="fc" id="L51">    }</span>
+
+
+    Literal(HandleFOPCstrings stringHandler, PredicateName pred, List&lt;Term&gt; arguments, List&lt;String&gt; argumentNames) {
+<span class="fc" id="L55">        this(stringHandler, pred, arguments);</span>
+<span class="fc" id="L56">        this.argumentNames = argumentNames;</span>
+<span class="fc" id="L57">        sortArgumentsByName();</span>
+<span class="fc" id="L58">        this.stringHandler = stringHandler;</span>
+        // If one or the other is null, don't check (e.g, this might be a bareCopy call).
+<span class="pc bpc" id="L60" title="3 of 6 branches missed.">        if (arguments != null &amp;&amp; argumentNames != null &amp;&amp; Utils.getSizeSafely(arguments) != Utils.getSizeSafely(argumentNames)) {</span>
+<span class="nc" id="L61">            Utils.error(&quot;Have &quot; + arguments + &quot; and &quot; + argumentNames + &quot; - number of arguments and number of names must match.&quot;);</span>
+        }
+<span class="fc" id="L63">    }</span>
+
+    public boolean isaBridgerLiteral() { // TODO need to check allCollector other vars are bound?
+<span class="fc" id="L66">        return predicateName.isaBridgerLiteral(arguments);</span>
+    }
+
+    private Literal getBareCopy(List&lt;Term&gt; newArguments) {
+<span class="fc" id="L70">        return getBareCopy(newArguments, argumentNames);</span>
+    }
+
+    private Literal getBareCopy(List&lt;Term&gt; newArguments, List&lt;String&gt; newNames) {
+<span class="fc" id="L74">        return (Literal) stringHandler.getLiteral(predicateName, newArguments, newNames).setWeightOnSentence(wgtSentence);</span>
+    }
+
+    // A ('reverse') variant of contains().
+    public boolean member(Collection&lt;Literal&gt; otherLists) {
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (Utils.getSizeSafely(otherLists) &lt; 1) {</span>
+<span class="fc" id="L80">            return false;</span>
+        }
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        for (Literal otherLit : otherLists) {</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (this.equals(otherLit)) {</span>
+<span class="fc" id="L84">                return true;</span>
+            }
+<span class="fc" id="L86">        }</span>
+<span class="fc" id="L87">        return false;</span>
+    }
+
+    // This code makes changes &quot;in place&quot; and assumes that the caller has made a copy if necessary.  (Note: be very careful if you change this code. For efficiency reasons it tries to save using new memory.)
+    @Override
+    public Literal applyTheta(Map&lt;Variable, Term&gt; theta) {
+        // This should be essentially the same code as in Function.applyTheta
+<span class="fc" id="L94">        boolean needNewLiteral = false; // See if there is a chance this might need to change (only do a one-level deep evaluation).</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (arguments != null) {</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            for (Term term : arguments) {</span>
+<span class="fc bfc" id="L97" title="All 6 branches covered.">                if (!((term instanceof Variable &amp;&amp; theta.get(term) == null) || term instanceof Constant)) {</span>
+<span class="fc" id="L98">                    needNewLiteral = true;</span>
+<span class="fc" id="L99">                    break;</span>
+                }
+<span class="fc" id="L101">            }</span>
+        }
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (!needNewLiteral) {</span>
+<span class="fc" id="L104">            return this;</span>
+        }
+<span class="fc" id="L106">        int numbArgs = numberArgs();</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        List&lt;Term&gt; newArguments = (numbArgs == 0 ? null : new ArrayList&lt;&gt;(numberArgs()));</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (numbArgs &gt; 0) {</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            for (Term arg : arguments) {</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">                if (arg == null) {</span>
+<span class="nc" id="L111">                    Utils.error(&quot;Has an arg=null: &quot; + this);</span>
+                }
+<span class="fc" id="L113">                newArguments.add(arg.applyTheta(theta));</span>
+<span class="fc" id="L114">            }</span>
+        }
+<span class="fc" id="L116">        return getBareCopy(newArguments);</span>
+    }
+
+    public Literal applyTheta(BindingList bindingList) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (bindingList != null) {</span>
+<span class="fc" id="L121">            return applyTheta(bindingList.theta);</span>
+        }
+        else {
+<span class="nc" id="L124">            return this;</span>
+        }
+    }
+
+    @Override
+    public Literal copy(boolean recursiveCopy) { // recursiveCopy=true means that the copying recurs down to the leaves.   Also, variables will be created anew if requested.
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        List&lt;Term&gt;   newArguments = (arguments     != null ? new ArrayList&lt;&gt;(  numberArgs()) : null);</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        List&lt;String&gt; newArgNames  = (argumentNames != null ? new ArrayList&lt;&gt;(numberArgs()) : null);</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        if (argumentNames != null) {</span>
+<span class="nc" id="L133">            newArgNames.addAll(argumentNames);</span>
+        }
+
+        // TODO(hayesall): IDE recommended a null guard here. The guard breaks JUnit, but not CLI interaction?
+        // assert newArguments != null;
+
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (recursiveCopy) {</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            if (arguments != null) {</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                for (Term term : arguments) {</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">                    newArguments.add(term == null ? null : term.copy(true));</span>
+<span class="fc" id="L143">                }</span>
+            }
+<span class="fc" id="L145">            return getBareCopy(newArguments, newArgNames);</span>
+        }
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (arguments != null) {</span>
+<span class="fc" id="L148">            newArguments.addAll(arguments);</span>
+        }
+<span class="fc" id="L150">        return getBareCopy(newArguments, newArgNames);</span>
+    }
+
+    @Override
+    public Literal copy2(boolean recursiveCopy, BindingList bindingList) { // recursiveCopy=true means that the copying recurs down to the leaves.   Also, variables will be created anew if requested.
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        List&lt;Term&gt; newArguments = (arguments != null ? new ArrayList&lt;&gt;(numberArgs()) : null);</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        List&lt;String&gt; newArgNames = (argumentNames != null ? new ArrayList&lt;&gt;(numberArgs()) : null);</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        if (argumentNames != null) {</span>
+<span class="nc" id="L158">            newArgNames.addAll(argumentNames);</span>
+        }
+        // TODO(hayesall): the null guard is recommended here, but it occasionally causes problems with the UWCSE set.
+        // assert newArguments != null;
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (recursiveCopy) {</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">            if (arguments != null) {</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                for (Term term : arguments) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                    newArguments.add(term == null ? null : term.copy2(true, bindingList));</span>
+<span class="nc" id="L166">                }</span>
+            }
+<span class="nc" id="L168">            return getBareCopy(newArguments, newArgNames);</span>
+        }
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (arguments != null) {</span>
+<span class="nc" id="L171">            newArguments.addAll(arguments);</span>
+        }
+<span class="nc" id="L173">        return getBareCopy(newArguments, newArgNames);</span>
+    }
+
+    @Override
+    public boolean containsTermAsSentence() {
+<span class="fc" id="L178">        return false;</span>
+    }
+
+    @Override
+    public Collection&lt;Variable&gt; collectAllVariables() {
+<span class="fc" id="L183">        return collectFreeVariables(null);</span>
+    }
+
+    @Override
+    public Collection&lt;Variable&gt; collectFreeVariables(Collection&lt;Variable&gt; boundVariables) {
+<span class="fc" id="L188">        List&lt;Variable&gt; result = null; // Don't create until needed.</span>
+
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        if (arguments != null) {</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">            for (Term term : arguments) {</span>
+<span class="fc" id="L192">                Collection&lt;Variable&gt; temp = term.collectFreeVariables(boundVariables);</span>
+
+<span class="fc bfc" id="L194" title="All 2 branches covered.">                if (temp != null) {</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">                    if (result == null) {</span>
+<span class="fc" id="L196">                        result = new ArrayList&lt;&gt;(4);</span>
+                    }
+<span class="fc bfc" id="L198" title="All 2 branches covered.">                    for (Variable var : temp) {</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">                        if (!result.contains(var)) {</span>
+<span class="fc" id="L200">                            result.add(var);</span>
+                        }
+<span class="fc" id="L202">                    }</span>
+                }
+<span class="fc" id="L204">            }</span>
+        }
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        return result== null ? Collections.EMPTY_LIST : result;</span>
+    }
+
+    private String restOfToString(BindingList bindingList) {
+<span class="fc" id="L210">        StringBuilder result = new StringBuilder(&quot;(&quot;);</span>
+<span class="fc" id="L211">        boolean firstOne = true;</span>
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">        boolean hasArgNames = (argumentNames != null);</span>
+<span class="fc" id="L213">        int numberOfArgNames = Utils.getSizeSafely(argumentNames);</span>
+
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">        if (arguments != null) {</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">            for (int i = 0; i &lt; numberArgs(); i++) {</span>
+            	
+<span class="fc" id="L218">                Term arg = arguments.get(i);</span>
+<span class="fc bfc" id="L219" title="All 2 branches covered.">                if (firstOne) {</span>
+<span class="fc" id="L220">                    firstOne = false;</span>
+                }
+                else {
+<span class="fc" id="L223">                    result.append(&quot;, &quot;);</span>
+                }
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">                if (arg == null) {</span>
+<span class="nc" id="L226">                    result.append(&quot;null&quot;);</span>
+                }
+                else {
+<span class="pc bpc" id="L229" title="3 of 4 branches missed.">                    result.append(hasArgNames ? (i &gt;= numberOfArgNames ? &quot;noNameForMe&quot; : argumentNames.get(i)) + &quot;=&quot; : &quot;&quot;).append(arg.toString(Integer.MAX_VALUE, bindingList));</span>
+                } // No need for extra parentheses in an argument list.
+            }
+        }
+<span class="fc" id="L233">        return result + &quot;)&quot;;</span>
+    }
+
+    public PredicateName getPredicateName() {
+<span class="nc" id="L237">        return predicateName;</span>
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if ( this == obj) {</span>
+<span class="fc" id="L243">            return true;</span>
+        }
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">        if (obj == null) {</span>
+<span class="nc" id="L246">            return false;</span>
+        }
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">        if (!(obj instanceof Literal)) {</span>
+<span class="nc" id="L249">            return false;</span>
+        }
+<span class="fc" id="L251">        final Literal other = (Literal) obj;</span>
+
+<span class="fc bfc" id="L253" title="All 2 branches covered.">        if (!Objects.equals(this.predicateName, other.predicateName)) {</span>
+<span class="fc" id="L254">            return false;</span>
+        }
+<span class="fc bfc" id="L256" title="All 2 branches covered.">        if (!Objects.equals(this.arguments, other.arguments)) {</span>
+<span class="fc" id="L257">            return false;</span>
+        }
+<span class="fc" id="L259">        return Objects.equals(this.argumentNames, other.argumentNames);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L264">        int hash = 7;</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        hash = 23 * hash + (this.predicateName != null ? this.predicateName.hashCode() : 0);</span>
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">        hash = 23 * hash + (this.arguments != null ? this.arguments.hashCode() : 0);</span>
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">        hash = 23 * hash + (this.argumentNames != null ? this.argumentNames.hashCode() : 0);</span>
+<span class="fc" id="L268">        return hash;</span>
+    }
+
+    // Are these two equivalent POSSIBLY AFTER SOME VARIABLE RENAMING?
+    public BindingList variants(Literal other, BindingList bindings) {
+        // Need to collect the matched variables (so they don't get matched to another variable elsewhere).
+<span class="fc bfc" id="L274" title="All 2 branches covered.">        if (predicateName != other.predicateName) {</span>
+<span class="fc" id="L275">            return null;</span>
+        }
+<span class="fc" id="L277">        int numbArgs      = numberArgs();</span>
+<span class="fc" id="L278">        int otherNumbArgs = other.numberArgs();</span>
+<span class="pc bpc" id="L279" title="1 of 2 branches missed.">        if (numbArgs != otherNumbArgs) {</span>
+<span class="nc" id="L280">            return null;</span>
+        }
+        // Have checked that the lengths are equal, so need only one iterator.
+<span class="pc bpc" id="L283" title="1 of 4 branches missed.">        if (arguments != null) for (ListIterator&lt;Term&gt; terms1 = arguments.listIterator(), terms2 = other.arguments.listIterator(); terms1.hasNext();) {</span>
+<span class="fc" id="L284">            Term term1 = terms1.next();</span>
+<span class="fc" id="L285">            Term term2 = terms2.next();</span>
+
+<span class="fc bfc" id="L287" title="All 2 branches covered.">            if (term1 == term2) {</span>
+<span class="fc" id="L288">                continue;</span>
+            }
+<span class="pc bpc" id="L290" title="2 of 4 branches missed.">            if (term1 == null || term2 == null) {</span>
+<span class="nc" id="L291">                return null;</span>
+            }
+
+<span class="fc" id="L294">            bindings = term1.variants(term2, bindings);</span>
+<span class="fc bfc" id="L295" title="All 2 branches covered.">            if (bindings == null) {</span>
+<span class="fc" id="L296">                return null;</span>
+            }
+<span class="fc" id="L298">        }</span>
+<span class="pc bpc" id="L299" title="2 of 4 branches missed.">        if (argumentNames == null &amp;&amp; other.argumentNames == null) {</span>
+<span class="fc" id="L300">            return bindings;</span>
+        }
+<span class="nc bnc" id="L302" title="All 4 branches missed.">        if (argumentNames == null || other.argumentNames == null) {</span>
+<span class="nc" id="L303">            return null;</span>
+        }
+<span class="nc bnc" id="L305" title="All 2 branches missed.">        for (int i = 0; i &lt; numbArgs; i++) { // Should do a double walk of the two lists, but I don't recall the syntax</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">            if (!argumentNames.get(i).equalsIgnoreCase(other.argumentNames.get(i))) {</span>
+<span class="nc" id="L307">                return null;</span>
+            }
+        }
+<span class="nc" id="L310">        return bindings;</span>
+    }
+
+    @Override
+    public BindingList isEquivalentUptoVariableRenaming(Sentence that, BindingList bindings) {
+<span class="nc bnc" id="L315" title="All 2 branches missed.">        if (!(that instanceof Literal)) return null;</span>
+
+<span class="nc" id="L317">        Literal thatLiteral = (Literal) that;</span>
+
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        if ( this.predicateName != thatLiteral.predicateName ) return null;</span>
+
+<span class="nc bnc" id="L321" title="All 2 branches missed.">        if ( this.numberArgs() != thatLiteral.numberArgs() ) return null;</span>
+
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        for (int i = 0; i &lt; numberArgs(); i++) {</span>
+<span class="nc" id="L324">            bindings = this.getArgument(i).isEquivalentUptoVariableRenaming(thatLiteral.getArgument(i), bindings);</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">            if ( bindings == null ) return null;</span>
+        }
+
+<span class="nc" id="L328">        return bindings;</span>
+    }
+
+    @Override
+    public BindingList variants(Sentence other, BindingList bindings) {
+        // Need to collect the matched variables (so they don't get matched to another variable elsewhere).
+<span class="nc bnc" id="L334" title="All 2 branches missed.">        if (!(other instanceof Literal)) {</span>
+<span class="nc" id="L335">            return null;</span>
+        }
+<span class="nc" id="L337">        return variants((Literal) other, bindings);</span>
+    }
+
+    public int getArity() {
+<span class="fc" id="L341">        return numberArgs();</span>
+    }
+
+    public int numberArgs() {
+<span class="fc bfc" id="L345" title="All 2 branches covered.">        if (cached_arity &lt; 0) {</span>
+<span class="fc" id="L346">            setNumberArgs();</span>
+        }
+<span class="fc" id="L348">        return cached_arity;</span>
+    }
+
+    private void setNumberArgs() {
+<span class="fc bfc" id="L352" title="All 2 branches covered.">        if (arguments == null) {</span>
+<span class="fc" id="L353">            cached_arity = 0;</span>
+        }
+        else {
+<span class="fc" id="L356">            cached_arity = arguments.size();</span>
+        }
+<span class="fc" id="L358">        containsVariables();</span>
+<span class="fc" id="L359">    }</span>
+
+    public boolean containsThisVariable(Variable var) {
+<span class="nc bnc" id="L362" title="All 2 branches missed.">        if (arguments == null) {</span>
+<span class="nc" id="L363">            return false;</span>
+        }
+<span class="nc bnc" id="L365" title="All 2 branches missed.">        for (Term arg : arguments) {</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">            if (arg == var) {</span>
+<span class="nc" id="L367">                return true;</span>
+            }
+<span class="nc" id="L369">        }</span>
+<span class="nc" id="L370">        return false;</span>
+    }
+    
+    // Cache this calculation to save time.
+    public boolean containsVariables() {
+<span class="fc bfc" id="L375" title="All 2 branches covered.">        if (containsVariables &lt; 0) {</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">            if (arguments == null) {</span>
+<span class="fc" id="L377">                containsVariables = 0;</span>
+<span class="fc" id="L378">                return false;</span>
+            }
+<span class="fc bfc" id="L380" title="All 2 branches covered.">            for (Term term : arguments) {</span>
+<span class="fc bfc" id="L381" title="All 2 branches covered.">                if (term instanceof Variable) {</span>
+<span class="fc" id="L382">                    containsVariables = 1;</span>
+<span class="fc" id="L383">                    return true;</span>
+                }
+<span class="fc bfc" id="L385" title="All 4 branches covered.">                if ((term instanceof Function) &amp;&amp; term.containsVariables()) {</span>
+<span class="fc" id="L386">                    containsVariables = 1;</span>
+<span class="fc" id="L387">                    return true;</span>
+                }
+<span class="fc" id="L389">            }</span>
+<span class="fc" id="L390">            containsVariables = 0;</span>
+        }
+<span class="fc bfc" id="L392" title="All 2 branches covered.">        return (containsVariables &gt; 0);</span>
+    }
+
+    /* Would any variables in this clause remain UNBOUND if this binding list were to be applied?
+     */
+    @Override
+    public boolean containsFreeVariablesAfterSubstitution(BindingList theta) {
+<span class="nc bnc" id="L399" title="All 2 branches missed.">        if (!containsVariables()) {</span>
+<span class="nc" id="L400">            return false;</span>
+        }
+<span class="nc bnc" id="L402" title="All 4 branches missed.">        if (theta == null || arguments == null) {</span>
+<span class="nc" id="L403">            return false;</span>
+        }
+<span class="nc bnc" id="L405" title="All 2 branches missed.">        for (Term term : arguments) {</span>
+<span class="nc bnc" id="L406" title="All 2 branches missed.">            if (term.freeVariablesAfterSubstitution(theta)) {</span>
+<span class="nc" id="L407">                return true;</span>
+            }
+<span class="nc" id="L409">        }</span>
+<span class="nc" id="L410">        return false;</span>
+    }
+
+    // Clausal-form converter stuff.
+    @Override
+    protected boolean containsThisFOPCtype(String marker) {
+<span class="fc" id="L416">        return false;</span>
+    }
+
+    @Override
+    protected Literal convertEquivalenceToImplication() {
+<span class="nc" id="L421">        return this;</span>
+    }
+
+    @Override
+    protected Literal eliminateImplications() {
+<span class="fc" id="L426">        return this;</span>
+    }
+
+    @Override
+    protected Sentence negate() { // In NOTs, the SECOND argument is used.
+<span class="fc" id="L431">        return stringHandler.getConnectedSentence(null, stringHandler.getConnectiveName(&quot;not&quot;), this).setWeightOnSentence(wgtSentence);</span>
+    }
+
+    @Override
+    protected Sentence moveNegationInwards() { // Can't go in any further.
+<span class="fc" id="L436">        return this;</span>
+    }
+
+    @Override
+    protected Literal skolemize(List&lt;Variable&gt; outerUniversalVars) {
+<span class="fc" id="L441">        return this; // Can't go in any further.</span>
+    }
+
+    @Override
+    protected Literal distributeDisjunctionOverConjunction() {
+<span class="fc" id="L446">        return this; // Can't go in any further.</span>
+    }
+
+    @Override
+    protected Literal distributeConjunctionOverDisjunction() {
+<span class="nc" id="L451">        return this; // Can't go in any further.</span>
+    }
+
+    @Override
+    protected List&lt;Clause&gt; convertToListOfClauses() {
+<span class="fc" id="L456">        List&lt;Clause&gt; result = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L457">        result.add(convertToClause(true)); // Convert allCollector of these to unnegated literals.</span>
+<span class="fc" id="L458">        return result;</span>
+    }
+
+    @Override
+    protected Clause convertToClause() {
+<span class="fc" id="L463">        return convertToClause(true);</span>
+    }
+
+    Clause convertToClause(boolean isaPositiveLiteral) {
+<span class="fc" id="L467">        double literalWgt = wgtSentence;</span>
+<span class="fc" id="L468">        wgtSentence = Sentence.maxWeight; // Move the literal's weight out to the clause that &quot;wraps&quot; it.</span>
+<span class="fc" id="L469">        return (Clause) stringHandler.getClause(this, isaPositiveLiteral).setWeightOnSentence(literalWgt);</span>
+    }
+
+    public Function convertToFunction(HandleFOPCstrings stringHandler) {
+<span class="fc" id="L473">        FunctionName functionName = stringHandler.getFunctionName(predicateName.name);</span>
+<span class="fc" id="L474">        return stringHandler.getFunction(functionName, arguments, argumentNames, null);</span>
+    }
+
+    @Override
+    public String toPrettyString(String newLineStarter, int precedenceOfCaller, BindingList bindingList) {
+<span class="fc" id="L479">        return toString(precedenceOfCaller, bindingList);   // TODO have this use toPrettyString in the recursive calls.</span>
+    }
+
+    @Override
+    public String toString(int precedenceOfCaller, BindingList bindingList) {
+<span class="fc" id="L484">        String result = returnWeightString();</span>
+
+<span class="fc" id="L486">        String pNameString = predicateName.toString();</span>
+
+<span class="fc" id="L488">        result += pNameString;</span>
+<span class="fc bfc" id="L489" title="All 2 branches covered.">        if (arguments == null) {</span>
+<span class="fc" id="L490">            return result;</span>
+        }
+<span class="fc" id="L492">        return result + restOfToString(bindingList);</span>
+    }
+
+    @Override
+    public boolean isDefiniteClause() {
+<span class="fc" id="L497">        return true;</span>
+    }
+
+    @Override
+    public boolean isDefiniteClauseFact() {
+<span class="fc" id="L502">        return true;</span>
+    }
+
+    @Override
+    public boolean isDefiniteClauseRule() {
+<span class="fc" id="L507">        return false;</span>
+    }
+
+    @Override
+    public Literal getDefiniteClauseHead() {
+<span class="fc" id="L512">        return this;</span>
+    }
+
+    @Override
+    public Literal getDefiniteClauseFactAsLiteral() throws IllegalStateException {
+<span class="nc" id="L517">        return this;</span>
+    }
+
+    @Override
+    public Clause getDefiniteClauseAsClause() throws IllegalStateException {
+<span class="fc" id="L522">        return getStringHandler().getClause(this, true);</span>
+    }
+
+    @Override
+    public List&lt;Literal&gt; getDefiniteClauseBody() {
+<span class="fc" id="L527">        return Collections.EMPTY_LIST;</span>
+    }
+
+    public BindingList unifyDefiniteClause(DefiniteClause otherClause, BindingList bindingList) {
+<span class="nc bnc" id="L531" title="All 2 branches missed.">        if (!otherClause.isDefiniteClauseFact()) {</span>
+<span class="nc" id="L532">            return null;</span>
+        }
+
+<span class="nc" id="L535">        Literal otherHead = otherClause.getDefiniteClauseFactAsLiteral();</span>
+
+<span class="nc bnc" id="L537" title="All 2 branches missed.">        if (predicateName != otherHead.predicateName) {</span>
+<span class="nc" id="L538">            return null;</span>
+        }
+
+<span class="nc bnc" id="L541" title="All 2 branches missed.">        if (numberArgs() != otherHead.numberArgs()) {</span>
+<span class="nc" id="L542">            return null;</span>
+        }
+
+<span class="nc bnc" id="L545" title="All 2 branches missed.">        if (bindingList == null) {</span>
+<span class="nc" id="L546">            bindingList = new BindingList();</span>
+        }
+
+<span class="nc" id="L549">        return Unifier.UNIFIER.unify(this, otherHead, bindingList);</span>
+    }
+
+    public List&lt;Term&gt; getArguments() {
+<span class="fc bfc" id="L553" title="All 2 branches covered.">        return arguments == null ? Collections.EMPTY_LIST : arguments;</span>
+    }
+
+    public Term getArgument(int i) {
+<span class="fc" id="L557">        return arguments.get(i);</span>
+    }
+
+    public void setArguments(List&lt;Term&gt; arguments) {
+<span class="fc" id="L561">        this.arguments = arguments;</span>
+<span class="fc" id="L562">        setNumberArgs();</span>
+<span class="fc" id="L563">        sortArgumentsByName();</span>
+<span class="fc" id="L564">    }</span>
+
+    public List&lt;String&gt; getArgumentNames() {
+<span class="fc" id="L567">        return argumentNames;</span>
+    }
+
+    public void addArgument(Term term) {
+<span class="pc bpc" id="L571" title="1 of 2 branches missed.">        if (argumentNames != null) {</span>
+<span class="nc" id="L572">            Utils.error(&quot;Current arguments are named, so you need to pass in term and name for '&quot; + this + &quot;'.&quot;);</span>
+        }
+<span class="pc bpc" id="L574" title="1 of 2 branches missed.">        if (arguments == null) {</span>
+<span class="nc" id="L575">        	arguments = new ArrayList&lt;&gt;(1);</span>
+        }
+<span class="fc" id="L577">        arguments.add(term);</span>
+<span class="fc" id="L578">        setNumberArgs();</span>
+<span class="fc" id="L579">    }</span>
+
+    public void addArgument(Term term, String name) {
+<span class="nc" id="L582">        arguments.add(term);</span>
+<span class="nc" id="L583">        argumentNames.add(name);</span>
+<span class="nc" id="L584">        setNumberArgs();</span>
+<span class="nc" id="L585">        sortArgumentsByName();</span>
+<span class="nc" id="L586">    }</span>
+
+    public void removeArgument(Term term) {
+<span class="pc bpc" id="L589" title="1 of 2 branches missed.">        if (argumentNames != null) {</span>
+<span class="nc" id="L590">            Utils.error(&quot;Current arguments are named, so you need to pass in term and name for '&quot; + this + &quot;'.&quot;);</span>
+        }
+<span class="pc bpc" id="L592" title="1 of 2 branches missed.">        if (!arguments.remove(term)) {</span>
+<span class="nc" id="L593">            Utils.error(&quot;Could not remove '&quot; + term + &quot;' from '&quot; + this + &quot;'.&quot;);</span>
+        }
+<span class="fc" id="L595">        setNumberArgs();</span>
+<span class="fc" id="L596">    }</span>
+
+    private void sortArgumentsByName() {
+<span class="pc bpc" id="L599" title="1 of 2 branches missed.">        if (argumentNames == null) {</span>
+<span class="fc" id="L600">            return;</span>
+        }
+<span class="nc" id="L602">        int numbArgs = numberArgs();</span>
+<span class="nc bnc" id="L603" title="All 2 branches missed.">        if (Utils.getSizeSafely(argumentNames) != numbArgs) {</span>
+<span class="nc" id="L604">            Utils.error(&quot;# of arguments (&quot; + numbArgs + &quot;) does not equal number of argument names (&quot;</span>
+<span class="nc" id="L605">                    + Utils.getSizeSafely(argumentNames) + &quot;):\n   args = &quot; + arguments + &quot;\n  names = &quot; + argumentNames + &quot;\n    lit = &quot; + this);</span>
+        }
+<span class="nc bnc" id="L607" title="All 2 branches missed.">        if (numbArgs &lt; 2) {</span>
+<span class="nc" id="L608">            return;</span>
+        }
+<span class="nc" id="L610">        List&lt;NamedTerm&gt; namedTerms = new ArrayList&lt;&gt;(numbArgs);</span>
+<span class="nc" id="L611">        Set&lt;String&gt; namesSeen = new HashSet&lt;&gt;(4);</span>
+<span class="nc bnc" id="L612" title="All 2 branches missed.">        for (int i = 0; i &lt; numbArgs; i++) {</span>
+<span class="nc" id="L613">            String argName = argumentNames.get(i);</span>
+<span class="nc bnc" id="L614" title="All 2 branches missed.">            if (namesSeen.contains(argName)) {</span>
+<span class="nc" id="L615">                Utils.error(&quot;Cannot have duplicate names (&quot; + argName + &quot;): &quot; + argumentNames);</span>
+            }
+<span class="nc bnc" id="L617" title="All 2 branches missed.">            if ( argName != null ) namesSeen.add(argName);</span>
+<span class="nc" id="L618">            namedTerms.add(new NamedTerm(arguments.get(i), argName));</span>
+        }
+<span class="nc" id="L620">        namedTerms.sort(NamedTerm.comparator);</span>
+<span class="nc" id="L621">        arguments.clear();</span>
+<span class="nc" id="L622">        argumentNames.clear();</span>
+<span class="nc bnc" id="L623" title="All 2 branches missed.">        for (NamedTerm nt : namedTerms) {</span>
+<span class="nc" id="L624">            arguments.add(nt.term);</span>
+<span class="nc" id="L625">            argumentNames.add(nt.name);</span>
+<span class="nc" id="L626">        }</span>
+<span class="nc" id="L627">    }</span>
+
+    public PredicateNameAndArity getPredicateNameAndArity() {
+<span class="fc" id="L630">        return stringHandler.getPredicate(predicateName, getArity());</span>
+    }
+
+    @Override
+    public &lt;Return, Data&gt; Return accept(SentenceVisitor&lt;Return, Data&gt; visitor, Data data) {
+<span class="fc" id="L635">        return visitor.visitLiteral(this, data);</span>
+    }
+
+    @Override
+    public int countVarOccurrencesInFOPC(Variable v) {
+<span class="fc" id="L640">        int total = 0;</span>
+<span class="fc bfc" id="L641" title="All 2 branches covered.">        if (arguments != null) {</span>
+<span class="fc bfc" id="L642" title="All 2 branches covered.">            for (Term arg : arguments) {</span>
+<span class="fc" id="L643">                total += arg.countVarOccurrencesInFOPC(v);</span>
+<span class="fc" id="L644">            }</span>
+        }
+<span class="fc" id="L646">        return total;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

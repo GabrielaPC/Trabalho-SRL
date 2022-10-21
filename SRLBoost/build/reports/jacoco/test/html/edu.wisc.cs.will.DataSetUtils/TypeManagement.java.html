@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TypeManagement.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.DataSetUtils</a> &gt; <span class="el_source">TypeManagement.java</span></div><h1>TypeManagement.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.DataSetUtils;
+
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.Utils.MessageType;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.*;
+
+/*
+ * @author shavlik
+ */
+<span class="pc bpc" id="L12" title="1 of 2 branches missed.">public class TypeManagement {</span>
+
+    private final HandleFOPCstrings stringHandler;
+
+    private Map&lt;PredicateName, Set&lt;Type&gt;&gt; beenWarnedHashMap;
+
+    private Map&lt;Term, Map&lt;Type, Literal&gt;&gt; addedConstantHashMap;
+
+<span class="fc" id="L20">    public TypeManagement(HandleFOPCstrings stringHandler) {</span>
+<span class="fc" id="L21">        this.stringHandler = stringHandler;</span>
+<span class="fc" id="L22">    }</span>
+
+    // Collect as many types as possible from the data read in.
+    // The Boolean return indicates whether or not addToFactsFile should be called.
+    public void collectTypedConstants(List&lt;Literal&gt; targetLiterals, List&lt;List&lt;ArgSpec&gt;&gt; targetArgSpecs, Set&lt;PredicateNameAndArity&gt; bodyModes,
+                                      List&lt;Example&gt; posExamples, List&lt;Example&gt; negExamples, Iterable&lt;Sentence&gt; backgroundFacts) {
+
+<span class="fc" id="L29">        Utils.println(&quot;\n% Collecting the types of constants.&quot;);</span>
+
+<span class="fc" id="L31">        collectImplicitTypeConstantsViaModeAndFactInspection(bodyModes, backgroundFacts);</span>
+<span class="fc" id="L32">        Utils.println(&quot;\n% Looking at the training examples to see if any types of new constants can be inferred.&quot;);</span>
+
+        // TODO(hayesall): Inlining on the assumption that `target` and `types` are known at runtime.
+        //      Type errors should be treated as runtime/parsing errors.
+
+<span class="pc bpc" id="L37" title="4 of 6 branches missed.">        if (targetLiterals != null &amp;&amp; (posExamples != null || negExamples != null)) {</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">            for (int i = 0; i &lt; Utils.getSizeSafely(targetLiterals); i++) {</span>
+<span class="fc" id="L39">                PredicateName targetPredicate = targetLiterals.get(i).predicateName;</span>
+<span class="pc bpc" id="L40" title="2 of 4 branches missed.">                assert targetArgSpecs != null;</span>
+<span class="fc" id="L41">                List&lt;ArgSpec&gt; argSpecs = targetArgSpecs.get(i);</span>
+<span class="fc" id="L42">                recordTypedConstantsFromTheseExamples(posExamples, targetPredicate, argSpecs);</span>
+<span class="fc" id="L43">                recordTypedConstantsFromTheseExamples(negExamples, targetPredicate, argSpecs);</span>
+            }
+        }
+<span class="fc" id="L46">        checkThatTypesOfAllConstantsAreKnown(backgroundFacts);</span>
+<span class="fc" id="L47">    }</span>
+
+    private void collectImplicitTypeConstantsViaModeAndFactInspection(Set&lt;PredicateNameAndArity&gt; bodyModes, Iterable&lt;Sentence&gt; backgroundFacts) {
+<span class="fc" id="L50">        Map&lt;Term, Set&lt;Type&gt;&gt; alreadyCheckedConstantHash = new HashMap&lt;&gt;(4096);</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        for (PredicateNameAndArity predName : bodyModes) {</span>
+            // First need to see if this predicate can have DIFFERENT numbers of arguments.  If so, we need to treat each separately.
+<span class="fc" id="L53">            Set&lt;Integer&gt; sizes = new HashSet&lt;&gt;(4);</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            for (PredicateSpec specs : predName.getPredicateName().getTypeList()) { // Consider each known mode for this predicate.</span>
+<span class="fc" id="L55">                Integer length = Utils.getSizeSafely(specs.getSignature());</span>
+<span class="fc" id="L56">                sizes.add(length);</span>
+<span class="fc" id="L57">            }</span>
+
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            for (Integer argSize : sizes) {</span>
+<span class="fc" id="L60">                boolean firstTime = true;</span>
+<span class="fc" id="L61">                int size = Utils.getSizeSafely(predName.getPredicateName().getTypeListForThisArity(argSize));</span>
+<span class="fc" id="L62">                Set&lt;Integer&gt; ambiguous = new HashSet&lt;&gt;(size);</span>
+<span class="fc" id="L63">                List&lt;Type&gt; argTypes = new ArrayList&lt;&gt;(size);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">                for (PredicateSpec specs : predName.getPredicateName().getTypeListForThisArity(argSize)) { // Again consider each known mode for this predicate, but only worry about those with arity = argSize.</span>
+                    // We now have to see if all modes for this parity and arity specify the same types for the arguments.
+                    // If there is ambiguity then we cannot infer new typed constants since we don't know which mode matches the facts.
+                    // (Aside: we could have fact p(dog1, dog2) but only a mode about humans [i.e., the p(dog1,dog2) should be ignored] and this code will infer dog1 and dog2 are humans.  Not clear how to avoid this short of requiring users to always give lists of constants, which is quite the burden.)
+<span class="fc" id="L68">                    help_collectImplicitTypeConstantsViaModeAndFactInspection(ambiguous, specs.getSignature(), predName, firstTime, specs.getTypeSpecList(), argTypes);</span>
+<span class="fc" id="L69">                    firstTime = false; // The second (and subsequent) time around we need to see if the types are the same, e.g. may only differ in terms of +/-/# etc, which doesn't matter here.</span>
+<span class="fc" id="L70">                }</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">                if (ambiguous.size() &lt; size) {</span>
+
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">                    if (backgroundFacts != null) {</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">                        for (Sentence sentence : backgroundFacts) {</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                            if (sentence instanceof Literal) {</span>
+<span class="fc" id="L76">                                Literal fact = (Literal) sentence;</span>
+<span class="pc bpc" id="L77" title="1 of 4 branches missed.">                                if (fact.predicateName == predName.getPredicateName() &amp;&amp; fact.getArity() == argSize) {</span>
+<span class="fc" id="L78">                                    help_matchFactsAndModes(fact, fact.getArguments(), ambiguous, argTypes, alreadyCheckedConstantHash);</span>
+                                }
+                            }
+<span class="fc" id="L81">                        }</span>
+                    }
+                }
+<span class="fc" id="L84">            }</span>
+<span class="fc" id="L85">        }</span>
+<span class="fc" id="L86">    }</span>
+
+    private void help_matchFactsAndModes(Literal fact, List&lt;Term&gt; args, Set&lt;Integer&gt; ambiguous, List&lt;Type&gt; argTypes, Map&lt;Term, Set&lt;Type&gt;&gt; alreadyCheckedConstantHash) {
+
+<span class="fc" id="L90">        int counter = 0;</span>
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (args == null) {</span>
+<span class="nc" id="L92">            return;</span>
+        }
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        for (Term arg : args) {</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            if (ambiguous.contains(counter)) {</span>
+<span class="nc" id="L96">                counter++; // Need to skip this argument.</span>
+            }
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            else if (arg.isGrounded()) {</span>
+<span class="fc" id="L99">                Type thisType = argTypes.get(counter);</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">                if (thisType == null) {</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                    if (args.size() &gt; 1) {</span>
+<span class="nc" id="L102">                        Utils.println(fact + &quot; thisType = &quot; + null);</span>
+                    }
+<span class="nc" id="L104">                    counter++; // I added this Nov 2010 since it seems to be needed, though didn't run into any specific bug.</span>
+<span class="nc" id="L105">                    continue;  // This argument is a specific constant and not a type, so no type inference possible.</span>
+                }
+<span class="fc" id="L107">                Set&lt;Type&gt; lookup1 = alreadyCheckedConstantHash.get(arg);</span>
+
+<span class="fc bfc" id="L109" title="All 4 branches covered.">                if (lookup1 != null &amp;&amp; lookup1.contains(thisType)) {</span>
+<span class="fc" id="L110">                    counter++;</span>
+<span class="fc" id="L111">                    continue; // Already checked if this constant is of this type.</span>
+                }
+                // Have inferred the type of this constant.
+<span class="fc" id="L114">                addNewConstant(stringHandler, arg, thisType, fact);</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">                if (lookup1 == null) {</span>
+<span class="fc" id="L116">                    lookup1 = new HashSet&lt;&gt;(4);</span>
+<span class="fc" id="L117">                    alreadyCheckedConstantHash.put(arg, lookup1);</span>
+                }
+<span class="fc" id="L119">                lookup1.add(thisType);</span>
+<span class="fc" id="L120">                counter++;</span>
+<span class="fc" id="L121">            }</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            else if (arg instanceof Variable) {</span>
+<span class="nc" id="L123">                counter++; // Simply skip variables.</span>
+            }
+            else {
+<span class="nc" id="L126">                Utils.error(&quot;Should not have arg=&quot; + arg);</span>
+            }
+<span class="fc" id="L128">        }</span>
+
+<span class="fc" id="L130">    }</span>
+
+    private void help_collectImplicitTypeConstantsViaModeAndFactInspection(Set&lt;Integer&gt; ambiguous, List&lt;Term&gt; signature, PredicateNameAndArity predName, boolean firstTime,
+                                                                           List&lt;TypeSpec&gt; typeSpecList, List&lt;Type&gt; argTypes) {
+<span class="fc" id="L134">        int counter = 0;</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        if (signature == null) {</span>
+<span class="nc" id="L136">            Utils.error(&quot;Should not have signature = null for '&quot; + predName + &quot;'.&quot;);</span>
+        }
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        for (Term term : signature) {</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">            if (term.isGrounded()) {</span>
+<span class="fc" id="L140">                TypeSpec spec = typeSpecList.get(counter);</span>
+<span class="fc" id="L141">                Type thisType = (spec.isaType); // Cannot do type inferencing when the specification is for a SPECIFIC value.</span>
+<span class="fc bfc" id="L142" title="All 2 branches covered.">                if (firstTime) {</span>
+<span class="fc" id="L143">                    argTypes.add(thisType);</span>
+                }
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                else if (argTypes.get(counter) != thisType) {</span>
+<span class="nc" id="L146">                    Utils.println(&quot;%  Because type='&quot; + thisType + &quot;' is inconsistent with &quot; + predName + argTypes + &quot;, cannot infer constants from argument #&quot; + (counter + 1) + &quot; in mode = &quot; + typeSpecList);</span>
+<span class="nc" id="L147">                    ambiguous.add(counter); // Was 'break' but should be able to walk through the other terms.</span>
+                }
+<span class="fc" id="L149">                counter++;</span>
+<span class="fc" id="L150">            }</span>
+            else {
+<span class="nc" id="L152">                Utils.error(&quot;Should not have term = &quot; + term);</span>
+            }
+<span class="fc" id="L154">        }</span>
+<span class="fc" id="L155">    }</span>
+
+    // Check all constants in facts and make sure they are typed (and uniquely!).
+    private void checkThatTypesOfAllConstantsAreKnown(Iterable&lt;Sentence&gt; backgroundFacts) {
+<span class="fc" id="L159">        Set&lt;Term&gt; alreadyCheckedHash = new HashSet&lt;&gt;(1024);</span>
+
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        if (backgroundFacts != null) {</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            for (Sentence sentence : backgroundFacts) {</span>
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">                if (sentence instanceof Literal) {</span>
+<span class="fc" id="L164">                    Literal fact = (Literal) sentence;</span>
+
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">                    if (fact.predicateName.hasMatchingMode(fact)) {</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">                        for (Term arg : fact.getArguments()) {</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">                            if (arg.isGrounded()) {</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">                                if (alreadyCheckedHash.contains(arg)) {</span>
+<span class="fc" id="L170">                                    continue;</span>
+                                } // Already checked this constant.
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">                                if (stringHandler.getTypesOfConstant(arg, false) == null) {</span>
+<span class="nc" id="L173">                                    throw new RuntimeException(&quot;Deprecated + Should not be possible.&quot;);</span>
+                                }
+<span class="fc" id="L175">                                alreadyCheckedHash.add(arg);</span>
+                            }
+<span class="fc" id="L177">                        }</span>
+                    }
+                }
+<span class="fc" id="L180">            }</span>
+        }
+<span class="fc" id="L182">    }</span>
+
+    private void recordTypedConstantsFromTheseExamples(List&lt;Example&gt; examples, PredicateName targetPredicate, List&lt;ArgSpec&gt; targetArgSpecs) {
+
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        if (examples == null) {</span>
+<span class="fc" id="L187">            return;</span>
+        }
+
+        // Collect all the constants in the specified set of examples.
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        for (Literal ex : examples) {</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">            if (targetPredicate != ex.predicateName) { // &amp;&amp; warningCounter++ &lt; 10) {</span>
+                // This would be handled later by the next call to recordTyped...
+<span class="fc" id="L194">                continue;</span>
+            }
+<span class="fc" id="L196">            int counter = 0;</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">            for (Term arg : ex.getArguments()) {</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">                if (arg.isGrounded()) {</span>
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">                    if (counter &gt;= targetArgSpecs.size()) {</span>
+<span class="nc" id="L200">                        Utils.error(&quot;#args do not match!  TargetArgSpecs = &quot; + targetArgSpecs + &quot; while ex = &quot; + ex);</span>
+                    }
+<span class="fc" id="L202">                    ArgSpec spec = targetArgSpecs.get(counter);</span>
+<span class="fc" id="L203">                    addNewConstant(stringHandler, arg, spec.typeSpec.isaType, ex);</span>
+<span class="fc" id="L204">                    counter++;</span>
+<span class="pc bnc" id="L205" title="All 2 branches missed.">                } else if (arg instanceof Function) {</span>
+<span class="nc" id="L206">                    Function f = (Function) arg;</span>
+<span class="nc" id="L207">                    counter += f.countLeaves();</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">                } else if (arg instanceof Variable) {</span>
+<span class="nc" id="L209">                    Utils.error(&quot;Should not have variables here: &quot; + arg + &quot; for: &quot; + targetPredicate);</span>
+                } else {
+<span class="nc" id="L211">                    Utils.error(&quot;Have a type here for which code needs to be written: &quot; + arg);</span>
+                }
+<span class="fc" id="L213">            }</span>
+<span class="fc" id="L214">        }</span>
+<span class="fc" id="L215">    }</span>
+
+    // See if this is a new constant of this type.
+    private void addNewConstant(HandleFOPCstrings stringHandler, Term constant, Type type, Literal generator) {
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">        if (generator == null) {</span>
+<span class="nc" id="L220">            Utils.error(&quot;Cannot have generator=null.&quot;);</span>
+        }
+<span class="fc" id="L222">        PredicateName predName = generator.predicateName;</span>
+<span class="fc" id="L223">        int predArity = generator.numberArgs();</span>
+<span class="fc" id="L224">        String name = constant.toString();</span>
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">        if (name == null) {</span>
+<span class="nc" id="L226">            Utils.error(&quot;Have no name for this constant: '&quot; + constant + &quot;' from &quot; + generator);</span>
+        } // Not sure printing constant here will do anything, but might as well try.
+        // See comment next line.  Type constantAsType = stringHandler.getIsaType(constant.getName());
+        // I (jws) no longer think this is needed: if (stringHandler.reverseIsa(constantAsType) != null) { Utils.error(&quot;This code assumes that type '&quot; + constantAsType + &quot;' is a LEAF in the type hierarchy, but instead it has these children: '&quot; + Utils.limitLengthOfPrintedList(stringHandler.reverseIsa(constantAsType), 25) + &quot;'.&quot;); }
+<span class="fc" id="L230">        Set&lt;Term&gt; knownConstants = stringHandler.getConstantsOfExactlyThisType(type);</span>
+
+<span class="fc bfc" id="L232" title="All 4 branches covered.">        if (knownConstants != null &amp;&amp; knownConstants.contains(constant)) {</span>
+<span class="fc" id="L233">            return;</span>
+        } // Already in the map.
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (stringHandler.getTypesOfConstant(constant, false) != null) { // See if any types of this constant are already known.</span>
+
+<span class="fc" id="L237">            List&lt;Type&gt; existingTypes = stringHandler.getTypesOfConstant(constant, false);</span>
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">            if (existingTypes != null) {</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">                for (Type existing : existingTypes) {</span>
+                    // If the new type is a superclass of an existing type, don't add.
+<span class="pc bpc" id="L241" title="1 of 2 branches missed.">                    if (stringHandler.isaHandler.isa(existing, type)) {</span>
+<span class="nc" id="L242">                        throw new RuntimeException(&quot;Deprecated + Should not be possible.&quot;);</span>
+                    }
+
+                    // If the new type is a subclass of an existing type, remove the old attachment to this constant, since the ISA hierarchy contains this information.
+<span class="pc bpc" id="L246" title="1 of 2 branches missed.">                    if (stringHandler.isaHandler.isa(type, existing)) {</span>
+<span class="nc" id="L247">                        throw new RuntimeException(&quot;Deprecated + Should not be possible.&quot;);</span>
+                    }
+<span class="fc" id="L249">                }</span>
+            }
+
+<span class="fc bfc" id="L252" title="All 2 branches covered.">            if (beenWarnedHashMap == null) {</span>
+<span class="fc" id="L253">                beenWarnedHashMap = new HashMap&lt;&gt;(4);</span>
+            }
+<span class="fc" id="L255">            Set&lt;Type&gt; lookup1a = beenWarnedHashMap.computeIfAbsent(predName, k -&gt; new HashSet&lt;&gt;(4));  // See if there has been a warning about this type from this predicate.</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">            if (!lookup1a.contains(type)) {</span>
+<span class="pc bpc" id="L257" title="2 of 4 branches missed.">                if (!predName.dontComplainAboutMultipleTypes(predArity) &amp;&amp; !dontWorryAboutTheseTypes(existingTypes)) {</span>
+
+                    // TODO(hayesall): Turn this into an actual error earlier.
+
+<span class="fc" id="L261">                    Utils.println(MessageType.ISA_HANDLER_TYPE_INFERENCE, &quot;\n%   *** WARNING ***  Constant '&quot; + constant + &quot;' is already marked as being of types = &quot; + existingTypes</span>
+<span class="fc" id="L262">                            + &quot;;\n%          type = '&quot; + type + &quot;' may be added if not already known.\n%  PredicateName = '&quot; + predName + &quot;', from '&quot; + generator + &quot;',\n%  which has types = &quot; + predName.getTypeList()</span>
+                            + &quot;\n%   Other warnings with this predicate and this new type are not reported in order to keep this printout small.  Use dontComplainAboutMultipleTypes to override.&quot;);
+                }
+<span class="fc" id="L265">                lookup1a.add(type);</span>
+            }
+        }
+
+<span class="fc bfc" id="L269" title="All 2 branches covered.">        if (addedConstantHashMap == null) {</span>
+<span class="fc" id="L270">            addedConstantHashMap = new HashMap&lt;&gt;(1024);</span>
+        }
+<span class="fc" id="L272">        Map&lt;Type, Literal&gt; lookup1b = addedConstantHashMap.get(constant);  // See if this constant has been already assigned to another type, and if so report the literal that caused it to be so.</span>
+<span class="pc bpc" id="L273" title="1 of 4 branches missed.">        if (lookup1b != null &amp;&amp; !lookup1b.containsKey(type)) { // Just report the FIRST conflict, since the others can be traced back from the reports (i.e., the first one doesn't know it is a duplicate).</span>
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">            if (!predName.dontComplainAboutMultipleTypes(predArity)) {</span>
+<span class="fc" id="L275">                dontWorryAboutTheseTypes(lookup1b);</span>
+            }
+        }
+<span class="fc bfc" id="L278" title="All 2 branches covered.">        if (lookup1b == null) {</span>
+<span class="fc" id="L279">            lookup1b = new HashMap&lt;&gt;(4);</span>
+<span class="fc" id="L280">            addedConstantHashMap.put(constant, lookup1b);</span>
+        }
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">        if (!lookup1b.containsKey(type)) {</span>
+<span class="fc" id="L283">            lookup1b.put(type, generator);</span>
+        }
+        // Possibly this line should be much earlier in this method, but the other warnings can be helpful.
+<span class="fc" id="L286">        Type newType = stringHandler.isaHandler.getIsaType(constant.toString());</span>
+<span class="pc bpc" id="L287" title="2 of 4 branches missed.">        if (newType != type &amp;&amp; !stringHandler.isaHandler.okToAddToIsa(newType, type)) { // OK to add constant with same name as type.</span>
+<span class="nc" id="L288">            return;</span>
+        }
+<span class="fc" id="L290">        stringHandler.addNewConstantOfThisType(constant, type);</span>
+<span class="fc" id="L291">    }</span>
+
+    private void dontWorryAboutTheseTypes(Map&lt;Type, Literal&gt; types) {
+<span class="pc bpc" id="L294" title="1 of 2 branches missed.">        if (types == null) {</span>
+<span class="nc" id="L295">            return;</span>
+        }
+<span class="pc bpc" id="L297" title="1 of 2 branches missed.">        for (Type type : types.keySet()) {</span>
+<span class="pc bpc" id="L298" title="1 of 2 branches missed.">            if (!dontWorryAboutThisType(type)) {</span>
+<span class="fc" id="L299">                return;</span>
+            }
+<span class="nc" id="L301">        }</span>
+<span class="nc" id="L302">    }</span>
+
+    private boolean dontWorryAboutTheseTypes(List&lt;Type&gt; types) {
+<span class="pc bpc" id="L305" title="1 of 2 branches missed.">        if (types == null) {</span>
+<span class="nc" id="L306">            return true;</span>
+        }
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">        for (Type type : types) {</span>
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">            if (!dontWorryAboutThisType(type)) {</span>
+<span class="fc" id="L310">                return false;</span>
+            }
+<span class="nc" id="L312">        }</span>
+<span class="nc" id="L313">        return true;</span>
+    }
+
+    private boolean dontWorryAboutThisType(Type type) {
+<span class="pc bpc" id="L317" title="2 of 4 branches missed.">        return type.typeName.equalsIgnoreCase(&quot;willAnything&quot;) || type.typeName.equalsIgnoreCase(&quot;willList&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

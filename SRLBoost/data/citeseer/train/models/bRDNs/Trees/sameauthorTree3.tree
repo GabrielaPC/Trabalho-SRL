@@ -1,0 +1,9 @@
+setParam: stringsAreCaseSensitive = true.
+
+usePrologVariables: true.
+
+
+(sameauthor(A, B, 0.40390648237861687) :-  /* #neg=8 #pos=241 */ haswordauthor(A, UniqueVar10), haswordauthor(B, UniqueVar10), haswordvenue(_, UniqueVar10)).
+(sameauthor(A, B, 0.3630945224443797) :-  /* #neg=18 #pos=119 */ haswordauthor(A, UniqueVar11), haswordauthor(B, UniqueVar11), haswordtitle(_, UniqueVar11)).
+(sameauthor(A, B, 0.4072853796652973) :-  /* #neg=6 #pos=243 */ haswordauthor(A, UniqueVar12), haswordauthor(B, UniqueVar12)).
+sameauthor(_, _, -0.10159632948783635) /* #neg=26 */ .

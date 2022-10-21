@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComputeAUC.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.DataSetUtils</a> &gt; <span class="el_source">ComputeAUC.java</span></div><h1>ComputeAUC.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.DataSetUtils;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import org.srlearn.auc.Confusion;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/*
+ * This class computes the AUC(ROC/PR) using http://mark.goadrich.com/programs/AUC/
+ * @author Tushar Khot
+ * @author Alexander L. Hayes
+ */
+public class ComputeAUC {
+
+	private final double ROC;
+	private final double PR;
+	private final double CLL;
+
+	public ComputeAUC(List&lt;Double&gt; positiveExampleProbabilities,
+<span class="fc" id="L22">			          List&lt;Double&gt; negativeExampleProbabilities) {</span>
+<span class="fc" id="L23">		CLL = getCLL(positiveExampleProbabilities, negativeExampleProbabilities);</span>
+		// The AUC code crashes if all the examples are of the same category.
+<span class="pc bpc" id="L25" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(positiveExampleProbabilities) &lt; 1) {</span>
+<span class="nc" id="L26">			Utils.println(&quot;\nNo positive examples in ComputeAUC.  Using AUC-ROC = 0.5 and AUC-PR = 0.0&quot;);</span>
+<span class="nc" id="L27">			ROC = 0.5;</span>
+<span class="nc" id="L28">			PR  = 0.0;</span>
+<span class="nc" id="L29">			return;</span>
+		}
+<span class="fc bfc" id="L31" title="All 2 branches covered.">		if (Utils.getSizeSafely(negativeExampleProbabilities) &lt; 1) {</span>
+<span class="fc" id="L32">			Utils.println(&quot;\nNo negative examples in ComputeAUC.  Using AUC-ROC = 1.0 and AUC-PR = 1.0&quot;);</span>
+<span class="fc" id="L33">			ROC = 1.0;</span>
+<span class="fc" id="L34">			PR  = 1.0;</span>
+<span class="fc" id="L35">			return;</span>
+		}
+
+		// TODO(hayesall): Move this logic into `InferBoostedRDN`, or move the `getCLL` into a `Metrics` package.
+
+<span class="fc" id="L40">		List&lt;Double&gt; predictedValues = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L41">		predictedValues.addAll(positiveExampleProbabilities);</span>
+<span class="fc" id="L42">		predictedValues.addAll(negativeExampleProbabilities);</span>
+
+<span class="fc" id="L44">		List&lt;Integer&gt; actualValues = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L46" title="All 2 branches covered.">		for (int i=0; i&lt;positiveExampleProbabilities.size(); i++) {</span>
+<span class="fc" id="L47">			actualValues.add(1);</span>
+		}
+<span class="fc bfc" id="L49" title="All 2 branches covered.">		for (int i=0; i&lt;negativeExampleProbabilities.size(); i++) {</span>
+<span class="fc" id="L50">			actualValues.add(0);</span>
+		}
+
+<span class="fc" id="L53">		Confusion confusion = Confusion.fromPredictions(</span>
+<span class="fc" id="L54">				predictedValues.stream().mapToDouble(d -&gt; d).toArray(),</span>
+<span class="fc" id="L55">				actualValues.stream().mapToInt(d -&gt; d).toArray()</span>
+		);
+
+<span class="fc" id="L58">		ROC = confusion.calculateAUCROC();</span>
+<span class="fc" id="L59">		PR = confusion.calculateAUCPR(0.0);</span>
+<span class="fc" id="L60">	}</span>
+	
+	private double getCLL(List&lt;Double&gt; posProb,
+				List&lt;Double&gt; negProb) {
+<span class="fc" id="L64">		Utils.println(&quot;%Pos=&quot; + posProb.size());</span>
+<span class="fc" id="L65">		Utils.println(&quot;%Neg=&quot; + negProb.size());</span>
+<span class="fc" id="L66">		double llSum = 0;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">		for (Double prob : posProb) {</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">			if (prob == 0) {</span>
+<span class="nc" id="L69">				prob = 1e-6;</span>
+			}
+<span class="fc" id="L71">			llSum += Math.log(prob);</span>
+<span class="fc" id="L72">		}</span>
+<span class="fc" id="L73">		Utils.println(&quot;%LL:&quot; + llSum);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">		for (Double prob : negProb) {</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">			if (prob == 1) {</span>
+<span class="nc" id="L76">				prob = 1 - 1e-6;</span>
+			}
+<span class="fc" id="L78">			llSum += Math.log(1 - prob);</span>
+<span class="fc" id="L79">		}</span>
+<span class="fc" id="L80">		Utils.println(&quot;%LL:&quot; + llSum);</span>
+<span class="fc" id="L81">		return llSum/(posProb.size() + negProb.size());</span>
+	}
+
+	public double getROC() {
+<span class="fc" id="L85">		return ROC;</span>
+	}
+
+	public double getPR() {
+<span class="fc" id="L89">		return PR;</span>
+	}
+	
+	public double getCLL() {
+<span class="fc" id="L93">		return CLL;</span>
+	}
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

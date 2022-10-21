@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LearnedClause.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">LearnedClause.java</span></div><h1>LearnedClause.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.FOPC.Clause;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+
+/*
+ * @author shavlik
+ * This is a clause with some extra information concerning how it was learned.
+ */
+public class LearnedClause extends Clause {
+	private final LearnOneClause   task;
+	private final SingleClauseNode node;
+	private final int outerLoopCycle;
+	private final int totalNumberOfPosExamplesCovered;
+	private final int numberOfPosExamplesCovered;
+	private final int newlyCoveredPosExamples;
+	private final int numberOfPosExamples;
+	private final int totalNumberOfNegExamplesCovered;
+	private final int numberOfNegExamplesCovered;
+	private final int newlyCoveredNegExamples;
+	private final int numberOfNegExamples;
+	
+	LearnedClause(LearnOneClause task, SingleClauseNode node, int outerLoopCycle,
+				  int totalNumberOfPosExamplesCovered, int numberOfPosExamplesCovered, int newlyCoveredPosExamples, int numberOfPosExamples,
+				  int totalNumberOfNegExamplesCovered, int numberOfNegExamplesCovered, int newlyCoveredNegExamples, int numberOfNegExamples) {
+<span class="fc" id="L27">		super(task.getStringHandler(), node.getClause()); // TODO (I no longer recall why we) need to rename this learned clause, but since 'node' is a property, have not yet done so, because node and all its parents would then not match the clause.</span>
+<span class="fc" id="L28">		this.task                       = task;</span>
+<span class="fc" id="L29">		this.node                       = node;</span>
+<span class="fc" id="L30">		this.outerLoopCycle             = outerLoopCycle; </span>
+<span class="fc" id="L31">		this.numberOfPosExamplesCovered = numberOfPosExamplesCovered; </span>
+<span class="fc" id="L32">		this.newlyCoveredPosExamples    = newlyCoveredPosExamples;</span>
+<span class="fc" id="L33">		this.numberOfPosExamples        = numberOfPosExamples;</span>
+<span class="fc" id="L34">		this.numberOfNegExamplesCovered = numberOfNegExamplesCovered; </span>
+<span class="fc" id="L35">		this.newlyCoveredNegExamples    = newlyCoveredNegExamples;</span>
+<span class="fc" id="L36">		this.numberOfNegExamples        = numberOfNegExamples;</span>
+<span class="fc" id="L37">		this.totalNumberOfPosExamplesCovered = totalNumberOfPosExamplesCovered;</span>
+<span class="fc" id="L38">		this.totalNumberOfNegExamplesCovered = totalNumberOfNegExamplesCovered;</span>
+<span class="fc" id="L39">	}</span>
+	
+	private String reportStats() throws SearchInterrupted {
+<span class="fc" id="L42">		double percentPos      = 100 * (double)numberOfPosExamplesCovered      / numberOfPosExamples;</span>
+<span class="fc" id="L43">		double precentNeg      = 100 * (double)numberOfNegExamplesCovered      / numberOfNegExamples;</span>
+<span class="fc" id="L44">		double percentTotalPos = 100 * (double)totalNumberOfPosExamplesCovered / numberOfPosExamples;</span>
+<span class="fc" id="L45">		double percentTotalNeg = 100 * (double)totalNumberOfNegExamplesCovered / numberOfNegExamples;</span>
+
+<span class="fc" id="L47">		return &quot;\n // Learned this clause on outer loop cycle #&quot; + outerLoopCycle + &quot;.  It scores=&quot;</span>
+<span class="fc" id="L48">						+ Utils.truncate(node.score, 2) + &quot; and has recall=&quot; + Utils.truncate(node.recall(), 2) + &quot;, precision=&quot; + Utils.truncate(node.precision(), 2) + &quot;, and F1=&quot; + Utils.truncate(node.F(1.0), 2) + &quot; (using m-estimates).&quot;</span>
+<span class="fc" id="L49">						+ &quot;\n // It covers &quot; + Utils.truncate(percentPos) + &quot;% of the positive examples, &quot; + numberOfPosExamplesCovered + &quot; of &quot; + numberOfPosExamples</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">						+ (newlyCoveredPosExamples &lt; numberOfPosExamplesCovered ? &quot; (of which &quot; + newlyCoveredPosExamples + &quot; are newly covered)&quot; : &quot;&quot;) + &quot;,&quot;</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">						+ (task.regressionTask ? &quot;&quot;</span>
+<span class="nc" id="L52">											   : &quot;\n // and &quot;+ Utils.truncate(precentNeg) + &quot;% of the negative examples, &quot; + numberOfNegExamplesCovered + &quot; of &quot; + numberOfNegExamples</span>
+<span class="pc bnc" id="L53" title="All 2 branches missed.">											                 + (newlyCoveredNegExamples &lt; numberOfNegExamplesCovered ? &quot; (of which &quot; + newlyCoveredNegExamples + &quot; are newly covered)&quot; : &quot;&quot;) + &quot;.&quot;)</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">						+ (outerLoopCycle &gt; 1 ? &quot;\n // So far &quot; + totalNumberOfPosExamplesCovered + &quot; (&quot; + Utils.truncate(percentTotalPos) + &quot;%) of the positive &quot;</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">						                        + (task.regressionTask ? &quot;&quot; : &quot;and &quot; + totalNumberOfNegExamplesCovered +  &quot; (&quot; + Utils.truncate(percentTotalNeg) + &quot;%) of the negative &quot;)</span>
+<span class="fc" id="L56">						                        + &quot;examples have been covered.&quot;</span>
+<span class="fc" id="L57">						                      : &quot;&quot;)	+ &quot;&quot;;</span>
+	}
+
+	public String toString() {	
+		try {
+<span class="fc" id="L62">			return reportStats() + &quot;\n&quot; + super.toString();</span>
+		}
+<span class="nc" id="L64">		catch (SearchInterrupted e) {</span>
+<span class="nc" id="L65">			Utils.reportStackTrace(e);</span>
+<span class="nc" id="L66">			Utils.error(&quot;Something went wrong when trying to report statistics on a learned clause.  Error message: &quot; + e.getMessage());</span>
+<span class="nc" id="L67">			return null;</span>
+		}
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InitializeILPsearchSpace.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">InitializeILPsearchSpace.java</span></div><h1>InitializeILPsearchSpace.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.DataSetUtils.ArgSpec;
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.Utils.MessageType;
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.Initializer;
+import edu.wisc.cs.will.stdAIsearch.OpenList;
+import edu.wisc.cs.will.stdAIsearch.SearchInterrupted;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/*
+ * @author shavlik
+ */
+public class InitializeILPsearchSpace extends Initializer {
+
+	private SingleClauseNode bestNodeFromPreviousSearch;
+
+<span class="fc" id="L24">	InitializeILPsearchSpace() {</span>
+<span class="fc" id="L25">	}</span>
+
+	void setBestNodeFromPreviousSearch(SingleClauseNode bestNodeFromPreviousSearch) {
+<span class="fc" id="L28">		this.bestNodeFromPreviousSearch = bestNodeFromPreviousSearch;</span>
+<span class="fc" id="L29">	}</span>
+
+
+	public void initializeOpen(OpenList open) throws SearchInterrupted {		
+<span class="fc" id="L33">		open.clear();</span>
+		
+<span class="fc bfc" id="L35" title="All 2 branches covered.">		if (bestNodeFromPreviousSearch != null) {   // If this is non-null, pick up where last search left off.</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">			if (task.scorer != null) { open.insertByScoreIntoOpenList(bestNodeFromPreviousSearch); }</span>
+<span class="nc" id="L37">			else                     { open.addToEndOfOpenList(       bestNodeFromPreviousSearch); }</span>
+<span class="fc" id="L38">			return;</span>
+		}
+		
+<span class="fc" id="L41">		LearnOneClause ilpTask = (LearnOneClause) task;</span>
+<span class="fc" id="L42">		Unifier              unifier     = ilpTask.unifier;</span>
+<span class="fc" id="L43">		List&lt;Example&gt;        posSeeds    = ilpTask.seedPosExamples;</span>
+
+<span class="fc" id="L45">		List&lt;Literal&gt;        targets     = ilpTask.targets;</span>
+<span class="fc" id="L46">		List&lt;List&lt;Term&gt;&gt;     varLists    = ilpTask.variablesInTargets;</span>
+<span class="fc" id="L47">		List&lt;List&lt;ArgSpec&gt;&gt;  specsList   = ilpTask.targetArgSpecs;</span>
+		
+<span class="fc" id="L49">		int numbTargets     = Utils.getSizeSafely(targets);</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">		if (numbTargets &lt; 1) { Utils.error(&quot;Have no target concepts ...&quot;); }</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">		for (int i = 0; i &lt; Utils.getSizeSafely(targets); i++) {</span>
+<span class="fc" id="L52">			Literal            target       = targets.get(i);</span>
+<span class="fc" id="L53">			PredicateName      targetPred   = target.predicateName;</span>
+<span class="fc" id="L54">			List&lt;Term&gt;         variables    = varLists.get(i);</span>
+<span class="fc" id="L55">			List&lt;ArgSpec&gt;      specs        = specsList.get(i);</span>
+<span class="fc" id="L56">			List&lt;Type&gt;         typesPresent = new ArrayList&lt;&gt;(4);</span>
+<span class="fc" id="L57">			Map&lt;Type,List&lt;Term&gt;&gt; typesMap   = new HashMap&lt;&gt;(4);  // Collect the existing constants and variables that go with each type.</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">			for (ArgSpec spec : specs) {</span>
+<span class="fc" id="L59">				Type type = spec.typeSpec.isaType;</span>
+				
+<span class="fc" id="L61">				List&lt;Term&gt; terms = typesMap.get(type);</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">				if (terms != null) {</span>
+<span class="fc" id="L63">					terms.add(spec.arg);</span>
+<span class="fc" id="L64">					typesMap.put(type, terms);</span>
+				} else { // This type not yet seen.
+<span class="fc" id="L66">					List&lt;Term&gt; termsNew = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L67">					termsNew.add(spec.arg);</span>
+<span class="fc" id="L68">					typesMap.put(type, termsNew);</span>
+<span class="fc" id="L69">					typesPresent.add(type);</span>
+				}
+<span class="fc" id="L71">			}</span>
+
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">            if ( posSeeds == null ) throw new IllegalStateException(&quot;There are not positive seeds selected.  Maybe try LearnOneClause.selectSeedsRandomly()?&quot;);</span>
+
+            // Note the get(0) below is due to the weird List returned by getTypeListForThisArity.  The first
+            // element of that list is the PredicateSpec and the rest of the list is other stuff.
+<span class="fc" id="L77">			PredicateSpec pSpec = targetPred.getTypeListForThisArity(target.numberArgs()).get(0);  </span>
+
+<span class="fc" id="L79">			boolean containsMustBeConstant = containsMustBeConstantType(pSpec);</span>
+			// First look at the seeds and see if there are any restricted variablizations.
+			// Use one variable per unique constant in the head.
+<span class="fc bfc" id="L82" title="All 4 branches covered.">			if (!ilpTask.isaTreeStructuredTask()) for (Example posSeed : posSeeds) {  // Utils.println(&quot;posSeed=&quot; + posSeed);</span>
+<span class="fc" id="L83">				BindingList bl = unifier.unify(posSeed, target);</span>
+				
+				// NOTE: since this process can use CONSTANTS instead of variables, some things with 'var' in their name really should say 'term' - TODO: cleanup once this is better debugged.
+<span class="pc bpc" id="L86" title="3 of 4 branches missed.">				if (bl == null &amp;&amp; numbTargets == 1) { Utils.error(&quot;Could not unify positive example '&quot; + posSeed + &quot;'\n and target '&quot; + target+ &quot;'.&quot;); }</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">				if (bl != null) { // OK to not match, since multiple seeds.</span>
+<span class="pc bpc" id="L88" title="2 of 4 branches missed.">					if (containsMustBeConstant || !allUniqueBindings(bl, variables, pSpec)) {</span>
+<span class="nc" id="L89">						List&lt;Term&gt;         varsNeeded    = getVarsNeeded(bl, variables, pSpec); //Utils.println(&quot;varsNeeded=&quot; + varsNeeded);</span>
+<span class="nc" id="L90">						Map&lt;Variable,Term&gt; newTheta      = getNewTheta(  bl, variables, pSpec);</span>
+<span class="nc" id="L91">						Literal            newTarget     = getNewTarget(target, posSeed, pSpec, newTheta); // ((Literal) target.copy()).applyTheta(newTheta);</span>
+<span class="nc" id="L92">						varsNeeded.clear();</span>
+<span class="nc" id="L93">						collectStillNeededVars(newTarget.getArguments(), varsNeeded);</span>
+<span class="nc" id="L94">						List&lt;ArgSpec&gt;      newSpecs      = collectNewSpecs(specs, variables, varsNeeded);</span>
+<span class="nc" id="L95">						Map&lt;Type,List&lt;Term&gt;&gt; newTypesMap = collectNewTypes(newSpecs);</span>
+						// Check for duplicates here if more than one seed.
+<span class="nc" id="L97">						SingleClauseRootNode targetAsSearchNode2 = new SingleClauseRootNode(ilpTask, newTarget, newSpecs, varsNeeded, typesPresent, newTypesMap);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">						if (task.scorer != null) { open.insertByScoreIntoOpenList(targetAsSearchNode2); }</span>
+<span class="nc" id="L99">						else                     { open.addToEndOfOpenList(       targetAsSearchNode2); }</span>
+
+						// Note: can cover 0, even if covering the seed, if the total number covered is less than the minimum specified.
+<span class="nc" id="L102">						Utils.println(&quot;% New min-general root: &quot; + targetAsSearchNode2 + &quot;  score = &quot; + Utils.truncate(targetAsSearchNode2.score, 3));</span>
+					}
+				}
+<span class="fc" id="L105">			}</span>
+
+			// Stick in the version with all unique variables if no restricted version created (or requested to do so regardless).
+			// See chooseTargetMode for how the mode for the head is chosen.
+
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">			if (containsMustBeConstant) {</span>
+				// If this code is ever written, should ONLY constrain the specified arguments using one or all of the seeds.
+<span class="nc" id="L112">				Utils.warning(&quot;TODO: Should handle this case by altering the target in the 'must be constant' arguments.  Or maybe an '@' type was meant?&quot;);</span>
+			}
+<span class="fc" id="L114">			SingleClauseRootNode targetAsSearchNode = new SingleClauseRootNode(ilpTask, target, specs, variables, typesPresent, typesMap);</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">			if (task.scorer != null) { open.insertByScoreIntoOpenList(targetAsSearchNode); }</span>
+<span class="nc" id="L116">			else                     { open.addToEndOfOpenList(       targetAsSearchNode); } // We want any specific heads to be tried first.</span>
+<span class="fc" id="L117">			Utils.println(MessageType.ILP_INNERLOOP, &quot;% Most-general root: &quot; + targetAsSearchNode + &quot;  score = &quot; + Utils.truncate(targetAsSearchNode.score, 3));</span>
+		}
+<span class="fc" id="L119">	}</span>
+	
+	private void collectStillNeededVars(List&lt;Term&gt; arguments, List&lt;Term&gt; neededVars) {
+<span class="nc bnc" id="L122" title="All 2 branches missed.">		if (arguments == null) { return; }</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">		for (Term arg : arguments) {</span>
+<span class="nc bnc" id="L124" title="All 4 branches missed.">			if      (arg instanceof Variable) { if (!neededVars.contains(arg)) { neededVars.add(arg); } }</span>
+<span class="nc bnc" id="L125" title="All 4 branches missed.">			else if (arg instanceof Constant) { if (!neededVars.contains(arg)) { neededVars.add(arg); } }</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">			else if (arg instanceof Function) {</span>
+<span class="nc" id="L127">				collectStillNeededVars(((Function) arg).getArguments(), neededVars);</span>
+<span class="nc" id="L128">			} else {Utils.error(&quot;Should not reach here ..&quot;); }</span>
+<span class="nc" id="L129">		}</span>
+		
+<span class="nc" id="L131">	}</span>
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// TODO - clean up and merge some/all of these ...  (they all are a bit different though, so might need to be the same).
+	
+	private boolean containsMustBeConstantType(PredicateSpec spec) {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">		for (TypeSpec tSpec : spec.getTypeSpecList()) {</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">			if (tSpec.mustBeConstant()) { return true; }</span>
+<span class="fc" id="L139">		}</span>
+<span class="fc" id="L140">		return false;</span>
+	}
+
+	private Map&lt;Type,List&lt;Term&gt;&gt; collectNewTypes(List&lt;ArgSpec&gt; argSpecs) {
+<span class="nc bnc" id="L144" title="All 2 branches missed.">		if (argSpecs == null) { return null; }</span>
+<span class="nc" id="L145">		Map&lt;Type,List&lt;Term&gt;&gt; results = new HashMap&lt;&gt;(4);</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">		for (ArgSpec spec : argSpecs) {</span>
+<span class="nc" id="L147">			Type       type  = spec.typeSpec.isaType;			</span>
+<span class="nc" id="L148">			List&lt;Term&gt; terms = results.get(type);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">			if (terms != null) {</span>
+<span class="nc" id="L150">				terms.add(spec.arg);</span>
+<span class="nc" id="L151">				results.put(type, terms);</span>
+			} else { // This type not yet seen.
+<span class="nc" id="L153">				List&lt;Term&gt; termsNew = new ArrayList&lt;&gt;(1);</span>
+<span class="nc" id="L154">				termsNew.add(spec.arg);</span>
+<span class="nc" id="L155">				results.put(type, termsNew);</span>
+			}
+<span class="nc" id="L157">		}</span>
+<span class="nc" id="L158">		return results;</span>
+	}
+	
+	private List&lt;ArgSpec&gt; collectNewSpecs(List&lt;ArgSpec&gt; specs, List&lt;Term&gt; origVarsNeeded, List&lt;Term&gt; currentVarsNeeded) {
+<span class="nc bnc" id="L162" title="All 4 branches missed.">		if (specs == null || currentVarsNeeded == null) { return null; }</span>
+<span class="nc" id="L163">		List&lt;ArgSpec&gt; results = new ArrayList&lt;&gt;(1);</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">		for (int i = 0; i &lt; specs.size(); i++)  {</span>
+<span class="nc" id="L165">			ArgSpec spec = specs.get(i);  </span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">			if (origVarsNeeded.get(i) == spec.arg) { </span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">				if (currentVarsNeeded.contains(spec.arg)) {</span>
+<span class="nc" id="L168">					results.add(spec);</span>
+				}
+			}
+<span class="nc" id="L171">			else { Utils.error(&quot;Are these not in order?  If so, do a double for loop.&quot;); }</span>
+		}
+<span class="nc" id="L173">		return results;</span>
+	}
+
+	// Do all these variables have a UNIQUE match?  Note: equals is properly defined for FOPC functions.
+	private boolean allUniqueBindings(BindingList bl, List&lt;Term&gt; vars, PredicateSpec pSpec) {
+<span class="fc bfc" id="L178" title="All 2 branches covered.">		if (Utils.getSizeSafely(vars) &lt; 2) { return true; } </span>
+<span class="fc" id="L179">		Map&lt;Term,List&lt;Type&gt;&gt; termsSeen = new HashMap&lt;&gt;(4);  // Use List instead instead of Set since these should be small.</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">		if (Utils.getSizeSafely(vars) != Utils.getSizeSafely(pSpec.getTypeSpecList())) { Utils.error(&quot;Mismatch: &quot; + vars + &quot; vs.&quot; + pSpec.getTypeSpecList()); }</span>
+<span class="pc bpc" id="L181" title="1 of 4 branches missed.">		for (int i = 0; i &lt; vars.size(); i++) if (vars.get(i) instanceof Variable) {</span>
+<span class="fc" id="L182">			Term var = vars.get(i);</span>
+<span class="fc" id="L183">			Type type = pSpec.getTypeSpecList().get(i).isaType;</span>
+<span class="fc" id="L184">			Term term = bl.lookup((Variable) var);</span>
+<span class="fc" id="L185">			List&lt;Type&gt; lookup = termsSeen.get(term); </span>
+<span class="pc bpc" id="L186" title="3 of 4 branches missed.">			if (lookup != null &amp;&amp; lookup.contains(type)) { return false; }</span>
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">			if (lookup == null) { lookup = new ArrayList&lt;&gt;(1); }</span>
+<span class="fc" id="L188">			lookup.add(type);</span>
+<span class="fc" id="L189">			termsSeen.put(term, lookup);</span>
+		}
+<span class="fc" id="L191">		return true;</span>
+	}
+	
+	private List&lt;Term&gt; getVarsNeeded(BindingList bl, List&lt;Term&gt; vars, PredicateSpec pSpec) {
+<span class="nc bnc" id="L195" title="All 2 branches missed.">		if (Utils.getSizeSafely(vars) &lt; 2) { return vars; } </span>
+<span class="nc" id="L196">		Map&lt;Term,List&lt;Type&gt;&gt; termsSeen = new HashMap&lt;&gt;(4);  // Use List instead instead of Set since these should be small.</span>
+<span class="nc" id="L197">		List&lt;Term&gt;          varsNeeded = new ArrayList&lt;&gt;(1);</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">		if (Utils.getSizeSafely(vars) != Utils.getSizeSafely(pSpec.getTypeSpecList())) { Utils.error(&quot;Mismatch: &quot; + vars + &quot; vs.&quot; + pSpec.getTypeSpecList()); }</span>
+<span class="nc bnc" id="L199" title="All 4 branches missed.">		for (int i = 0; i &lt; vars.size(); i++) if (vars.get(i) instanceof Variable) {</span>
+<span class="nc" id="L200">			Variable var = (Variable) vars.get(i);</span>
+<span class="nc" id="L201">			Type    type = pSpec.getTypeSpecList().get(i).isaType;</span>
+<span class="nc" id="L202">			Term    term = bl.lookup(var);</span>
+<span class="nc" id="L203">			List&lt;Type&gt; lookup = termsSeen.get(term);</span>
+<span class="nc bnc" id="L204" title="All 4 branches missed.">			if (lookup != null &amp;&amp; lookup.contains(type)) { continue; } // Have a duplicate, skip it.</span>
+<span class="nc bnc" id="L205" title="All 2 branches missed.">			if (lookup == null) { lookup = new ArrayList&lt;&gt;(1); }</span>
+<span class="nc" id="L206">			lookup.add(type);</span>
+<span class="nc" id="L207">			termsSeen.put(term, lookup);</span>
+<span class="nc" id="L208">			varsNeeded.add(var);</span>
+		}
+<span class="nc" id="L210">		return varsNeeded;</span>
+	}
+	
+	private Map&lt;Variable,Term&gt; getNewTheta(BindingList bl, List&lt;Term&gt; vars, PredicateSpec pSpec) {
+<span class="nc bnc" id="L214" title="All 2 branches missed.">		if (Utils.getSizeSafely(vars) &lt; 2) { return bl.theta; } </span>
+<span class="nc" id="L215">		Map&lt;Term,List&lt;TypeVarPair&gt;&gt; termsSeen = new HashMap&lt;&gt;(4);  // Use List instead instead of Set since these should be small.</span>
+<span class="nc" id="L216">		Map&lt;Variable,Term&gt;          newTheta  = new HashMap&lt;&gt;(4);</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">		if (Utils.getSizeSafely(vars) != Utils.getSizeSafely(pSpec.getTypeSpecList())) { Utils.error(); }</span>
+<span class="nc bnc" id="L218" title="All 4 branches missed.">		for (int i = 0; i &lt; vars.size(); i++) if (vars.get(i) instanceof Variable) {</span>
+<span class="nc" id="L219">			Variable var = (Variable) vars.get(i);</span>
+<span class="nc" id="L220">			Type    type = pSpec.getTypeSpecList().get(i).isaType;</span>
+<span class="nc" id="L221">			Term    term = bl.lookup(var);</span>
+<span class="nc" id="L222">			List&lt;TypeVarPair&gt; lookup = termsSeen.get(term);</span>
+<span class="nc bnc" id="L223" title="All 6 branches missed.">			if (lookup != null) for (TypeVarPair pair : lookup) if (pair.type == type) { // Have a duplicate, need to add it to the returned result.</span>
+<span class="nc" id="L224">				newTheta.put(var, pair.variable);</span>
+			}
+<span class="nc bnc" id="L226" title="All 2 branches missed.">			if (lookup == null) { lookup = new ArrayList&lt;&gt;(1); }</span>
+<span class="nc" id="L227">			lookup.add(new TypeVarPair(type, var));</span>
+<span class="nc" id="L228">			termsSeen.put(term, lookup);</span>
+		}
+<span class="nc" id="L230">		return newTheta;</span>
+	}
+	
+	private Literal getNewTarget(Literal oldTarget, Example example, PredicateSpec pSpec, Map&lt;Variable,Term&gt; theta) {
+<span class="nc" id="L234">		return ((LearnOneClause) task).stringHandler.getLiteral(oldTarget.predicateName, help_getNewTarget(oldTarget.getArguments(), 0, example.getArguments(), pSpec, theta));</span>
+	}
+	private List&lt;Term&gt; help_getNewTarget(List&lt;Term&gt; args, int counter, List&lt;Term&gt; exampleArgs, PredicateSpec pSpec, Map&lt;Variable,Term&gt; theta) {
+<span class="nc bnc" id="L237" title="All 2 branches missed.">		if (args == null) { return null; }</span>
+<span class="nc" id="L238">		List&lt;Term&gt; result = new ArrayList&lt;&gt;(args.size());</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">		for (int i = 0; i &lt; args.size(); i++) {</span>
+<span class="nc" id="L240">			Term arg   = args.get(i);</span>
+<span class="nc" id="L241">			Term exArg = exampleArgs.get(i); // Since the target unifies with the seed, we can follow along.</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">			if (arg instanceof Variable) {</span>
+<span class="nc" id="L243">				TypeSpec tSpec = pSpec.getTypeSpecList().get(counter);</span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">				if (tSpec.mustBeConstant()) { // The reason for this method  is to handle this case.</span>
+<span class="nc" id="L245">					result.add(exArg); // Use the constant in the example.</span>
+				} else {
+<span class="nc" id="L247">					Term lookup = repeatedlyLookup(arg, theta);</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">					result.add(lookup == null ? arg : lookup); // Buggy if bound to null?  What does applyTheta do here?</span>
+				}
+<span class="nc" id="L250">				counter++;</span>
+<span class="nc bnc" id="L251" title="All 2 branches missed.">			} else if (arg instanceof Constant) {</span>
+<span class="nc" id="L252">				result.add(arg);</span>
+<span class="nc" id="L253">				counter++;</span>
+<span class="nc bnc" id="L254" title="All 2 branches missed.">			} else if (arg instanceof Function) {</span>
+<span class="nc" id="L255">				Function f   = (Function) arg;</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">				Function exF = (exArg instanceof Function ? (Function) exArg : f); // Cannot go deeper into example (so it must have a variable; just be 'sloppy' here since this should be very rare).</span>
+<span class="nc" id="L257">				List&lt;Term&gt; newArgs = help_getNewTarget(f.getArguments(), counter, exF.getArguments(), pSpec, theta);</span>
+<span class="nc" id="L258">				result.add( ((LearnOneClause) task).stringHandler.getFunction(f.functionName, newArgs, f.getTypeSpec()));</span>
+<span class="nc" id="L259">				counter += f.countLeaves();</span>
+			}
+		}
+<span class="nc" id="L262">		return result;</span>
+	}
+	
+	private Term repeatedlyLookup(Term arg, Map&lt;Variable,Term&gt; theta) {
+<span class="nc" id="L266">        Term result = arg;</span>
+
+<span class="nc bnc" id="L268" title="All 2 branches missed.">        if (arg instanceof Variable) {</span>
+<span class="nc" id="L269">            Variable variable = (Variable) arg;</span>
+
+<span class="nc" id="L271">            Term lookup = theta.get(variable);</span>
+		
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            if (lookup != null) {</span>
+<span class="nc" id="L274">                result = repeatedlyLookup(lookup, theta);</span>
+            }
+        }
+
+<span class="nc" id="L278">        return result;</span>
+	}
+
+    // A simple 'helper' class.
+    private static class TypeVarPair {
+        final Type     type;
+        final Variable variable;
+
+<span class="nc" id="L286">        TypeVarPair(Type type, Variable var) {</span>
+<span class="nc" id="L287">            this.type = type;</span>
+<span class="nc" id="L288">            variable  = var;</span>
+<span class="nc" id="L289">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

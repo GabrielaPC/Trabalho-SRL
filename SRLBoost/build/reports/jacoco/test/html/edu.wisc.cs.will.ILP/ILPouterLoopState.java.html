@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ILPouterLoopState.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">ILPouterLoopState.java</span></div><h1>ILPouterLoopState.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.DataSetUtils.Example;
+import edu.wisc.cs.will.FOPC.Theory;
+import edu.wisc.cs.will.FOPC.TreeStructuredTheory;
+import edu.wisc.cs.will.FOPC.TreeStructuredTheoryInteriorNode;
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.io.Serializable;
+import java.util.*;
+
+/*
+ *
+ * @author twalker
+ */
+public class ILPouterLoopState implements Serializable, Cloneable {
+
+    private int            numberOfCycles;
+    private int            numberOfLearnedClauses;     // Could easily count this, but keep it around for simplicity.
+    private int            numberOfPosExamplesCovered; // Ditto.
+    private int            numberOfNegExamplesCovered; // Ditto.
+    private int            total_nodesExpanded;        // Sum over all outer-loop iterations.
+    private int            total_nodesCreated;
+    private int            total_nodesNotAddedToOPENsinceMaxScoreTooLow;
+    private int            total_nodesRemovedFromOPENsinceMaxScoreNowTooLow;
+    private int            total_countOfPruningDueToVariantChildren;
+
+    private double         fractionOfPosCovered;
+    private double         fractionOfNegCovered;
+
+    private Theory         stdILPtheory;           // The standard ILP theory, i.e. the best clause from each seed.
+
+    private Collection&lt;Example&gt; coveredPosExamples; // Collect positive examples covered by at least ONE 'best clause' produced by the ILP inner loop.
+    private Collection&lt;Example&gt; coveredNegExamples; // Also see which negative examples are covered by some clause.
+
+    private Set&lt;Example&gt;     seedPosExamplesUsed;
+    private Set&lt;Example&gt;     seedNegExamplesUsed;
+
+    private   List&lt;TreeStructuredLearningTask&gt;  queueOfTreeStructuredLearningTasks; 
+	private   TreeStructuredTheory              treeBasedTheory;  // Used when learning tree-structured theories.
+    private   TreeStructuredLearningTask        currentTreeLearningTask;
+<span class="fc" id="L42">    private   double                            overallMinPosWeight = -1; // When doing trees and we use smaller training sets upon recursion, this specifies the minimum (weighted) size of positive examples in a recursive call.</span>
+<span class="fc" id="L43">    double                            maxAcceptableNodeScoreToStop = Double.POSITIVE_INFINITY; // If score &lt;= this, can create a leaf node in a tree-structured theory.</span>
+
+    private long             clockTimeUsedInMillisec;
+<span class="fc" id="L46">    private long             maximumClockTimeInMillisec = Long.MAX_VALUE;</span>
+    
+   /* Empty constructor for ILPouterLoopState.
+    *
+    * It is assumed that the ILPOuterLoop will setup all of these variables during
+    * initialization or re-constitution of the checkpoint file.
+    */
+<span class="fc" id="L53">   ILPouterLoopState() {</span>
+<span class="fc" id="L54">    }</span>
+
+    public ILPouterLoopState clone() {
+        try {
+<span class="nc" id="L58">            return (ILPouterLoopState) super.clone();</span>
+<span class="nc" id="L59">        } catch(CloneNotSupportedException e) {</span>
+<span class="nc" id="L60">            return null;</span>
+        }
+    }
+
+    Collection&lt;Example&gt; getCoveredNegExamples() {
+<span class="nc" id="L65">        return coveredNegExamples;</span>
+    }
+
+    void setCoveredNegExamples(Collection&lt;Example&gt; coveredNegExamples) {
+<span class="fc" id="L69">        this.coveredNegExamples = coveredNegExamples;</span>
+<span class="fc" id="L70">    }</span>
+
+    Collection&lt;Example&gt; getCoveredPosExamples() {
+<span class="fc" id="L73">        return coveredPosExamples;</span>
+    }
+
+    void setCoveredPosExamples(Collection&lt;Example&gt; coveredPosExamples) {
+<span class="fc" id="L77">        this.coveredPosExamples = coveredPosExamples;</span>
+<span class="fc" id="L78">    }</span>
+
+    double getFractionOfNegCovered() {
+<span class="fc" id="L81">        return fractionOfNegCovered;</span>
+    }
+
+    void setFractionOfNegCovered(double fractionOfNegCovered) {
+<span class="fc" id="L85">        this.fractionOfNegCovered = fractionOfNegCovered;</span>
+<span class="fc" id="L86">    }</span>
+
+    double getFractionOfPosCovered() {
+<span class="fc" id="L89">        return fractionOfPosCovered;</span>
+    }
+
+    void setFractionOfPosCovered(double fractionOfPosCovered) {
+<span class="fc" id="L93">        this.fractionOfPosCovered = fractionOfPosCovered;</span>
+<span class="fc" id="L94">    }</span>
+
+    int getNumberOfCycles() {
+<span class="fc" id="L97">        return numberOfCycles;</span>
+    }
+
+    void setNumberOfCycles(int numberOfCycles) {
+<span class="fc" id="L101">        this.numberOfCycles = numberOfCycles;</span>
+<span class="fc" id="L102">    }</span>
+
+    int getNumberOfLearnedClauses() {
+<span class="fc" id="L105">        return numberOfLearnedClauses;</span>
+    }
+
+    void setNumberOfLearnedClauses(int numberOfLearnedClauses) {
+<span class="fc" id="L109">        this.numberOfLearnedClauses = numberOfLearnedClauses;</span>
+<span class="fc" id="L110">    }</span>
+
+    int getNumberOfNegExamplesCovered() {
+<span class="fc" id="L113">        return numberOfNegExamplesCovered;</span>
+    }
+
+    void setNumberOfNegExamplesCovered(int numberOfNegExamplesCovered) {
+<span class="fc" id="L117">        this.numberOfNegExamplesCovered = numberOfNegExamplesCovered;</span>
+<span class="fc" id="L118">    }</span>
+
+    int getNumberOfPosExamplesCovered() {
+<span class="fc" id="L121">        return numberOfPosExamplesCovered;</span>
+    }
+
+    void setNumberOfPosExamplesCovered(int numberOfPosExamplesCovered) {
+<span class="fc" id="L125">        this.numberOfPosExamplesCovered = numberOfPosExamplesCovered;</span>
+<span class="fc" id="L126">    }</span>
+
+    Theory getStdILPtheory() {
+<span class="fc" id="L129">        return stdILPtheory;</span>
+    }
+
+    void setStdILPtheory(Theory stdILPtheory) {
+<span class="fc" id="L133">        this.stdILPtheory = stdILPtheory;</span>
+<span class="fc" id="L134">    }</span>
+
+    int getTotal_countOfPruningDueToVariantChildren() {
+<span class="fc" id="L137">        return total_countOfPruningDueToVariantChildren;</span>
+    }
+
+    void setTotal_countOfPruningDueToVariantChildren(int total_countOfPruningDueToVariantChildren) {
+<span class="fc" id="L141">        this.total_countOfPruningDueToVariantChildren = total_countOfPruningDueToVariantChildren;</span>
+<span class="fc" id="L142">    }</span>
+
+    int getTotal_nodesExpanded() {
+<span class="fc" id="L145">        return total_nodesExpanded;</span>
+    }
+
+    void setTotal_nodesConsidered(int total_nodesConsidered) {
+<span class="fc" id="L149">        this.total_nodesExpanded = total_nodesConsidered;</span>
+<span class="fc" id="L150">    }</span>
+
+    int getTotal_nodesCreated() {
+<span class="fc" id="L153">        return total_nodesCreated;</span>
+    }
+
+    void setTotal_nodesCreated(int total_nodesCreated) {
+<span class="fc" id="L157">        this.total_nodesCreated = total_nodesCreated;</span>
+<span class="fc" id="L158">    }</span>
+
+    int getTotal_nodesNotAddedToOPENsinceMaxScoreTooLow() {
+<span class="fc" id="L161">        return total_nodesNotAddedToOPENsinceMaxScoreTooLow;</span>
+    }
+
+    void setTotal_nodesNotAddedToOPENsinceMaxScoreTooLow(int total_nodesNotAddedToOPENsinceMaxScoreTooLow) {
+<span class="fc" id="L165">        this.total_nodesNotAddedToOPENsinceMaxScoreTooLow = total_nodesNotAddedToOPENsinceMaxScoreTooLow;</span>
+<span class="fc" id="L166">    }</span>
+
+    int getTotal_nodesRemovedFromOPENsinceMaxScoreNowTooLow() {
+<span class="fc" id="L169">        return total_nodesRemovedFromOPENsinceMaxScoreNowTooLow;</span>
+    }
+
+    void setTotal_nodesRemovedFromOPENsinceMaxScoreNowTooLow(int total_nodesRemovedFromOPENsinceMaxScoreNowTooLow) {
+<span class="fc" id="L173">        this.total_nodesRemovedFromOPENsinceMaxScoreNowTooLow = total_nodesRemovedFromOPENsinceMaxScoreNowTooLow;</span>
+<span class="fc" id="L174">    }</span>
+
+    int getCurrentFold() {
+<span class="fc" id="L177">        return -1;</span>
+    }
+
+    Set&lt;Example&gt; getNegExamplesUsedAsSeeds() {
+<span class="nc" id="L181">        return seedNegExamplesUsed;</span>
+    }
+
+    Set&lt;Example&gt; getSeedPosExamplesUsed() {
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">        if ( seedPosExamplesUsed == null ) seedPosExamplesUsed = new HashSet&lt;&gt;();</span>
+
+<span class="fc" id="L187">        return seedPosExamplesUsed;</span>
+    }
+
+    Set&lt;Example&gt; getSeedNegExamplesUsed() {
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">        if ( seedNegExamplesUsed == null ) seedNegExamplesUsed = new HashSet&lt;&gt;();</span>
+
+<span class="fc" id="L193">        return seedNegExamplesUsed;</span>
+    }
+    
+    void clearSeedPosExamplesUsed() {
+<span class="fc bfc" id="L197" title="All 2 branches covered.">    	if ( seedPosExamplesUsed == null ) { seedPosExamplesUsed = new HashSet&lt;&gt;(4); return; }</span>
+<span class="fc" id="L198">    	seedPosExamplesUsed.clear();</span>
+<span class="fc" id="L199">    }</span>
+    
+    void clearSeedNegExamplesUsed() {
+<span class="fc bfc" id="L202" title="All 2 branches covered.">    	if ( seedNegExamplesUsed == null ) { seedNegExamplesUsed = new HashSet&lt;&gt;(4);return; }</span>
+<span class="fc" id="L203">    	seedNegExamplesUsed.clear();</span>
+<span class="fc" id="L204">    }</span>
+
+    long getClockTimeUsedInMillisec() {
+<span class="fc" id="L207">        return clockTimeUsedInMillisec;</span>
+    }
+
+    void setClockTimeUsedInMillisec(long clockTimeUsed) {
+<span class="fc" id="L211">        this.clockTimeUsedInMillisec = clockTimeUsed;</span>
+<span class="fc" id="L212">    }</span>
+
+    long getMaximumClockTimeInMillisec() {
+<span class="fc" id="L215">        return maximumClockTimeInMillisec;</span>
+    }
+
+    void setMaximumClockTimeInMillisec(long maximumClockTime) {
+<span class="fc" id="L219">        this.maximumClockTimeInMillisec = maximumClockTime;</span>
+<span class="fc" id="L220">    }</span>
+	
+	TreeStructuredLearningTask popQueueOfTreeStructuredLearningTasks() {
+<span class="pc bpc" id="L223" title="1 of 2 branches missed.">		if (queueOfTreeStructuredLearningTasksIsEmpty()) { return null; }</span>
+<span class="fc" id="L224">		return queueOfTreeStructuredLearningTasks.remove(0);</span>
+	}	
+	
+	// This method assumes LOWER scores are better.
+    void addToQueueOfTreeStructuredLearningTasks(TreeStructuredLearningTask task, TreeStructuredTheoryInteriorNode treeNode, SingleClauseNode creatingSearchNode, double score) {
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">        Utils.println(&quot;%      addToQueueOfTreeStructuredLearningTasks (level=&quot; + Utils.comma(treeNode == null ? -1 : treeNode.getLevel())</span>
+<span class="fc" id="L230">                    + &quot;; score=&quot; + Utils.truncate(score, 6) + &quot;)\n%         ILP node to extend: &quot;	+  creatingSearchNode);</span>
+<span class="fc" id="L231">        task.setCreatingNode(creatingSearchNode);</span>
+<span class="fc" id="L232">		task.setScore(score);</span>
+<span class="pc bpc" id="L233" title="1 of 2 branches missed.">		insertIntoQueueOfLearningTasks(task, (treeNode == null ? -1 : treeNode.getLevel()), score);</span>
+<span class="fc" id="L234">	}</span>
+	
+	// This method assumes LOWER scores are better.
+	private void insertIntoQueueOfLearningTasks(TreeStructuredLearningTask task, int level, double score) {
+<span class="fc bfc" id="L238" title="All 2 branches covered.">		if (queueOfTreeStructuredLearningTasks == null) { queueOfTreeStructuredLearningTasks = new LinkedList&lt;&gt;(); }</span>
+<span class="fc" id="L239">		int counter = 0;</span>
+<span class="fc" id="L240">		int size    = Utils.getSizeSafely(queueOfTreeStructuredLearningTasks);</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">		for (TreeStructuredLearningTask item : queueOfTreeStructuredLearningTasks) {</span>
+<span class="fc bfc" id="L242" title="All 2 branches covered.">			if (score &lt; item.getScore()) { // See if the new node's score belongs BEFORE this item.  (Ties go AFTER old entries.)</span>
+<span class="fc" id="L243">				queueOfTreeStructuredLearningTasks.add(counter, task);</span>
+<span class="fc" id="L244">                Utils.println(&quot;%      Insert tree-structured search node (@ level = &quot; + Utils.comma(level) + &quot; and with score = &quot; + Utils.truncate(score, 6) + &quot;) into position #&quot; + Utils.comma(counter + 1) + &quot; in the search queue (new size=&quot; + Utils.comma(size + 1)+  &quot;).&quot;);</span>
+<span class="fc" id="L245">                return;</span>
+			}
+<span class="fc" id="L247">			counter++;</span>
+<span class="fc" id="L248">		}</span>
+<span class="fc" id="L249">        Utils.println(&quot;%      Insert tree-structured search node (@ level = &quot; + Utils.comma(level) + &quot; and with score = &quot; + Utils.truncate(score, 6) + &quot;) into the LAST position (#&quot; + Utils.comma(counter + 1) + &quot;) in the search queue.&quot;);</span>
+<span class="fc" id="L250">        queueOfTreeStructuredLearningTasks.add(task);</span>
+<span class="fc" id="L251">	}</span>
+
+	boolean queueOfTreeStructuredLearningTasksIsEmpty() {
+<span class="pc bpc" id="L254" title="1 of 4 branches missed.">		return (queueOfTreeStructuredLearningTasks == null || queueOfTreeStructuredLearningTasks.isEmpty()) ;</span>
+	}
+
+    TreeStructuredTheory getTreeBasedTheory() {
+<span class="fc" id="L258">		return treeBasedTheory;</span>
+	}
+
+    void setTreeBasedTheory(TreeStructuredTheory treeBasedTheory) {
+<span class="fc" id="L262">		this.treeBasedTheory = treeBasedTheory;</span>
+<span class="fc" id="L263">	}</span>
+
+	TreeStructuredLearningTask getCurrentTreeLearningTask() {
+<span class="fc" id="L266">		return currentTreeLearningTask;</span>
+	}
+
+    void setCurrentTreeLearningTask(TreeStructuredLearningTask currentTreeLearningTask) {
+<span class="fc" id="L270">		this.currentTreeLearningTask = currentTreeLearningTask;</span>
+<span class="fc" id="L271">	}</span>
+
+	double getOverallMinPosWeight() {
+<span class="fc" id="L274">		return overallMinPosWeight;</span>
+	}
+
+	void setOverallMinPosWeight(double wgt) {
+<span class="fc" id="L278">		this.overallMinPosWeight = wgt;</span>
+<span class="fc" id="L279">	}</span>
+    
+    void clearAll() {
+<span class="fc bfc" id="L282" title="All 2 branches covered.">    	if (coveredPosExamples     != null) { coveredPosExamples.clear(); }</span>
+<span class="fc bfc" id="L283" title="All 2 branches covered.">    	if (coveredNegExamples     != null) { coveredNegExamples.clear(); }</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">    	if (seedPosExamplesUsed    != null) { seedPosExamplesUsed.clear(); }</span>
+<span class="fc bfc" id="L285" title="All 2 branches covered.">    	if (seedNegExamplesUsed    != null) { seedNegExamplesUsed.clear(); }</span>
+<span class="fc bfc" id="L286" title="All 2 branches covered.">    	if (queueOfTreeStructuredLearningTasks != null) { queueOfTreeStructuredLearningTasks.clear(); }</span>
+<span class="fc" id="L287">    	stdILPtheory = null;</span>
+<span class="fc" id="L288">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

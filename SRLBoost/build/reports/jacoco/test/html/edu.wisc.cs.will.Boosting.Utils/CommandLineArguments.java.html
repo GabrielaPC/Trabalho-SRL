@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CommandLineArguments.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.Utils</a> &gt; <span class="el_source">CommandLineArguments.java</span></div><h1>CommandLineArguments.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.Utils;
+
+import edu.wisc.cs.will.Utils.Utils;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+// TODO(@hayesall): Replace this with an actual commandline parser.
+
+public class CommandLineArguments {
+
+	public CommandLineArguments() {
+<span class="fc" id="L14">		super();</span>
+<span class="fc" id="L15">	}</span>
+
+	/*
+	 * Steps to add new arguments
+	 * 1. Define a &quot;static final&quot; string for the flag
+	 * 2. Define a variable that is set by the flag
+	 * 3. Create a getter and setter for the variable.
+	 * 4. Set the value of the variable from the flags in parseArgs
+	 * 5. Define a usage string in getUsageString
+	 */
+
+	public static final String srlboost_version = &quot;0.3.0&quot;;
+
+	private static final String argPrefix = &quot;-&quot;;
+	private static final String learn = &quot;l&quot;;
+
+	// Need to turn this off when using Condor.
+<span class="fc" id="L32">	public final boolean useLockFiles = true;</span>
+	
+<span class="fc" id="L34">	private boolean learnVal = false;</span>
+
+	private static final String useMLN = &quot;mln&quot;;
+<span class="fc" id="L37">	private boolean learnMLN=false;</span>
+
+	private static final String useSoftM = &quot;softm&quot;;
+<span class="fc" id="L40">	private boolean SoftM=false;</span>
+	
+	private static final String alphaFlag=&quot;alpha&quot;;
+<span class="fc" id="L43">	private double alpha=0;</span>
+	
+	private static final String betaFlag=&quot;beta&quot;;
+<span class="fc" id="L46">	private double beta=0;</span>
+
+	private static final String learnMLNClauses = &quot;mlnClause&quot;;
+<span class="fc" id="L49">	private boolean learningMLNClauses=false;</span>
+	
+	private static final String numMLNClauses = &quot;numMLNClause&quot;;
+<span class="fc" id="L52">	private int numberOfMLNClauses=5;</span>
+	
+	private static final String maxMLNLength = &quot;mlnClauseLen&quot;;
+<span class="fc" id="L55">	private int maxMLNClauseLength=2;</span>
+
+	private static final String infer = &quot;i&quot;;
+<span class="fc" id="L58">	private boolean inferVal=false;</span>
+
+	private static final String trainDir = &quot;train&quot;;
+	private String trainDirVal;
+
+	private static final String testDir = &quot;test&quot;;
+	private String testDirVal;
+
+	private static final String modelDir = &quot;model&quot;;
+<span class="fc" id="L67">	private String modelDirVal = null;</span>
+
+<span class="fc" id="L69">	private String resultsDirVal = null;</span>
+
+	private static final String targetPred = &quot;target&quot;;
+<span class="fc" id="L72">	private Set&lt;String&gt; targetPredVal = null;</span>
+
+	private static final String maxTrees = &quot;trees&quot;;
+<span class="fc" id="L75">	private int maxTreesVal=10;</span>
+
+	private static final String regressionFlag = &quot;reg&quot;;
+<span class="fc" id="L78">	private boolean learnRegression = false;</span>
+
+	private static final String stepLen = &quot;step&quot;;
+<span class="fc" id="L81">	private double stepLenVal =1;</span>
+
+	private static final String sampleNegsToPosRatio = &quot;negPosRatio&quot;;
+<span class="fc" id="L84">	private double sampleNegsToPosRatioVal = 2;</span>
+
+	private static final String testNegsToPosRatio = &quot;testNegPosRatio&quot;;
+<span class="fc" id="L87">	private double testNegsToPosRatioVal = -1;</span>
+
+	private static final String aucPath = &quot;aucJarPath&quot;;
+
+	public boolean parseArgs(String[] args) {
+
+<span class="fc bfc" id="L93" title="All 2 branches covered.">		for (int i = 0; i &lt; args.length; i++) {</span>
+
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">			if (args[i].trim().isEmpty())</span>
+<span class="nc" id="L96">				continue;</span>
+
+<span class="pc bpc" id="L98" title="2 of 4 branches missed.">			if (argMatches(args[i], &quot;v&quot;) || argMatches(args[i], &quot;version&quot;)) {</span>
+<span class="nc" id="L99">				System.out.println(srlboost_version);</span>
+<span class="nc" id="L100">				System.exit(0);</span>
+			}
+
+<span class="pc bpc" id="L103" title="2 of 4 branches missed.">			if (argMatches(args[i], &quot;h&quot;) || argMatches(args[i], &quot;help&quot;)) {</span>
+<span class="nc" id="L104">				System.out.println(getUsageString());</span>
+<span class="nc" id="L105">				System.exit(0);</span>
+			}
+
+<span class="fc bfc" id="L108" title="All 2 branches covered.">			if (argMatches(args[i], useMLN)) {</span>
+<span class="fc" id="L109">				learnMLN = true;</span>
+<span class="fc" id="L110">				continue;</span>
+			}
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">			if (argMatches(args[i], useSoftM)) {</span>
+<span class="nc" id="L113">				SoftM = true;</span>
+<span class="nc" id="L114">				continue;</span>
+			}
+			
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">			if (argMatches(args[i], alphaFlag)) {</span>
+<span class="nc" id="L118">				alpha=Double.parseDouble(args[++i]);</span>
+<span class="nc" id="L119">				continue;</span>
+			}
+	
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">			if (argMatches(args[i], betaFlag)) {</span>
+<span class="nc" id="L123">				beta=Double.parseDouble(args[++i]);</span>
+<span class="nc" id="L124">				continue;</span>
+			}
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">			if (argMatches(args[i], learnMLNClauses)) {</span>
+<span class="fc" id="L128">				learningMLNClauses = true;</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">				if (isArgumentNotAFlag(args, i+1)) {</span>
+<span class="nc" id="L130">					learningMLNClauses = Utils.parseBoolean(args[++i]);</span>
+				}
+				continue;
+			}
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">			if (argMatches(args[i], numMLNClauses)) {</span>
+<span class="nc" id="L135">				numberOfMLNClauses=Integer.parseInt(args[++i]);</span>
+<span class="nc" id="L136">				continue;</span>
+			}
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">			if (argMatches(args[i], maxMLNLength)) {</span>
+<span class="nc" id="L139">				maxMLNClauseLength=Integer.parseInt(args[++i]);</span>
+<span class="nc" id="L140">				continue;</span>
+			}
+<span class="fc bfc" id="L142" title="All 2 branches covered.">			if (argMatches(args[i], learn)) {</span>
+<span class="fc" id="L143">				learnVal = true;</span>
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">				if (isArgumentNotAFlag(args, i+1)) {</span>
+<span class="nc" id="L145">					learnVal = Utils.parseBoolean(args[++i]);</span>
+				}
+				continue;
+			}
+<span class="fc bfc" id="L149" title="All 2 branches covered.">			if (argMatches(args[i], infer)) {</span>
+<span class="fc" id="L150">				inferVal = true;</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">				if (isArgumentNotAFlag(args, i+1)) {</span>
+<span class="nc" id="L152">					inferVal = Utils.parseBoolean(args[++i]);</span>
+				}
+				continue;
+			}
+<span class="fc bfc" id="L156" title="All 2 branches covered.">			if (argMatches(args[i], trainDir)) {</span>
+<span class="fc" id="L157">				setTrainDirVal(args[++i]);</span>
+<span class="fc" id="L158">				continue;</span>
+			}
+<span class="fc bfc" id="L160" title="All 2 branches covered.">			if (argMatches(args[i], testDir)) {</span>
+<span class="fc" id="L161">				setTestDirVal(args[++i]);</span>
+<span class="fc" id="L162">				continue;</span>
+			}
+<span class="fc bfc" id="L164" title="All 2 branches covered.">			if (argMatches(args[i], modelDir)) {</span>
+<span class="fc" id="L165">				setModelDirVal(args[++i]);</span>
+<span class="fc" id="L166">				continue; </span>
+			}
+<span class="fc bfc" id="L168" title="All 2 branches covered.">			if (argMatches(args[i], targetPred)) {</span>
+				// TODO(hayesall): There doesn't seem to be any advantage to passing multiple targets at once.
+				//		several places actually throw errors complaining that YAP is not available if there are multiple targets.
+<span class="fc" id="L171">				String targetStr = args[++i];</span>
+<span class="fc" id="L172">				targetPredVal = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L173">				targetPredVal.addAll(Arrays.asList(targetStr.split(&quot;,&quot;)));</span>
+
+<span class="pc bpc" id="L175" title="1 of 2 branches missed.">				if (targetPredVal.size() &gt; 1) {</span>
+<span class="nc" id="L176">					throw new RuntimeException(&quot;Passing multiple targets is deprecated.&quot;);</span>
+				}
+
+				continue;
+			}
+<span class="fc bfc" id="L181" title="All 2 branches covered.">			if (argMatches(args[i], regressionFlag)) {</span>
+<span class="fc" id="L182">				learnRegression=true;</span>
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">				if (isArgumentNotAFlag(args, i+1)) {</span>
+<span class="nc" id="L184">					learnRegression = Utils.parseBoolean(args[++i]);</span>
+				}
+				continue;
+			}
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">			if (argMatches(args[i], maxTrees)) {</span>
+<span class="fc" id="L189">				maxTreesVal=Integer.parseInt(args[++i]);</span>
+<span class="fc" id="L190">				continue;</span>
+			}
+<span class="nc bnc" id="L192" title="All 2 branches missed.">			if (argMatches(args[i], stepLen)) {</span>
+<span class="nc" id="L193">				stepLenVal=Double.parseDouble(args[++i]);</span>
+<span class="nc" id="L194">				continue;</span>
+			}
+<span class="nc bnc" id="L196" title="All 2 branches missed.">			if (argMatches(args[i], sampleNegsToPosRatio)) {</span>
+<span class="nc" id="L197">				sampleNegsToPosRatioVal=Double.parseDouble(args[++i]);</span>
+<span class="nc" id="L198">				continue;</span>
+			}
+<span class="nc bnc" id="L200" title="All 2 branches missed.">			if (argMatches(args[i], testNegsToPosRatio)) {</span>
+<span class="nc" id="L201">				testNegsToPosRatioVal=Double.parseDouble(args[++i]);</span>
+<span class="nc" id="L202">				continue;</span>
+			}
+<span class="nc bnc" id="L204" title="All 2 branches missed.">			if (argMatches(args[i], aucPath)) {</span>
+				// TODO(hayesall): No longer used, but might be passed in other setups where I've shelled out.
+<span class="nc" id="L206">				String aucPathVal = args[++i];</span>
+<span class="nc" id="L207">				continue;</span>
+			}
+
+<span class="nc" id="L210">			Utils.println(&quot;Unknown argument: &quot; + args[i]);</span>
+<span class="nc" id="L211">			return false;</span>
+		}
+		
+<span class="fc" id="L214">		return true;</span>
+	}
+
+	/*
+	 * Returns true if there is an argument at &quot;index&quot; and it is not a flag. It uses startsWith(&quot;-&quot;) to determine
+	 * if the next argument is a flag. So make sure to use it only for checking if boolean flags have 
+	 * an argument that follows it as that would not begin with &quot;-&quot;
+	 * @param args Arguments 
+	 * @param index Position to look at
+	 */
+	private static boolean isArgumentNotAFlag(String[] args, int index) {
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">		if (args.length &gt; index) {</span>
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">			return !args[index].startsWith(&quot;-&quot;);</span>
+		}
+<span class="nc" id="L228">		return false;</span>
+	}
+	
+	public static String getUsageString() {
+<span class="nc" id="L232">		String result = &quot;Usage:\n&quot;;</span>
+		
+<span class="nc" id="L234">		result += argPrefix + learn + &quot; : Use this flag, if you want to enable learning.\n&quot;;</span>
+		
+<span class="nc" id="L236">		result += argPrefix + infer + &quot; : Use this flag, if you want to enable inference.\n&quot;;</span>
+
+<span class="nc" id="L238">		result += argPrefix + trainDir + &quot; &lt;Training directory&gt; : Path to the training directory in WILL format.\n&quot;;</span>
+		
+<span class="nc" id="L240">		result += argPrefix + testDir + &quot; &lt;Testing directory&gt; : Path to the testing directory in WILL format.\n&quot;;</span>
+		
+<span class="nc" id="L242">		result += argPrefix + modelDir + &quot; &lt;Model directory&gt; : Path to the directory with the stored models[or where they will be stored].\n&quot;;</span>
+
+<span class="nc" id="L244">		result += argPrefix + targetPred + &quot; &lt;target predicates&gt; : Comma separated list of predicates that need to be learned/inferred.\n&quot;;</span>
+
+<span class="nc" id="L246">		result += argPrefix + maxTrees + &quot; &lt;Number of trees&gt;: Number of boosting trees.\n&quot;;</span>
+
+<span class="nc" id="L248">		result += argPrefix + stepLen + &quot; &lt;Step Length&gt;: Default step length for functional gradient.\n&quot;;</span>
+
+<span class="nc" id="L250">		result += argPrefix + testNegsToPosRatio + &quot; &lt;Negative/Positive ratio&gt;: Ratio of negatives to positive for testing.\n&quot;;</span>
+		
+<span class="nc" id="L252">		return result;</span>
+	}
+	
+	private boolean argMatches(String arg, String constant) {
+<span class="fc bfc" id="L256" title="All 2 branches covered.">		return arg.compareToIgnoreCase(argPrefix + constant) == 0;</span>
+	}
+
+	public boolean isLearnVal() {
+<span class="fc" id="L260">		return learnVal;</span>
+	}
+
+	public boolean isInferVal() {
+<span class="fc" id="L264">		return inferVal;</span>
+	}
+
+<span class="fc" id="L267">	private boolean checked_trainDirVal = false;</span>
+
+	public String getTrainDirVal() {
+<span class="pc bpc" id="L270" title="3 of 4 branches missed.">		if (!checked_trainDirVal &amp;&amp; trainDirVal != null) {</span>
+<span class="nc" id="L271">			checked_trainDirVal = true;</span>
+		}
+<span class="fc" id="L273">		return trainDirVal;</span>
+	}
+
+	private void setTrainDirVal(String trainDirVal) {
+<span class="fc" id="L277">		checked_trainDirVal = true;</span>
+<span class="pc bpc" id="L278" title="3 of 4 branches missed.">		if (!(trainDirVal.endsWith(&quot;/&quot;) || trainDirVal.endsWith(&quot;\\&quot;))) {  trainDirVal += &quot;/&quot;; }</span>
+<span class="fc" id="L279">		this.trainDirVal = trainDirVal;</span>
+<span class="fc" id="L280">	}</span>
+
+<span class="fc" id="L282">	private boolean checked_testDirVal = false;</span>
+
+	public String getTestDirVal() {
+<span class="pc bpc" id="L285" title="3 of 4 branches missed.">		if (!checked_testDirVal &amp;&amp; testDirVal != null) {</span>
+<span class="nc" id="L286">			checked_testDirVal = true;</span>
+		}
+<span class="fc" id="L288">		return testDirVal;</span>
+	}
+
+	private void setTestDirVal(String testDirVal) {
+<span class="fc" id="L292">		checked_testDirVal = true;</span>
+<span class="pc bpc" id="L293" title="3 of 4 branches missed.">		if (!(testDirVal.endsWith(&quot;/&quot;) || testDirVal.endsWith(&quot;\\&quot;))) {  testDirVal += &quot;/&quot;; }</span>
+<span class="fc" id="L294">		this.testDirVal = testDirVal;</span>
+<span class="fc" id="L295">	}</span>
+	
+	public boolean isLearningMLNClauses() {
+<span class="fc" id="L298">		return learningMLNClauses;</span>
+	}
+
+	public int getNumberOfMLNClauses() {
+<span class="fc" id="L302">		return numberOfMLNClauses;</span>
+	}
+
+	public int getMaxMLNClauseLength() {
+<span class="fc" id="L306">		return maxMLNClauseLength;</span>
+	}
+
+	public boolean useCheckPointing() {
+<span class="fc" id="L310">		boolean noCheckPointing = false;</span>
+<span class="pc bpc" id="L311" title="1 of 2 branches missed.">		return !noCheckPointing;</span>
+	}
+
+<span class="fc" id="L314">	private boolean checked_modelDirVal = false;</span>
+
+	public String getModelDirVal() {
+<span class="pc bpc" id="L317" title="1 of 4 branches missed.">		if (!checked_modelDirVal &amp;&amp; modelDirVal != null) {</span>
+<span class="nc" id="L318">			checked_modelDirVal = true;</span>
+		}
+<span class="fc" id="L320">		return modelDirVal;</span>
+	}
+
+	public void setModelDirVal(String modelDirVal) {
+<span class="fc" id="L324">		checked_modelDirVal = true;</span>
+<span class="pc bpc" id="L325" title="3 of 4 branches missed.">		if (!(modelDirVal.endsWith(&quot;/&quot;) || modelDirVal.endsWith(&quot;\\&quot;))) {  modelDirVal += &quot;/&quot;; }</span>
+<span class="fc" id="L326">		this.modelDirVal = modelDirVal;</span>
+<span class="fc" id="L327">	}</span>
+
+<span class="fc" id="L329">	private boolean checked_resultsDirVal = false;</span>
+
+	public String getResultsDirVal() {
+<span class="pc bpc" id="L332" title="2 of 4 branches missed.">		if (!checked_resultsDirVal &amp;&amp; resultsDirVal != null) {</span>
+<span class="nc" id="L333">			checked_resultsDirVal = true;</span>
+		}
+<span class="fc" id="L335">		return resultsDirVal;</span>
+	}
+
+	public void setResultsDirVal(String resultsDirVal) {
+<span class="fc" id="L339">		checked_resultsDirVal = true;</span>
+<span class="pc bpc" id="L340" title="3 of 4 branches missed.">		if (!(resultsDirVal.endsWith(&quot;/&quot;) || resultsDirVal.endsWith(&quot;\\&quot;))) {  resultsDirVal += &quot;/&quot;; }</span>
+<span class="fc" id="L341">		this.resultsDirVal = resultsDirVal;</span>
+<span class="fc" id="L342">	}</span>
+
+	public String getModelFileVal() {
+<span class="fc" id="L345">		return null;</span>
+	}
+
+	public Set&lt;String&gt; getTargetPredVal() {
+<span class="fc" id="L349">		return targetPredVal;</span>
+	}
+
+	public boolean isLearnRegression() {
+<span class="fc" id="L353">		return learnRegression;</span>
+	}
+
+	public void setLearnRegression(boolean learnRegression) {
+<span class="nc" id="L357">		this.learnRegression = learnRegression;</span>
+<span class="nc" id="L358">	}</span>
+
+	public int getMaxTreesVal() {
+<span class="fc" id="L361">		return maxTreesVal;</span>
+	}
+
+	public double getDefaultStepLenVal() {
+<span class="fc" id="L365">		return stepLenVal;</span>
+	}
+
+	public double getSamplePosProbVal() {
+<span class="fc" id="L369">		return -1.0;</span>
+	}
+
+	public double getSampleNegsToPosRatioVal() {
+<span class="fc" id="L373">		return sampleNegsToPosRatioVal;</span>
+	}
+
+	public double getTestNegsToPosRatioVal() {
+<span class="fc" id="L377">		return testNegsToPosRatioVal;</span>
+	}
+
+	public boolean isLearnMLN() {
+<span class="fc" id="L381">		return learnMLN;</span>
+	}
+
+	public boolean isSoftM() {
+<span class="fc" id="L385">		return SoftM;</span>
+	}
+
+	public void setLearnMLN(boolean learnMLN) {
+<span class="nc" id="L389">		this.learnMLN = learnMLN;</span>
+<span class="nc" id="L390">	}</span>
+
+	public double getAlpha() {
+<span class="nc" id="L393">		return alpha;</span>
+	}
+
+	public double getBeta() {
+<span class="nc" id="L397">		return beta;</span>
+	}
+
+	public void setBeta(double beta) {
+<span class="nc" id="L401">		this.beta = beta;</span>
+<span class="nc" id="L402">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

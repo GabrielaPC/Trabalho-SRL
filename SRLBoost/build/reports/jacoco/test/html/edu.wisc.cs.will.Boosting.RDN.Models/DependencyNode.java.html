@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DependencyNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Boosting.RDN.Models</a> &gt; <span class="el_source">DependencyNode.java</span></div><h1>DependencyNode.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Boosting.RDN.Models;
+
+import java.util.ArrayList;
+
+public abstract class DependencyNode {
+
+	private final ArrayList&lt;DependencyNetworkEdge&gt; parents;
+	private final ArrayList&lt;DependencyNetworkEdge&gt; children;
+<span class="fc" id="L9">	private int numberForDOTGraph = -1;</span>
+
+<span class="fc" id="L11">	DependencyNode() {</span>
+<span class="fc" id="L12">		parents = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L13">		children = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L14">	}</span>
+
+	public abstract String  textForDOT();
+	public abstract boolean ignoreNodeForDOT();
+
+	/*
+	 * @param i - the index of parent edge
+	 * @return the ith parent edge 
+	 */
+	public DependencyNetworkEdge getParent(int i) {
+<span class="fc" id="L24">		return parents.get(i);</span>
+	}
+
+	/*
+	 * @return the number of parents
+	 */
+	int numParents() {
+<span class="fc" id="L31">		return parents.size();</span>
+	}
+
+	/*
+	 * @param edge - add this edge to the dependency network as parent
+	 */
+	void addParent(DependencyNetworkEdge edge) {
+<span class="fc" id="L38">		parents.add(edge);</span>
+<span class="fc" id="L39">	}</span>
+
+	/*
+	 * @param edge - add this edge to the dependency network as child
+	 */
+	void addChild(DependencyNetworkEdge edge) {
+<span class="fc" id="L45">		children.add(edge);</span>
+<span class="fc" id="L46">	}</span>
+
+	/*
+	 * @return the children
+	 */
+	public ArrayList&lt;DependencyNetworkEdge&gt; getChildren() {
+<span class="nc" id="L52">		return children;</span>
+	}
+
+
+	/*
+	 * @return the numberForDOTGraph
+	 */
+	int getNumberForDOTGraph() {
+<span class="fc" id="L60">		return numberForDOTGraph;</span>
+	}
+
+
+	/*
+	 * @param numberForDOTGraph the numberForDOTGraph to set
+	 */
+	void setNumberForDOTGraph(int numberForDOTGraph) {
+<span class="fc" id="L68">		this.numberForDOTGraph = numberForDOTGraph;</span>
+<span class="fc" id="L69">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

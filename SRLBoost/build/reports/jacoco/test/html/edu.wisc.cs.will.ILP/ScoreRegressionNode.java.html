@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScoreRegressionNode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">ScoreRegressionNode.java</span></div><h1>ScoreRegressionNode.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.Utils.Utils;
+import edu.wisc.cs.will.stdAIsearch.SearchNode;
+
+public class ScoreRegressionNode extends ScoreSingleClauseByAccuracy {
+
+	// Note we ADD penalties here, since the final score gets negated.
+	private   final static double scalingPenalties = 0.1; // For regression we might want to shift the penalties since prediction errors might be smaller or larger
+	private   final static double bonusForBridgers = 10000.0; // Seems this should suffice, though for some uses of regression it might not.  Don't want to lose the true score, since that'll help sort.
+	private final boolean forMLNs;
+
+	public ScoreRegressionNode(boolean useMLNs) {
+<span class="fc" id="L14">		super();</span>
+<span class="fc" id="L15">		forMLNs = useMLNs;</span>
+<span class="fc" id="L16">	}</span>
+
+	public double computeMaxPossibleScore(SearchNode nodeRaw) {
+<span class="nc" id="L19">		SingleClauseNode node = (SingleClauseNode)nodeRaw;</span>
+
+		// In best case, could end up with NO singleton variables.
+<span class="nc" id="L22">		return -scalingPenalties * getPenalties(node, false);</span>
+	}
+	
+	public double scoreThisNode(SearchNode nodeRaw) {
+<span class="fc" id="L26">		SingleClauseNode node  = (SingleClauseNode)nodeRaw;</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">		if (!Double.isNaN(node.score)) { return node.score; }</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">		double fit     = (forMLNs ? node.regressionFitForMLNs() : node.regressionFit());</span>
+<span class="fc" id="L29">		double penalty = scalingPenalties * (getPenalties(node, true));</span>
+
+		// Add small penalties as a function of length and the number of singleton variables
+		// (so shorter better if accuracy the same).
+<span class="fc" id="L33">		double score = fit + penalty;</span>
+<span class="fc" id="L34">		Utils.println(&quot;%     Score = &quot; + Utils.truncate(-score, 6) + &quot; (regressionFit = &quot; + Utils.truncate(fit, 6) + &quot;, penalties=&quot; + penalty + &quot;) for clause:  &quot; + node);</span>
+
+<span class="fc" id="L36">		node.score = -score;</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">		if (score &lt; 0) { Utils.error(&quot;Should not have a negative score: &quot; + Utils.truncate(-score, 6) + &quot; (regressionFit = &quot; + Utils.truncate(fit, 6) + &quot;, penalties=&quot; + penalty + &quot;) for clause:  &quot; + node); }</span>
+<span class="fc" id="L38">		return -score; // Since the code MAXIMIZES, negate here.</span>
+	}
+	
+	public double computeBonusScoreForThisNode(SearchNode nodeRaw) { // ADD this to the normal score.
+		// If a clause ends with a DETERMINATE literal, we want to allow it to be expanded
+		// since the determinate literal by itself is (usually) of no help.
+<span class="fc" id="L44">		SingleClauseNode node  = (SingleClauseNode)nodeRaw; </span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">		if (node.endsWithBridgerLiteral()) {</span>
+<span class="fc" id="L46">			return bonusForBridgers; </span>
+		}
+<span class="fc" id="L48">		return 0;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

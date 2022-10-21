@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Stopwatch.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.Utils</a> &gt; <span class="el_source">Stopwatch.java</span></div><h1>Stopwatch.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.Utils;
+
+/*
+ * Stopwatch.java
+ * Created on September 5, 2007, 7:36 PM
+ * @author twalker
+ */
+public class Stopwatch {
+
+<span class="fc" id="L10">    private long startTime = -1;</span>
+
+    /*
+     * Creates a new instance of Stopwatch and starts the watch.
+     */
+    public Stopwatch() {
+<span class="fc" id="L16">        this(true);</span>
+<span class="fc" id="L17">    }</span>
+
+    /*
+     * Creates a new instance of Stopwatch.
+     * @param start If true, the watch is started.
+     */
+<span class="fc" id="L23">    private Stopwatch(boolean start) {</span>
+<span class="pc bpc" id="L24" title="1 of 2 branches missed.">        if (start) {</span>
+<span class="fc" id="L25">            start();</span>
+        }
+<span class="fc" id="L27">    }</span>
+
+    /*
+     * Starts the watch. If the watch was already started, nothing is done.
+     */
+    private void start() {
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        if (startTime == -1) {</span>
+<span class="fc" id="L34">            startTime = System.currentTimeMillis();</span>
+        }
+<span class="fc" id="L36">    }</span>
+
+    /*
+     * Returns the total time accumulated so far, in milliseconds.
+     *
+     * If called while the stopwatch is running, this will return the time without
+     * stopping the stopwatch.
+     * @return Total time so far in milliseconds.
+     */
+    public long getTotalTimeInMilliseconds() {
+<span class="fc" id="L46">        long time = 0;</span>
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        if (startTime != -1) {</span>
+<span class="fc" id="L48">            time += System.currentTimeMillis() - startTime;</span>
+        }
+<span class="fc" id="L50">        return time;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SentenceCompressor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">srlboost</a> &gt; <a href="index.source.html" class="el_package">edu.wisc.cs.will.ILP</a> &gt; <span class="el_source">SentenceCompressor.java</span></div><h1>SentenceCompressor.java</h1><pre class="source lang-java linenums">package edu.wisc.cs.will.ILP;
+
+import edu.wisc.cs.will.FOPC.*;
+import edu.wisc.cs.will.FOPC.visitors.DefaultFOPCVisitor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/* Sentence Visitor that compresses Clause joined via AND connectives into a single clause.
+ * 
+ * @author twalker
+ */
+public class SentenceCompressor extends DefaultFOPCVisitor&lt;Void&gt; {
+
+<span class="fc" id="L15">    private static final SentenceCompressorVisitor SENTENCE_COMPRESSOR_VISITOR = new SentenceCompressorVisitor();</span>
+
+    private SentenceCompressor() {
+    }
+
+    public static Sentence getCompressedSentence(Sentence sentence) {
+<span class="fc" id="L21">        return sentence.accept(SENTENCE_COMPRESSOR_VISITOR, null);</span>
+    }
+
+    private static class SentenceCompressorVisitor extends DefaultFOPCVisitor&lt;Void&gt; {
+
+        private SentenceCompressorVisitor() {
+        }
+
+        
+        @Override
+        public Sentence visitConnectedSentence(ConnectedSentence sentence, Void data) {
+            Sentence result;
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">            if (ConnectiveName.isaAND(sentence.getConnective().name)) {</span>
+
+<span class="nc" id="L35">                Sentence newA = sentence.getSentenceA().accept(this, data);</span>
+<span class="nc" id="L36">                Sentence newB = sentence.getSentenceB().accept(this, data);</span>
+
+<span class="nc bnc" id="L38" title="All 8 branches missed.">                if ((newA instanceof Clause || newA instanceof Literal) &amp;&amp; (newB instanceof Clause || newB instanceof Literal)) {</span>
+
+<span class="nc" id="L40">                    List&lt;Literal&gt; posLits = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L41">                    List&lt;Literal&gt; negLits = new ArrayList&lt;&gt;();</span>
+
+<span class="nc bnc" id="L43" title="All 2 branches missed.">                    if (newA instanceof Clause) {</span>
+<span class="nc" id="L44">                        Clause clause = (Clause) newA;</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">                        if (clause.getNegLiteralCount() &gt; 0) {</span>
+<span class="nc" id="L46">                            negLits.addAll(clause.getNegativeLiterals());</span>
+                        }
+<span class="nc bnc" id="L48" title="All 2 branches missed.">                        if (clause.getPosLiteralCount() &gt; 0) {</span>
+<span class="nc" id="L49">                            posLits.addAll(clause.getPositiveLiterals());</span>
+                        }
+<span class="nc" id="L51">                    }</span>
+                    else {
+<span class="nc" id="L53">                        Literal literal = (Literal) newA;</span>
+<span class="nc" id="L54">                        posLits.add(literal);</span>
+                    }
+
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                    if (newB instanceof Clause) {</span>
+<span class="nc" id="L58">                        Clause clause = (Clause) newB;</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">                        if (clause.getNegLiteralCount() &gt; 0) {</span>
+<span class="nc" id="L60">                            negLits.addAll(clause.getNegativeLiterals());</span>
+                        }
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                        if (clause.getPosLiteralCount() &gt; 0) {</span>
+<span class="nc" id="L63">                            posLits.addAll(clause.getPositiveLiterals());</span>
+                        }
+<span class="nc" id="L65">                    }</span>
+                    else {
+<span class="nc" id="L67">                        Literal literal = (Literal) newB;</span>
+<span class="nc" id="L68">                        posLits.add(literal);</span>
+                    }
+
+<span class="nc" id="L71">                    result = sentence.getStringHandler().getClause(posLits, negLits);</span>
+
+<span class="nc" id="L73">                }</span>
+                else {
+<span class="nc" id="L75">                    result = sentence.getStringHandler().getConnectedSentence(newA, sentence.getConnective(), newB);</span>
+                }
+<span class="nc" id="L77">            }</span>
+            else {
+<span class="fc" id="L79">                result = super.visitConnectedSentence(sentence, data);</span>
+            }
+<span class="fc" id="L81">            return result;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

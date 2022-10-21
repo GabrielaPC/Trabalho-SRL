@@ -1,0 +1,124 @@
+
+% Switching to VarIndicator = uppercase.
+
+% Unset'ing VarIndicator.
+
+% Calling ILPouterLoop from createRegressionOuterLooper.
+
+% getInputArgWithDefaultValue: args=[data/trust/test/test_pos.txt, data/trust/test/test_neg.txt, data/trust/test/test_bk.txt, data/trust/test/test_facts.txt]
+%  for N=0: args[N]=data/trust/test/test_pos.txt
+
+% getInputArgWithDefaultValue: args=[data/trust/test/test_pos.txt, data/trust/test/test_neg.txt, data/trust/test/test_bk.txt, data/trust/test/test_facts.txt]
+%  for N=1: args[N]=data/trust/test/test_neg.txt
+
+% getInputArgWithDefaultValue: args=[data/trust/test/test_pos.txt, data/trust/test/test_neg.txt, data/trust/test/test_bk.txt, data/trust/test/test_facts.txt]
+%  for N=2: args[N]=data/trust/test/test_bk.txt
+
+% getInputArgWithDefaultValue: args=[data/trust/test/test_pos.txt, data/trust/test/test_neg.txt, data/trust/test/test_bk.txt, data/trust/test/test_facts.txt]
+%  for N=3: args[N]=data/trust/test/test_facts.txt
+
+% Welcome to the WILL ILP/SRL systems.
+
+% Reading background theory from dir: null
+
+% Switching to VarIndicator = uppercase.
+
+***** Warning: % Since this is the first setting of the notation for variables, will keep:
+%   variableIndicator = uppercase *****
+
+% [ LazyGroundClauseIndex ]  Building full index for mode/1 with 1 assertions.
+
+%  Read the facts.
+%  Have read 13.619 facts.
+% Have read 1.931 examples from 'data/trust/test' [data/trust/test/test*].
+% Have read 77 examples from 'data/trust/test' [data/trust/test/test*].
+
+%  LearnOneClause initialized.
+
+% The outer looper has been created.
+
+% Initializing the ILP inner looper.
+
+% NEW target:                 trusts(A, B)
+%  targetPred:                trusts/2
+%  targetArgTypes:            signature = [const, const], types = [+person, +person]
+%  targets:                   [trusts(A, B)]
+%  targetPredicates:          [trusts/2]
+%  targetArgSpecs:            [[A[+person], B[+person]]]
+%  variablesInTargets:        [[A, B]]
+
+% Started collecting constants
+
+% Collecting the types of constants.
+
+% Looking at the training examples to see if any types of new constants can be inferred.
+% No mode match to 'prior(0, 9.19062832800852E14)' in [signature = [const], types = [+person]]
+% Time to collect constants: 138 milliseconds
+
+% Read 1.931 pos examples and 77 neg examples.
+% Time to init learnOneClause: 145 milliseconds
+% Old dirdata/trust/train/models/
+
+% Have 1.931 'raw' positive examples and kept 1.931.
+% Have 77 'raw' negative examples and kept 77.
+
+% processing backup's for trusts
+%  POS EX = 1.931
+%  NEG EX = 77
+
+% Memory usage by WILLSetup (just counts # targets?):
+%  |backupPosExamples| = 1
+%  |backupNegExamples| = 1
+%  |predicatesAsFacts| = 0
+%  |addedToFactBase|   = 0
+
+% Getting bRDN's target predicates.
+% Did not learn a model for 'trusts' this run.
+%   loadModel (#0): data/trust/train/models/bRDNs/Trees/trustsTree0.tree
+%   loadModel (#1): data/trust/train/models/bRDNs/Trees/trustsTree1.tree
+%   loadModel (#2): data/trust/train/models/bRDNs/Trees/trustsTree2.tree
+%   loadModel (#3): data/trust/train/models/bRDNs/Trees/trustsTree3.tree
+%   loadModel (#4): data/trust/train/models/bRDNs/Trees/trustsTree4.tree
+%   loadModel (#5): data/trust/train/models/bRDNs/Trees/trustsTree5.tree
+%   loadModel (#6): data/trust/train/models/bRDNs/Trees/trustsTree6.tree
+%   loadModel (#7): data/trust/train/models/bRDNs/Trees/trustsTree7.tree
+%   loadModel (#8): data/trust/train/models/bRDNs/Trees/trustsTree8.tree
+%   loadModel (#9): data/trust/train/models/bRDNs/Trees/trustsTree9.tree
+%  Done loading 10 models.
+
+% for trusts |lookupPos| = 1.931
+% for trusts |lookupNeg| = 77
+% getJointExamples: |pos| = 1.931, |neg| = 77
+
+% Starting inference in bRDN.
+% Trees = 10
+
+% Starting getMarginalProbabilities.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 0:  Building full index for knows/2.
+% [ LazyGroundClauseIndex ]  Building full index for knows/2 with 7.577 assertions.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for knows/2.
+ (Arithmetic) Mean Probability Assigned to Correct Output Class: 1.671,636/2.008,00 = 0,832488
+
+ The weighted count of positive examples = 1.931,000 and the weighted count of negative examples = 77,000
+
+printExamples: Writing out predictions (for Tuffy?) on 2.008 examples for 'trusts' to:
+  data/trust/test/results_trusts.db
+ and to:
+  data/trust/test/query_trusts.db
+
+% Computing Area Under Curves.
+%Pos=1931
+%Neg=77
+%LL:-294.58690747957047
+%LL:-431.62111374891333
+% F1 = 1.0
+% Threshold = 0.8635513708954137
+
+%   AUC ROC   = 0,797390
+%   AUC PR    = 0,989157
+%   CLL	      = -0,214951
+%   Precision = 0,961653 at threshold = 0,500
+%   Recall    = 1,000000
+%   F1        = 0,980452
+
+% Total inference time (10 trees): 6,627 seconds.

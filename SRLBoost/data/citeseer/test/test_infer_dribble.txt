@@ -1,0 +1,123 @@
+
+% Switching to VarIndicator = uppercase.
+
+% Unset'ing VarIndicator.
+
+% Calling ILPouterLoop from createRegressionOuterLooper.
+
+% getInputArgWithDefaultValue: args=[data/citeseer/test/test_pos.txt, data/citeseer/test/test_neg.txt, data/citeseer/test/test_bk.txt, data/citeseer/test/test_facts.txt]
+%  for N=0: args[N]=data/citeseer/test/test_pos.txt
+
+% getInputArgWithDefaultValue: args=[data/citeseer/test/test_pos.txt, data/citeseer/test/test_neg.txt, data/citeseer/test/test_bk.txt, data/citeseer/test/test_facts.txt]
+%  for N=1: args[N]=data/citeseer/test/test_neg.txt
+
+% getInputArgWithDefaultValue: args=[data/citeseer/test/test_pos.txt, data/citeseer/test/test_neg.txt, data/citeseer/test/test_bk.txt, data/citeseer/test/test_facts.txt]
+%  for N=2: args[N]=data/citeseer/test/test_bk.txt
+
+% getInputArgWithDefaultValue: args=[data/citeseer/test/test_pos.txt, data/citeseer/test/test_neg.txt, data/citeseer/test/test_bk.txt, data/citeseer/test/test_facts.txt]
+%  for N=3: args[N]=data/citeseer/test/test_facts.txt
+
+% Welcome to the WILL ILP/SRL systems.
+
+% Reading background theory from dir: null
+
+% Switching to VarIndicator = uppercase.
+
+***** Warning: % Since this is the first setting of the notation for variables, will keep:
+%   variableIndicator = uppercase *****
+
+% [ LazyGroundClauseIndex ]  Building full index for mode/1 with 1 assertions.
+
+%  Read the facts.
+%  Have read 1.127 facts.
+% Have read 1.654 examples from 'data/citeseer/test' [data/citeseer/test/test*].
+% Have read 206 examples from 'data/citeseer/test' [data/citeseer/test/test*].
+
+%  LearnOneClause initialized.
+
+% The outer looper has been created.
+
+% Initializing the ILP inner looper.
+
+% NEW target:                 hasCat(A, B)
+%  targetPred:                hasCat/2
+%  targetArgTypes:            signature = [const, const], types = [+Id, #cat]
+%  targets:                   [hasCat(A, B)]
+%  targetPredicates:          [hasCat/2]
+%  targetArgSpecs:            [[A[+Id], B[#cat]]]
+%  variablesInTargets:        [[A, B]]
+
+% Started collecting constants
+
+% Collecting the types of constants.
+
+% Looking at the training examples to see if any types of new constants can be inferred.
+% Time to collect constants: 53 milliseconds
+
+% Read 1.654 pos examples and 206 neg examples.
+% Time to init learnOneClause: 56 milliseconds
+% Old dirdata/citeseer/train/models/
+
+% Have 1.654 'raw' positive examples and kept 1.654.
+% Have 206 'raw' negative examples and kept 206.
+
+% processing backup's for hasCat
+%  POS EX = 1.654
+%  NEG EX = 206
+
+% Memory usage by WILLSetup (just counts # targets?):
+%  |backupPosExamples| = 1
+%  |backupNegExamples| = 1
+%  |predicatesAsFacts| = 0
+%  |addedToFactBase|   = 0
+
+% Getting bRDN's target predicates.
+% Did not learn a model for 'hasCat' this run.
+%   loadModel (#0): data/citeseer/train/models/bRDNs/Trees/hasCatTree0.tree
+%   loadModel (#1): data/citeseer/train/models/bRDNs/Trees/hasCatTree1.tree
+%   loadModel (#2): data/citeseer/train/models/bRDNs/Trees/hasCatTree2.tree
+%   loadModel (#3): data/citeseer/train/models/bRDNs/Trees/hasCatTree3.tree
+%   loadModel (#4): data/citeseer/train/models/bRDNs/Trees/hasCatTree4.tree
+%   loadModel (#5): data/citeseer/train/models/bRDNs/Trees/hasCatTree5.tree
+%   loadModel (#6): data/citeseer/train/models/bRDNs/Trees/hasCatTree6.tree
+%   loadModel (#7): data/citeseer/train/models/bRDNs/Trees/hasCatTree7.tree
+%   loadModel (#8): data/citeseer/train/models/bRDNs/Trees/hasCatTree8.tree
+%   loadModel (#9): data/citeseer/train/models/bRDNs/Trees/hasCatTree9.tree
+%  Done loading 10 models.
+
+% for hasCat |lookupPos| = 1.654
+% for hasCat |lookupNeg| = 206
+% getJointExamples: |pos| = 1.654, |neg| = 206
+
+% Starting inference in bRDN.
+% Trees = 10
+
+% Starting getMarginalProbabilities.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 0:  Building full index for link/2.
+% [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for link/2.
+% [ LazyGroundClauseIndex ]  Building full index for link/2 with 1.127 assertions.
+ (Arithmetic) Mean Probability Assigned to Correct Output Class: 1.380,439/1.860,00 = 0,742171
+
+ The weighted count of positive examples = 1.654,000 and the weighted count of negative examples = 206,000
+
+printExamples: Writing out predictions (for Tuffy?) on 1.860 examples for 'hasCat' to:
+  data/citeseer/test/results_hasCat.db
+ and to:
+  data/citeseer/test/query_hasCat.db
+
+% Computing Area Under Curves.
+%Pos=1654
+%Neg=206
+%LL:-348.0518448049968
+%LL:-685.9847090380551
+% F1 = 1.0
+% Threshold = 0.7987166834919854
+
+%   AUC ROC   = 0,574493
+%   AUC PR    = 0,914902
+%   CLL	      = -0,368809
+%   Precision = 0,889247 at threshold = 0,500
+%   Recall    = 1,000000
+%   F1        = 0,941377
+
+% Total inference time (10 trees): 1,663 seconds.
