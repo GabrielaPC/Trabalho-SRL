@@ -15,7 +15,7 @@ usePrologVariables: true.
 
 
 
-%%%%%  WILL-Produced Tree #1 @ 18:25:55 10/21/22.  %%%%%
+%%%%%  WILL-Produced Tree #1 @ 19:15:32 10/21/22.  %%%%%
 
 % FOR trusts(A, B):
 %   if ( knows(A, C), knows(C, C) )
@@ -138,64 +138,64 @@ flattened_trusts(underscore, underscore, 0.8466104735610475) :-  /* #neg=3 #pos=
 
 % The unique flattened literals:
 %   knows(a, uniqueVar3)
-%   knows(underscore, uniqueVar7)
-%   knows(uniqueVar6, uniqueVar5)
-%   knows(b, underscore)
-%   knows(uniqueVar2, uniqueVar2)
-%   knows(underscore, uniqueVar8)
-%   knows(uniqueVar4, uniqueVar4)
-%   knows(uniqueVar6, a)
-%   knows(uniqueVar5, a)
-%   knows(a, uniqueVar2)
-%   knows(uniqueVar8, a)
-%   knows(b, a)
-%   knows(uniqueVar1, uniqueVar1)
-%   knows(a, uniqueVar4)
-%   knows(uniqueVar3, uniqueVar3)
 %   knows(uniqueVar3, a)
+%   knows(uniqueVar3, uniqueVar3)
+%   knows(uniqueVar6, a)
+%   knows(uniqueVar1, uniqueVar1)
 %   knows(a, uniqueVar1)
+%   knows(a, uniqueVar4)
+%   knows(uniqueVar6, uniqueVar5)
+%   knows(underscore, uniqueVar8)
+%   knows(uniqueVar5, a)
+%   knows(b, a)
+%   knows(underscore, uniqueVar7)
 %   knows(uniqueVar7, a)
+%   knows(uniqueVar2, uniqueVar2)
+%   knows(uniqueVar4, uniqueVar4)
+%   knows(a, uniqueVar2)
+%   knows(b, underscore)
+%   knows(uniqueVar8, a)
 
-%%%%%  WILL-Produced Tree #2 @ 18:26:02 10/21/22.  %%%%%
+%%%%%  WILL-Produced Tree #2 @ 19:15:40 10/21/22.  %%%%%
 
 % FOR trusts(A, B):
 %   if ( knows(A, C), knows(C, C) )
-%   then if ( knows(B, A) )
-%   | then return 0.6994914035015026;  // std dev = 1,975, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
-%   | else if ( knows(B, D) )
-%   | | then return 0.637613635329692;  // std dev = 5,276, 304,000 (wgt'ed) examples reached here.  /* #neg=31 #pos=273 */
-%   | | else if ( knows(C, A) )
-%   | | | then return 0.7194734122109544;  // std dev = 2,11e-08, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
+%   then if ( knows(C, A) )
+%   | then return 0.6821912399414805;  // std dev = 2,742, 162,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=154 */
+%   | else if ( knows(B, A) )
+%   | | then return 0.6879060376478439;  // std dev = 1,700, 82,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=79 */
+%   | | else if ( knows(B, D) )
+%   | | | then return 0.633392629274731;  // std dev = 4,632, 226,000 (wgt'ed) examples reached here.  /* #neg=24 #pos=202 */
 %   | | | else return 0.6794533872440252;  // std dev = 0,218, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
 %   else if ( knows(B, E), knows(E, B) )
 %   | then return 0.7036147903757071;  // std dev = 0,141, 1.222,000 (wgt'ed) examples reached here.  /* #neg=25 #pos=1.197 */
 %   | else if ( knows(F, A), knows(F, F) )
 %   | | then return 0.5648375413594845;  // std dev = 0,373, 12,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=10 */
-%   | | else if ( knows(G, A), knows(B, H) )
-%   | | | then if ( knows(G, H) )
-%   | | | | then return 0.610669388156869;  // std dev = 2,095, 42,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=37 */
-%   | | | | else return 0.6851135417933185;  // std dev = 1,692, 74,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=71 */
-%   | | | else return 0.6928763140805134;  // std dev = 0,185, 168,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=162 */
+%   | | else if ( knows(B, G), knows(G, G) )
+%   | | | then return 0.5585823384836616;  // std dev = 0,906, 6,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=5 */
+%   | | | else if ( knows(H, A), knows(B, I) )
+%   | | | | then return 0.6635911124035647;  // std dev = 2,553, 110,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=103 */
+%   | | | | else return 0.6928763140805134;  // std dev = 2,403, 168,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=162 */
 
 
 % Clauses:
 
-trusts(A, B, 0.6994914035015026) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(B, A), 
-     !. // Clause #1.
-
-trusts(A, B, 0.637613635329692) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(B, D), 
-     !. // Clause #2.
-
-trusts(A, B, 0.7194734122109544) :- 
+trusts(A, B, 0.6821912399414805) :- 
      knows(A, C), 
      knows(C, C), 
      knows(C, A), 
+     !. // Clause #1.
+
+trusts(A, B, 0.6879060376478439) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(B, A), 
+     !. // Clause #2.
+
+trusts(A, B, 0.633392629274731) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(B, D), 
      !. // Clause #3.
 
 trusts(A, B, 0.6794533872440252) :- 
@@ -213,13 +213,12 @@ trusts(A, B, 0.5648375413594845) :-
      knows(C, C), 
      !. // Clause #6.
 
-trusts(A, B, 0.610669388156869) :- 
-     knows(C, A), 
-     knows(B, D), 
-     knows(C, D), 
+trusts(A, B, 0.5585823384836616) :- 
+     knows(B, C), 
+     knows(C, C), 
      !. // Clause #7.
 
-trusts(A, B, 0.6851135417933185) :- 
+trusts(A, B, 0.6635911124035647) :- 
      knows(C, A), 
      knows(B, D), 
      !. // Clause #8.
@@ -229,22 +228,22 @@ trusts(A, B, 0.6928763140805134) :- !. // Clause #9.
 
 % The flattened versions of these clauses:
 
-flattened_trusts(a, b, 0.6994914035015026) :-  /* #neg=4 #pos=156 */ 
+flattened_trusts(a, underscore, 0.6821912399414805) :-  /* #neg=8 #pos=154 */ 
    knows(a, uniqueVar9),
    knows(uniqueVar9, uniqueVar9),
-   knows(b, a),
+   knows(uniqueVar9, a),
    !. // Flattened version of clause #1.
 
-flattened_trusts(a, b, 0.637613635329692) :-  /* #neg=31 #pos=273 */ 
+flattened_trusts(a, b, 0.6879060376478439) :-  /* #neg=3 #pos=79 */ 
    knows(a, uniqueVar10),
    knows(uniqueVar10, uniqueVar10),
-   knows(b, underscore),
+   knows(b, a),
    !. // Flattened version of clause #2.
 
-flattened_trusts(a, underscore, 0.7194734122109544) :-  /* #pos=6 */ 
+flattened_trusts(a, b, 0.633392629274731) :-  /* #neg=24 #pos=202 */ 
    knows(a, uniqueVar11),
    knows(uniqueVar11, uniqueVar11),
-   knows(uniqueVar11, a),
+   knows(b, underscore),
    !. // Flattened version of clause #3.
 
 flattened_trusts(a, underscore, 0.6794533872440252) :-  /* #neg=1 #pos=19 */ 
@@ -262,13 +261,12 @@ flattened_trusts(a, underscore, 0.5648375413594845) :-  /* #neg=2 #pos=10 */
    knows(uniqueVar14, uniqueVar14),
    !. // Flattened version of clause #6.
 
-flattened_trusts(a, b, 0.610669388156869) :-  /* #neg=5 #pos=37 */ 
-   knows(uniqueVar15, a),
-   knows(b, uniqueVar16),
-   knows(uniqueVar15, uniqueVar16),
+flattened_trusts(underscore, a, 0.5585823384836616) :-  /* #neg=1 #pos=5 */ 
+   knows(a, uniqueVar15),
+   knows(uniqueVar15, uniqueVar15),
    !. // Flattened version of clause #7.
 
-flattened_trusts(a, b, 0.6851135417933185) :-  /* #neg=3 #pos=71 */ 
+flattened_trusts(a, b, 0.6635911124035647) :-  /* #neg=7 #pos=103 */ 
    knows(underscore, a),
    knows(b, underscore),
    !. // Flattened version of clause #8.
@@ -278,1159 +276,1157 @@ flattened_trusts(underscore, underscore, 0.6928763140805134) :-  /* #neg=6 #pos=
 
 
 % The unique flattened literals:
-%   knows(uniqueVar15, uniqueVar16)
-%   knows(underscore, a)
-%   knows(b, uniqueVar16)
-%   knows(a, uniqueVar11)
-%   knows(uniqueVar10, uniqueVar10)
-%   knows(b, underscore)
-%   knows(uniqueVar12, uniqueVar12)
-%   knows(uniqueVar13, a)
-%   knows(uniqueVar11, a)
-%   knows(a, uniqueVar13)
-%   knows(a, uniqueVar9)
 %   knows(a, uniqueVar10)
-%   knows(uniqueVar14, uniqueVar14)
-%   knows(uniqueVar15, a)
+%   knows(uniqueVar10, uniqueVar10)
+%   knows(uniqueVar13, a)
+%   knows(a, uniqueVar9)
+%   knows(a, uniqueVar15)
+%   knows(uniqueVar15, uniqueVar15)
+%   knows(a, uniqueVar11)
+%   knows(uniqueVar12, uniqueVar12)
+%   knows(a, uniqueVar13)
 %   knows(uniqueVar14, a)
+%   knows(uniqueVar9, uniqueVar9)
 %   knows(b, a)
 %   knows(uniqueVar11, uniqueVar11)
+%   knows(underscore, a)
+%   knows(uniqueVar9, a)
 %   knows(a, uniqueVar12)
-%   knows(uniqueVar9, uniqueVar9)
-
-%%%%%  WILL-Produced Tree #3 @ 18:26:08 10/21/22.  %%%%%
-
-% FOR trusts(A, B):
-%   if ( knows(B, A) )
-%   then return 0.5518120675111413;  // std dev = 0,101, 584,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=578 */
-%   else if ( knows(C, A), knows(D, C) )
-%   | then if ( knows(D, A) )
-%   | | then return 0.5044821825644167;  // std dev = 7,329, 738,000 (wgt'ed) examples reached here.  /* #neg=59 #pos=679 */
-%   | | else if ( knows(B, E) )
-%   | | | then return 0.5552749434156429;  // std dev = 2,231, 358,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=353 */
-%   | | | else if ( knows(D, B) )
-%   | | | | then return 0.5504511069684362;  // std dev = 0,987, 38,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=37 */
-%   | | | | else return 0.4655238786197725;  // std dev = 1,333, 18,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=16 */
-%   | else if ( knows(A, F), knows(F, B) )
-%   | | then if ( knows(B, F) )
-%   | | | then return 0.5295145892878748;  // std dev = 0,989, 26,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=25 */
-%   | | | else if ( knows(B, G) )
-%   | | | | then return 0.4558255834467835;  // std dev = 1,313, 18,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=16 */
-%   | | | | else return 0.564762446580682;  // std dev = 0,000, 4,000 (wgt'ed) examples reached here.  /* #pos=4 */
-%   | | else return 0.5592526644278057;  // std dev = 0,067, 224,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=223 */
-
-
-% Clauses:
-
-trusts(A, B, 0.5518120675111413) :- 
-     knows(B, A), 
-     !. // Clause #1.
-
-trusts(A, B, 0.5044821825644167) :- 
-     knows(C, A), 
-     knows(D, C), 
-     knows(D, A), 
-     !. // Clause #2.
-
-trusts(A, B, 0.5552749434156429) :- 
-     knows(C, A), 
-     knows(D, C), 
-     knows(B, E), 
-     !. // Clause #3.
-
-trusts(A, B, 0.5504511069684362) :- 
-     knows(C, A), 
-     knows(D, C), 
-     knows(D, B), 
-     !. // Clause #4.
-
-trusts(A, B, 0.4655238786197725) :- 
-     knows(C, A), 
-     knows(D, C), 
-     !. // Clause #5.
-
-trusts(A, B, 0.5295145892878748) :- 
-     knows(A, C), 
-     knows(C, B), 
-     knows(B, C), 
-     !. // Clause #6.
-
-trusts(A, B, 0.4558255834467835) :- 
-     knows(A, C), 
-     knows(C, B), 
-     knows(B, D), 
-     !. // Clause #7.
-
-trusts(A, B, 0.564762446580682) :- 
-     knows(A, C), 
-     knows(C, B), 
-     !. // Clause #8.
-
-trusts(A, B, 0.5592526644278057) :- !. // Clause #9.
-
-
-% The flattened versions of these clauses:
-
-flattened_trusts(a, b, 0.5518120675111413) :-  /* #neg=6 #pos=578 */ 
-   knows(b, a),
-   !. // Flattened version of clause #1.
-
-flattened_trusts(a, underscore, 0.5044821825644167) :-  /* #neg=59 #pos=679 */ 
-   knows(uniqueVar17, a),
-   knows(uniqueVar18, uniqueVar17),
-   knows(uniqueVar18, a),
-   !. // Flattened version of clause #2.
-
-flattened_trusts(a, b, 0.5552749434156429) :-  /* #neg=5 #pos=353 */ 
-   knows(uniqueVar19, a),
-   knows(underscore, uniqueVar19),
-   knows(b, underscore),
-   !. // Flattened version of clause #3.
-
-flattened_trusts(a, b, 0.5504511069684362) :-  /* #neg=1 #pos=37 */ 
-   knows(uniqueVar20, a),
-   knows(uniqueVar21, uniqueVar20),
-   knows(uniqueVar21, b),
-   !. // Flattened version of clause #4.
-
-flattened_trusts(a, underscore, 0.4655238786197725) :-  /* #neg=2 #pos=16 */ 
-   knows(uniqueVar22, a),
-   knows(underscore, uniqueVar22),
-   !. // Flattened version of clause #5.
-
-flattened_trusts(a, b, 0.5295145892878748) :-  /* #neg=1 #pos=25 */ 
-   knows(a, uniqueVar23),
-   knows(uniqueVar23, b),
-   knows(b, uniqueVar23),
-   !. // Flattened version of clause #6.
-
-flattened_trusts(a, b, 0.4558255834467835) :-  /* #neg=2 #pos=16 */ 
-   knows(a, uniqueVar24),
-   knows(uniqueVar24, b),
-   knows(b, underscore),
-   !. // Flattened version of clause #7.
-
-flattened_trusts(a, b, 0.564762446580682) :-  /* #pos=4 */ 
-   knows(a, uniqueVar25),
-   knows(uniqueVar25, b),
-   !. // Flattened version of clause #8.
-
-flattened_trusts(underscore, underscore, 0.5592526644278057) :-  /* #neg=1 #pos=223 */ 
-   !. // Flattened version of clause #9.
-
-
-% The unique flattened literals:
-%   knows(a, uniqueVar25)
-%   knows(b, uniqueVar23)
-%   knows(a, uniqueVar24)
 %   knows(b, underscore)
-%   knows(a, uniqueVar23)
-%   knows(uniqueVar18, uniqueVar17)
-%   knows(uniqueVar21, uniqueVar20)
-%   knows(uniqueVar19, a)
-%   knows(uniqueVar21, b)
-%   knows(uniqueVar25, b)
-%   knows(uniqueVar18, a)
-%   knows(uniqueVar17, a)
-%   knows(uniqueVar22, a)
-%   knows(b, a)
-%   knows(underscore, uniqueVar19)
-%   knows(underscore, uniqueVar22)
-%   knows(uniqueVar24, b)
-%   knows(uniqueVar23, b)
-%   knows(uniqueVar20, a)
+%   knows(uniqueVar14, uniqueVar14)
 
-%%%%%  WILL-Produced Tree #4 @ 18:26:17 10/21/22.  %%%%%
+%%%%%  WILL-Produced Tree #3 @ 19:15:50 10/21/22.  %%%%%
 
 % FOR trusts(A, B):
 %   if ( knows(B, A) )
-%   then return 0.4147547485318321;  // std dev = 0,101, 584,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=578 */
+%   then return 0.5527780448020555;  // std dev = 0,101, 584,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=578 */
 %   else if ( knows(C, A), knows(C, C) )
-%   | then if ( knows(A, C) )
-%   | | then return 0.38886764551954806;  // std dev = 2,526, 84,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=77 */
-%   | | else if ( knows(C, B) )
-%   | | | then return 0.4691396188587295;  // std dev = 0,036, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
-%   | | | else if ( knows(B, B) )
-%   | | | | then return -0.024548014944530183;  // std dev = 1,000, 4,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=2 */
-%   | | | | else return 0.29175959076543007;  // std dev = 2,547, 46,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=38 */
-%   | else if ( knows(D, B), knows(B, D) )
-%   | | then return 0.4055908067778868;  // std dev = 0,184, 950,000 (wgt'ed) examples reached here.  /* #neg=34 #pos=916 */
-%   | | else if ( knows(E, A), knows(B, F) )
-%   | | | then if ( knows(E, F) )
-%   | | | | then return 0.3259325201187505;  // std dev = 2,611, 56,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=48 */
-%   | | | | else return 0.3903207912827489;  // std dev = 2,151, 92,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=87 */
-%   | | | else return 0.4060659723633622;  // std dev = 0,190, 186,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=179 */
+%   | then if ( knows(B, B) )
+%   | | then return 0.2964892143195309;  // std dev = 1,448, 10,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=7 */
+%   | | else if ( knows(A, C) )
+%   | | | then return 0.5125695678042864;  // std dev = 2,352, 80,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=74 */
+%   | | | else if ( knows(C, B) )
+%   | | | | then return 0.5908798552822158;  // std dev = 0,034, 4,000 (wgt'ed) examples reached here.  /* #pos=4 */
+%   | | | | else return 0.417054504199685;  // std dev = 2,546, 46,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=38 */
+%   | else if ( knows(D, A), knows(E, D) )
+%   | | then if ( knows(E, A) )
+%   | | | then return 0.5115895882405596;  // std dev = 6,225, 598,000 (wgt'ed) examples reached here.  /* #neg=42 #pos=556 */
+%   | | | else if ( knows(B, F) )
+%   | | | | then return 0.5560430941607938;  // std dev = 2,231, 358,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=353 */
+%   | | | | else return 0.5231530692849373;  // std dev = 1,685, 56,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=53 */
+%   | | else return 0.5497689141156168;  // std dev = 0,120, 272,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=268 */
 
 
 % Clauses:
 
-trusts(A, B, 0.4147547485318321) :- 
+trusts(A, B, 0.5527780448020555) :- 
      knows(B, A), 
      !. // Clause #1.
 
-trusts(A, B, 0.38886764551954806) :- 
-     knows(C, A), 
-     knows(C, C), 
-     knows(A, C), 
-     !. // Clause #2.
-
-trusts(A, B, 0.4691396188587295) :- 
-     knows(C, A), 
-     knows(C, C), 
-     knows(C, B), 
-     !. // Clause #3.
-
-trusts(A, B, -0.024548014944530183) :- 
+trusts(A, B, 0.2964892143195309) :- 
      knows(C, A), 
      knows(C, C), 
      knows(B, B), 
+     !. // Clause #2.
+
+trusts(A, B, 0.5125695678042864) :- 
+     knows(C, A), 
+     knows(C, C), 
+     knows(A, C), 
+     !. // Clause #3.
+
+trusts(A, B, 0.5908798552822158) :- 
+     knows(C, A), 
+     knows(C, C), 
+     knows(C, B), 
      !. // Clause #4.
 
-trusts(A, B, 0.29175959076543007) :- 
+trusts(A, B, 0.417054504199685) :- 
      knows(C, A), 
      knows(C, C), 
      !. // Clause #5.
 
-trusts(A, B, 0.4055908067778868) :- 
-     knows(C, B), 
-     knows(B, C), 
+trusts(A, B, 0.5115895882405596) :- 
+     knows(C, A), 
+     knows(D, C), 
+     knows(D, A), 
      !. // Clause #6.
 
-trusts(A, B, 0.3259325201187505) :- 
+trusts(A, B, 0.5560430941607938) :- 
      knows(C, A), 
-     knows(B, D), 
-     knows(C, D), 
+     knows(D, C), 
+     knows(B, E), 
      !. // Clause #7.
 
-trusts(A, B, 0.3903207912827489) :- 
+trusts(A, B, 0.5231530692849373) :- 
      knows(C, A), 
-     knows(B, D), 
+     knows(D, C), 
      !. // Clause #8.
 
-trusts(A, B, 0.4060659723633622) :- !. // Clause #9.
+trusts(A, B, 0.5497689141156168) :- !. // Clause #9.
 
 
 % The flattened versions of these clauses:
 
-flattened_trusts(a, b, 0.4147547485318321) :-  /* #neg=6 #pos=578 */ 
+flattened_trusts(a, b, 0.5527780448020555) :-  /* #neg=6 #pos=578 */ 
    knows(b, a),
    !. // Flattened version of clause #1.
 
-flattened_trusts(a, underscore, 0.38886764551954806) :-  /* #neg=7 #pos=77 */ 
-   knows(uniqueVar26, a),
-   knows(uniqueVar26, uniqueVar26),
-   knows(a, uniqueVar26),
+flattened_trusts(a, b, 0.2964892143195309) :-  /* #neg=3 #pos=7 */ 
+   knows(uniqueVar16, a),
+   knows(uniqueVar16, uniqueVar16),
+   knows(b, b),
    !. // Flattened version of clause #2.
 
-flattened_trusts(a, b, 0.4691396188587295) :-  /* #pos=6 */ 
-   knows(uniqueVar27, a),
-   knows(uniqueVar27, uniqueVar27),
-   knows(uniqueVar27, b),
+flattened_trusts(a, underscore, 0.5125695678042864) :-  /* #neg=6 #pos=74 */ 
+   knows(uniqueVar17, a),
+   knows(uniqueVar17, uniqueVar17),
+   knows(a, uniqueVar17),
    !. // Flattened version of clause #3.
 
-flattened_trusts(a, b, -0.024548014944530183) :-  /* #neg=2 #pos=2 */ 
-   knows(uniqueVar28, a),
-   knows(uniqueVar28, uniqueVar28),
-   knows(b, b),
+flattened_trusts(a, b, 0.5908798552822158) :-  /* #pos=4 */ 
+   knows(uniqueVar18, a),
+   knows(uniqueVar18, uniqueVar18),
+   knows(uniqueVar18, b),
    !. // Flattened version of clause #4.
 
-flattened_trusts(a, underscore, 0.29175959076543007) :-  /* #neg=8 #pos=38 */ 
-   knows(uniqueVar29, a),
-   knows(uniqueVar29, uniqueVar29),
+flattened_trusts(a, underscore, 0.417054504199685) :-  /* #neg=8 #pos=38 */ 
+   knows(uniqueVar19, a),
+   knows(uniqueVar19, uniqueVar19),
    !. // Flattened version of clause #5.
 
-flattened_trusts(underscore, a, 0.4055908067778868) :-  /* #neg=34 #pos=916 */ 
-   knows(uniqueVar30, a),
-   knows(a, uniqueVar30),
+flattened_trusts(a, underscore, 0.5115895882405596) :-  /* #neg=42 #pos=556 */ 
+   knows(uniqueVar20, a),
+   knows(uniqueVar21, uniqueVar20),
+   knows(uniqueVar21, a),
    !. // Flattened version of clause #6.
 
-flattened_trusts(a, b, 0.3259325201187505) :-  /* #neg=8 #pos=48 */ 
-   knows(uniqueVar31, a),
-   knows(b, uniqueVar32),
-   knows(uniqueVar31, uniqueVar32),
+flattened_trusts(a, b, 0.5560430941607938) :-  /* #neg=5 #pos=353 */ 
+   knows(uniqueVar22, a),
+   knows(underscore, uniqueVar22),
+   knows(b, underscore),
    !. // Flattened version of clause #7.
 
-flattened_trusts(a, b, 0.3903207912827489) :-  /* #neg=5 #pos=87 */ 
-   knows(underscore, a),
-   knows(b, underscore),
+flattened_trusts(a, underscore, 0.5231530692849373) :-  /* #neg=3 #pos=53 */ 
+   knows(uniqueVar23, a),
+   knows(underscore, uniqueVar23),
    !. // Flattened version of clause #8.
 
-flattened_trusts(underscore, underscore, 0.4060659723633622) :-  /* #neg=7 #pos=179 */ 
+flattened_trusts(underscore, underscore, 0.5497689141156168) :-  /* #neg=4 #pos=268 */ 
    !. // Flattened version of clause #9.
 
 
 % The unique flattened literals:
-%   knows(underscore, a)
-%   knows(b, underscore)
-%   knows(a, uniqueVar26)
-%   knows(b, b)
-%   knows(uniqueVar27, a)
-%   knows(uniqueVar26, a)
-%   knows(uniqueVar27, b)
-%   knows(uniqueVar29, a)
-%   knows(uniqueVar27, uniqueVar27)
-%   knows(uniqueVar28, a)
-%   knows(b, uniqueVar32)
-%   knows(uniqueVar29, uniqueVar29)
-%   knows(a, uniqueVar30)
+%   knows(uniqueVar23, a)
+%   knows(uniqueVar19, a)
+%   knows(uniqueVar22, a)
+%   knows(underscore, uniqueVar22)
+%   knows(uniqueVar17, a)
+%   knows(uniqueVar18, a)
+%   knows(uniqueVar20, a)
+%   knows(uniqueVar21, uniqueVar20)
+%   knows(uniqueVar18, uniqueVar18)
 %   knows(b, a)
-%   knows(uniqueVar28, uniqueVar28)
-%   knows(uniqueVar30, a)
-%   knows(uniqueVar31, a)
-%   knows(uniqueVar31, uniqueVar32)
-%   knows(uniqueVar26, uniqueVar26)
+%   knows(b, b)
+%   knows(uniqueVar17, uniqueVar17)
+%   knows(uniqueVar18, b)
+%   knows(a, uniqueVar17)
+%   knows(uniqueVar19, uniqueVar19)
+%   knows(uniqueVar16, a)
+%   knows(uniqueVar21, a)
+%   knows(uniqueVar16, uniqueVar16)
+%   knows(underscore, uniqueVar23)
+%   knows(b, underscore)
 
-%%%%%  WILL-Produced Tree #5 @ 18:26:25 10/21/22.  %%%%%
+%%%%%  WILL-Produced Tree #4 @ 19:16:01 10/21/22.  %%%%%
 
 % FOR trusts(A, B):
 %   if ( knows(A, C), knows(C, C) )
 %   then if ( knows(B, A) )
-%   | then return 0.30698803528796204;  // std dev = 1,975, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
-%   | else if ( knows(B, C) )
-%   | | then return 0.29787985781554543;  // std dev = 2,264, 72,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=66 */
+%   | then return 0.4076501978376764;  // std dev = 1,976, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
+%   | else if ( knows(B, D) )
+%   | | then return 0.37024919786094046;  // std dev = 5,233, 304,000 (wgt'ed) examples reached here.  /* #neg=31 #pos=273 */
 %   | | else if ( knows(C, A) )
-%   | | | then return 0.29605795367651516;  // std dev = 2,341, 74,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=68 */
-%   | | | else if ( knows(B, D) )
-%   | | | | then return 0.26165995466230824;  // std dev = 4,063, 164,000 (wgt'ed) examples reached here.  /* #neg=19 #pos=145 */
-%   | | | | else return 0.30428943185374957;  // std dev = 0,975, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
-%   else if ( knows(E, A), knows(E, B) )
-%   | then return 0.32127866648205994;  // std dev = 0,134, 524,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=514 */
-%   | else if ( knows(F, A), knows(G, F) )
-%   | | then if ( knows(B, G) )
-%   | | | then return 0.3138170487302279;  // std dev = 2,764, 362,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=354 */
-%   | | | else return 0.2920480446055421;  // std dev = 0,223, 374,000 (wgt'ed) examples reached here.  /* #neg=20 #pos=354 */
-%   | | else return 0.3193910889514935;  // std dev = 0,106, 258,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=255 */
+%   | | | then return 0.4371074422804951;  // std dev = 0,000, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
+%   | | | else return 0.4018571756495904;  // std dev = 0,218, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
+%   else if ( knows(B, A) )
+%   | then return 0.41844052529407316;  // std dev = 0,069, 424,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=422 */
+%   | else if ( knows(E, A), knows(F, E) )
+%   | | then if ( knows(F, A) )
+%   | | | then return 0.39038627305159135;  // std dev = 5,200, 480,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=451 */
+%   | | | else if ( knows(B, G) )
+%   | | | | then return 0.4132177781438222;  // std dev = 1,988, 304,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=300 */
+%   | | | | else return 0.386659170436129;  // std dev = 1,679, 50,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=47 */
+%   | | else return 0.41467662780247433;  // std dev = 0,107, 260,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=257 */
 
 
 % Clauses:
 
-trusts(A, B, 0.30698803528796204) :- 
+trusts(A, B, 0.4076501978376764) :- 
      knows(A, C), 
      knows(C, C), 
      knows(B, A), 
      !. // Clause #1.
 
-trusts(A, B, 0.29787985781554543) :- 
+trusts(A, B, 0.37024919786094046) :- 
      knows(A, C), 
      knows(C, C), 
-     knows(B, C), 
+     knows(B, D), 
      !. // Clause #2.
 
-trusts(A, B, 0.29605795367651516) :- 
+trusts(A, B, 0.4371074422804951) :- 
      knows(A, C), 
      knows(C, C), 
      knows(C, A), 
      !. // Clause #3.
 
-trusts(A, B, 0.26165995466230824) :- 
+trusts(A, B, 0.4018571756495904) :- 
      knows(A, C), 
      knows(C, C), 
-     knows(B, D), 
      !. // Clause #4.
 
-trusts(A, B, 0.30428943185374957) :- 
-     knows(A, C), 
-     knows(C, C), 
+trusts(A, B, 0.41844052529407316) :- 
+     knows(B, A), 
      !. // Clause #5.
 
-trusts(A, B, 0.32127866648205994) :- 
-     knows(C, A), 
-     knows(C, B), 
-     !. // Clause #6.
-
-trusts(A, B, 0.3138170487302279) :- 
+trusts(A, B, 0.39038627305159135) :- 
      knows(C, A), 
      knows(D, C), 
-     knows(B, D), 
+     knows(D, A), 
+     !. // Clause #6.
+
+trusts(A, B, 0.4132177781438222) :- 
+     knows(C, A), 
+     knows(D, C), 
+     knows(B, E), 
      !. // Clause #7.
 
-trusts(A, B, 0.2920480446055421) :- 
+trusts(A, B, 0.386659170436129) :- 
      knows(C, A), 
      knows(D, C), 
      !. // Clause #8.
 
-trusts(A, B, 0.3193910889514935) :- !. // Clause #9.
+trusts(A, B, 0.41467662780247433) :- !. // Clause #9.
 
 
 % The flattened versions of these clauses:
 
-flattened_trusts(a, b, 0.30698803528796204) :-  /* #neg=4 #pos=156 */ 
-   knows(a, uniqueVar33),
-   knows(uniqueVar33, uniqueVar33),
+flattened_trusts(a, b, 0.4076501978376764) :-  /* #neg=4 #pos=156 */ 
+   knows(a, uniqueVar24),
+   knows(uniqueVar24, uniqueVar24),
    knows(b, a),
    !. // Flattened version of clause #1.
 
-flattened_trusts(a, b, 0.29787985781554543) :-  /* #neg=6 #pos=66 */ 
-   knows(a, uniqueVar34),
-   knows(uniqueVar34, uniqueVar34),
-   knows(b, uniqueVar34),
+flattened_trusts(a, b, 0.37024919786094046) :-  /* #neg=31 #pos=273 */ 
+   knows(a, uniqueVar25),
+   knows(uniqueVar25, uniqueVar25),
+   knows(b, underscore),
    !. // Flattened version of clause #2.
 
-flattened_trusts(a, underscore, 0.29605795367651516) :-  /* #neg=6 #pos=68 */ 
+flattened_trusts(a, underscore, 0.4371074422804951) :-  /* #pos=6 */ 
+   knows(a, uniqueVar26),
+   knows(uniqueVar26, uniqueVar26),
+   knows(uniqueVar26, a),
+   !. // Flattened version of clause #3.
+
+flattened_trusts(a, underscore, 0.4018571756495904) :-  /* #neg=1 #pos=19 */ 
+   knows(a, uniqueVar27),
+   knows(uniqueVar27, uniqueVar27),
+   !. // Flattened version of clause #4.
+
+flattened_trusts(a, b, 0.41844052529407316) :-  /* #neg=2 #pos=422 */ 
+   knows(b, a),
+   !. // Flattened version of clause #5.
+
+flattened_trusts(a, underscore, 0.39038627305159135) :-  /* #neg=29 #pos=451 */ 
+   knows(uniqueVar28, a),
+   knows(uniqueVar29, uniqueVar28),
+   knows(uniqueVar29, a),
+   !. // Flattened version of clause #6.
+
+flattened_trusts(a, b, 0.4132177781438222) :-  /* #neg=4 #pos=300 */ 
+   knows(uniqueVar30, a),
+   knows(underscore, uniqueVar30),
+   knows(b, underscore),
+   !. // Flattened version of clause #7.
+
+flattened_trusts(a, underscore, 0.386659170436129) :-  /* #neg=3 #pos=47 */ 
+   knows(uniqueVar31, a),
+   knows(underscore, uniqueVar31),
+   !. // Flattened version of clause #8.
+
+flattened_trusts(underscore, underscore, 0.41467662780247433) :-  /* #neg=3 #pos=257 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   knows(a, uniqueVar27)
+%   knows(underscore, uniqueVar31)
+%   knows(uniqueVar29, uniqueVar28)
+%   knows(uniqueVar31, a)
+%   knows(uniqueVar27, uniqueVar27)
+%   knows(uniqueVar30, a)
+%   knows(uniqueVar26, a)
+%   knows(uniqueVar26, uniqueVar26)
+%   knows(a, uniqueVar24)
+%   knows(uniqueVar25, uniqueVar25)
+%   knows(underscore, uniqueVar30)
+%   knows(b, a)
+%   knows(a, uniqueVar25)
+%   knows(a, uniqueVar26)
+%   knows(uniqueVar24, uniqueVar24)
+%   knows(uniqueVar28, a)
+%   knows(uniqueVar29, a)
+%   knows(b, underscore)
+
+%%%%%  WILL-Produced Tree #5 @ 19:16:08 10/21/22.  %%%%%
+
+% FOR trusts(A, B):
+%   if ( knows(A, C), knows(C, C) )
+%   then if ( knows(B, A) )
+%   | then return 0.3115524223299796;  // std dev = 1,975, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
+%   | else if ( knows(B, C) )
+%   | | then return 0.30504856948954134;  // std dev = 2,290, 72,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=66 */
+%   | | else if ( knows(B, D) )
+%   | | | then return 0.27221100161165473;  // std dev = 4,701, 232,000 (wgt'ed) examples reached here.  /* #neg=25 #pos=207 */
+%   | | | else if ( knows(C, A) )
+%   | | | | then return 0.33402925034228637;  // std dev = 0,000, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
+%   | | | | else return 0.30550237758662563;  // std dev = 0,977, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
+%   else if ( knows(E, B), knows(E, A) )
+%   | then return 0.320528716401572;  // std dev = 0,134, 524,000 (wgt'ed) examples reached here.  /* #neg=10 #pos=514 */
+%   | else if ( knows(A, F), knows(F, B) )
+%   | | then if ( knows(B, F) )
+%   | | | then return 0.3214337735307048;  // std dev = 1,005, 80,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=79 */
+%   | | | else return 0.26229006950383427;  // std dev = 0,266, 90,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=83 */
+%   | | else return 0.3091111058690081;  // std dev = 0,163, 824,000 (wgt'ed) examples reached here.  /* #neg=23 #pos=801 */
+
+
+% Clauses:
+
+trusts(A, B, 0.3115524223299796) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(B, A), 
+     !. // Clause #1.
+
+trusts(A, B, 0.30504856948954134) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(B, C), 
+     !. // Clause #2.
+
+trusts(A, B, 0.27221100161165473) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(B, D), 
+     !. // Clause #3.
+
+trusts(A, B, 0.33402925034228637) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(C, A), 
+     !. // Clause #4.
+
+trusts(A, B, 0.30550237758662563) :- 
+     knows(A, C), 
+     knows(C, C), 
+     !. // Clause #5.
+
+trusts(A, B, 0.320528716401572) :- 
+     knows(C, B), 
+     knows(C, A), 
+     !. // Clause #6.
+
+trusts(A, B, 0.3214337735307048) :- 
+     knows(A, C), 
+     knows(C, B), 
+     knows(B, C), 
+     !. // Clause #7.
+
+trusts(A, B, 0.26229006950383427) :- 
+     knows(A, C), 
+     knows(C, B), 
+     !. // Clause #8.
+
+trusts(A, B, 0.3091111058690081) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_trusts(a, b, 0.3115524223299796) :-  /* #neg=4 #pos=156 */ 
+   knows(a, uniqueVar32),
+   knows(uniqueVar32, uniqueVar32),
+   knows(b, a),
+   !. // Flattened version of clause #1.
+
+flattened_trusts(a, b, 0.30504856948954134) :-  /* #neg=6 #pos=66 */ 
+   knows(a, uniqueVar33),
+   knows(uniqueVar33, uniqueVar33),
+   knows(b, uniqueVar33),
+   !. // Flattened version of clause #2.
+
+flattened_trusts(a, b, 0.27221100161165473) :-  /* #neg=25 #pos=207 */ 
+   knows(a, uniqueVar34),
+   knows(uniqueVar34, uniqueVar34),
+   knows(b, underscore),
+   !. // Flattened version of clause #3.
+
+flattened_trusts(a, underscore, 0.33402925034228637) :-  /* #pos=6 */ 
    knows(a, uniqueVar35),
    knows(uniqueVar35, uniqueVar35),
    knows(uniqueVar35, a),
-   !. // Flattened version of clause #3.
+   !. // Flattened version of clause #4.
 
-flattened_trusts(a, b, 0.26165995466230824) :-  /* #neg=19 #pos=145 */ 
+flattened_trusts(a, underscore, 0.30550237758662563) :-  /* #neg=1 #pos=19 */ 
    knows(a, uniqueVar36),
    knows(uniqueVar36, uniqueVar36),
-   knows(b, underscore),
-   !. // Flattened version of clause #4.
-
-flattened_trusts(a, underscore, 0.30428943185374957) :-  /* #neg=1 #pos=19 */ 
-   knows(a, uniqueVar37),
-   knows(uniqueVar37, uniqueVar37),
    !. // Flattened version of clause #5.
 
-flattened_trusts(a, b, 0.32127866648205994) :-  /* #neg=10 #pos=514 */ 
-   knows(uniqueVar38, a),
-   knows(uniqueVar38, b),
+flattened_trusts(a, b, 0.320528716401572) :-  /* #neg=10 #pos=514 */ 
+   knows(uniqueVar37, b),
+   knows(uniqueVar37, a),
    !. // Flattened version of clause #6.
 
-flattened_trusts(a, b, 0.3138170487302279) :-  /* #neg=8 #pos=354 */ 
-   knows(uniqueVar39, a),
-   knows(uniqueVar40, uniqueVar39),
-   knows(b, uniqueVar40),
+flattened_trusts(a, b, 0.3214337735307048) :-  /* #neg=1 #pos=79 */ 
+   knows(a, uniqueVar38),
+   knows(uniqueVar38, b),
+   knows(b, uniqueVar38),
    !. // Flattened version of clause #7.
 
-flattened_trusts(a, underscore, 0.2920480446055421) :-  /* #neg=20 #pos=354 */ 
-   knows(uniqueVar41, a),
-   knows(underscore, uniqueVar41),
+flattened_trusts(a, b, 0.26229006950383427) :-  /* #neg=7 #pos=83 */ 
+   knows(a, uniqueVar39),
+   knows(uniqueVar39, b),
    !. // Flattened version of clause #8.
 
-flattened_trusts(underscore, underscore, 0.3193910889514935) :-  /* #neg=3 #pos=255 */ 
+flattened_trusts(underscore, underscore, 0.3091111058690081) :-  /* #neg=23 #pos=801 */ 
    !. // Flattened version of clause #9.
 
 
 % The unique flattened literals:
-%   knows(uniqueVar35, uniqueVar35)
-%   knows(a, uniqueVar34)
-%   knows(uniqueVar35, a)
-%   knows(uniqueVar36, uniqueVar36)
-%   knows(b, underscore)
-%   knows(b, uniqueVar40)
-%   knows(uniqueVar34, uniqueVar34)
+%   knows(b, uniqueVar38)
+%   knows(uniqueVar32, uniqueVar32)
 %   knows(a, uniqueVar33)
-%   knows(uniqueVar33, uniqueVar33)
-%   knows(uniqueVar37, uniqueVar37)
-%   knows(uniqueVar39, a)
-%   knows(b, uniqueVar34)
+%   knows(uniqueVar37, a)
+%   knows(uniqueVar34, uniqueVar34)
 %   knows(a, uniqueVar36)
+%   knows(uniqueVar39, b)
 %   knows(a, uniqueVar35)
-%   knows(underscore, uniqueVar41)
-%   knows(b, a)
+%   knows(uniqueVar37, b)
+%   knows(b, uniqueVar33)
+%   knows(a, uniqueVar38)
+%   knows(uniqueVar35, a)
+%   knows(a, uniqueVar32)
 %   knows(uniqueVar38, b)
-%   knows(uniqueVar41, a)
-%   knows(uniqueVar40, uniqueVar39)
-%   knows(a, uniqueVar37)
-%   knows(uniqueVar38, a)
+%   knows(uniqueVar36, uniqueVar36)
+%   knows(a, uniqueVar39)
+%   knows(b, a)
+%   knows(uniqueVar33, uniqueVar33)
+%   knows(a, uniqueVar34)
+%   knows(uniqueVar35, uniqueVar35)
+%   knows(b, underscore)
 
-%%%%%  WILL-Produced Tree #6 @ 18:26:36 10/21/22.  %%%%%
+%%%%%  WILL-Produced Tree #6 @ 19:16:17 10/21/22.  %%%%%
 
 % FOR trusts(A, B):
-%   if ( knows(A, C), knows(C, C) )
-%   then if ( knows(B, A) )
-%   | then return 0.24272511807038005;  // std dev = 1,975, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
-%   | else if ( knows(B, D) )
-%   | | then return 0.2142592791733077;  // std dev = 5,215, 304,000 (wgt'ed) examples reached here.  /* #neg=31 #pos=273 */
-%   | | else if ( knows(C, A) )
-%   | | | then return 0.27547285608049954;  // std dev = 1,05e-08, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
-%   | | | else return 0.2381480491495797;  // std dev = 0,218, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
-%   else if ( knows(B, A) )
-%   | then return 0.25619604552650865;  // std dev = 0,068, 424,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=422 */
-%   | else if ( knows(E, A), knows(F, E) )
-%   | | then if ( knows(F, A) )
-%   | | | then return 0.22947694869589183;  // std dev = 5,189, 480,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=451 */
-%   | | | else if ( knows(B, G) )
-%   | | | | then return 0.25518533441830404;  // std dev = 1,986, 304,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=300 */
-%   | | | | else return 0.2268037831764576;  // std dev = 1,670, 50,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=47 */
-%   | | else return 0.25289967356594306;  // std dev = 0,106, 260,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=257 */
+%   if ( knows(B, A) )
+%   then return 0.25312023036782316;  // std dev = 0,101, 584,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=578 */
+%   else if ( knows(C, A), knows(C, C) )
+%   | then if ( knows(C, B) )
+%   | | then return 0.2763102460593184;  // std dev = 0,990, 30,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=29 */
+%   | | else if ( knows(B, B) )
+%   | | | then return -0.14050258426165682;  // std dev = 1,225, 6,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=3 */
+%   | | | else if ( knows(A, C) )
+%   | | | | then return 0.22173652103410885;  // std dev = 2,131, 58,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=53 */
+%   | | | | else return 0.14997022543865726;  // std dev = 2,537, 46,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=38 */
+%   | else if ( knows(B, D), knows(D, B) )
+%   | | then return 0.24516065733449488;  // std dev = 0,184, 950,000 (wgt'ed) examples reached here.  /* #neg=34 #pos=916 */
+%   | | else if ( knows(B, E), knows(F, A) )
+%   | | | then if ( knows(F, E) )
+%   | | | | then return 0.15519042312082676;  // std dev = 2,605, 56,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=48 */
+%   | | | | else return 0.23539907032824625;  // std dev = 2,145, 92,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=87 */
+%   | | | else return 0.24485003501214636;  // std dev = 0,190, 186,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=179 */
 
 
 % Clauses:
 
-trusts(A, B, 0.24272511807038005) :- 
-     knows(A, C), 
-     knows(C, C), 
+trusts(A, B, 0.25312023036782316) :- 
      knows(B, A), 
      !. // Clause #1.
 
-trusts(A, B, 0.2142592791733077) :- 
-     knows(A, C), 
+trusts(A, B, 0.2763102460593184) :- 
+     knows(C, A), 
      knows(C, C), 
-     knows(B, D), 
+     knows(C, B), 
      !. // Clause #2.
 
-trusts(A, B, 0.27547285608049954) :- 
-     knows(A, C), 
-     knows(C, C), 
+trusts(A, B, -0.14050258426165682) :- 
      knows(C, A), 
+     knows(C, C), 
+     knows(B, B), 
      !. // Clause #3.
 
-trusts(A, B, 0.2381480491495797) :- 
-     knows(A, C), 
+trusts(A, B, 0.22173652103410885) :- 
+     knows(C, A), 
      knows(C, C), 
+     knows(A, C), 
      !. // Clause #4.
 
-trusts(A, B, 0.25619604552650865) :- 
-     knows(B, A), 
+trusts(A, B, 0.14997022543865726) :- 
+     knows(C, A), 
+     knows(C, C), 
      !. // Clause #5.
 
-trusts(A, B, 0.22947694869589183) :- 
-     knows(C, A), 
-     knows(D, C), 
-     knows(D, A), 
+trusts(A, B, 0.24516065733449488) :- 
+     knows(B, C), 
+     knows(C, B), 
      !. // Clause #6.
 
-trusts(A, B, 0.25518533441830404) :- 
-     knows(C, A), 
+trusts(A, B, 0.15519042312082676) :- 
+     knows(B, C), 
+     knows(D, A), 
      knows(D, C), 
-     knows(B, E), 
      !. // Clause #7.
 
-trusts(A, B, 0.2268037831764576) :- 
-     knows(C, A), 
-     knows(D, C), 
+trusts(A, B, 0.23539907032824625) :- 
+     knows(B, C), 
+     knows(D, A), 
      !. // Clause #8.
 
-trusts(A, B, 0.25289967356594306) :- !. // Clause #9.
+trusts(A, B, 0.24485003501214636) :- !. // Clause #9.
 
 
 % The flattened versions of these clauses:
 
-flattened_trusts(a, b, 0.24272511807038005) :-  /* #neg=4 #pos=156 */ 
-   knows(a, uniqueVar42),
-   knows(uniqueVar42, uniqueVar42),
+flattened_trusts(a, b, 0.25312023036782316) :-  /* #neg=6 #pos=578 */ 
    knows(b, a),
    !. // Flattened version of clause #1.
 
-flattened_trusts(a, b, 0.2142592791733077) :-  /* #neg=31 #pos=273 */ 
-   knows(a, uniqueVar43),
-   knows(uniqueVar43, uniqueVar43),
-   knows(b, underscore),
+flattened_trusts(a, b, 0.2763102460593184) :-  /* #neg=1 #pos=29 */ 
+   knows(uniqueVar40, a),
+   knows(uniqueVar40, uniqueVar40),
+   knows(uniqueVar40, b),
    !. // Flattened version of clause #2.
 
-flattened_trusts(a, underscore, 0.27547285608049954) :-  /* #pos=6 */ 
-   knows(a, uniqueVar44),
-   knows(uniqueVar44, uniqueVar44),
-   knows(uniqueVar44, a),
+flattened_trusts(a, b, -0.14050258426165682) :-  /* #neg=3 #pos=3 */ 
+   knows(uniqueVar41, a),
+   knows(uniqueVar41, uniqueVar41),
+   knows(b, b),
    !. // Flattened version of clause #3.
 
-flattened_trusts(a, underscore, 0.2381480491495797) :-  /* #neg=1 #pos=19 */ 
-   knows(a, uniqueVar45),
-   knows(uniqueVar45, uniqueVar45),
+flattened_trusts(a, underscore, 0.22173652103410885) :-  /* #neg=5 #pos=53 */ 
+   knows(uniqueVar42, a),
+   knows(uniqueVar42, uniqueVar42),
+   knows(a, uniqueVar42),
    !. // Flattened version of clause #4.
 
-flattened_trusts(a, b, 0.25619604552650865) :-  /* #neg=2 #pos=422 */ 
-   knows(b, a),
+flattened_trusts(a, underscore, 0.14997022543865726) :-  /* #neg=8 #pos=38 */ 
+   knows(uniqueVar43, a),
+   knows(uniqueVar43, uniqueVar43),
    !. // Flattened version of clause #5.
 
-flattened_trusts(a, underscore, 0.22947694869589183) :-  /* #neg=29 #pos=451 */ 
-   knows(uniqueVar46, a),
-   knows(uniqueVar47, uniqueVar46),
-   knows(uniqueVar47, a),
+flattened_trusts(underscore, a, 0.24516065733449488) :-  /* #neg=34 #pos=916 */ 
+   knows(a, uniqueVar44),
+   knows(uniqueVar44, a),
    !. // Flattened version of clause #6.
 
-flattened_trusts(a, b, 0.25518533441830404) :-  /* #neg=4 #pos=300 */ 
-   knows(uniqueVar48, a),
-   knows(underscore, uniqueVar48),
-   knows(b, underscore),
+flattened_trusts(a, b, 0.15519042312082676) :-  /* #neg=8 #pos=48 */ 
+   knows(b, uniqueVar45),
+   knows(uniqueVar46, a),
+   knows(uniqueVar46, uniqueVar45),
    !. // Flattened version of clause #7.
 
-flattened_trusts(a, underscore, 0.2268037831764576) :-  /* #neg=3 #pos=47 */ 
-   knows(uniqueVar49, a),
-   knows(underscore, uniqueVar49),
+flattened_trusts(a, b, 0.23539907032824625) :-  /* #neg=5 #pos=87 */ 
+   knows(b, underscore),
+   knows(underscore, a),
    !. // Flattened version of clause #8.
 
-flattened_trusts(underscore, underscore, 0.25289967356594306) :-  /* #neg=3 #pos=257 */ 
+flattened_trusts(underscore, underscore, 0.24485003501214636) :-  /* #neg=7 #pos=179 */ 
    !. // Flattened version of clause #9.
 
 
 % The unique flattened literals:
-%   knows(b, underscore)
-%   knows(a, uniqueVar45)
-%   knows(uniqueVar46, a)
-%   knows(uniqueVar44, a)
-%   knows(uniqueVar45, uniqueVar45)
-%   knows(uniqueVar44, uniqueVar44)
-%   knows(a, uniqueVar42)
-%   knows(a, uniqueVar43)
-%   knows(uniqueVar42, uniqueVar42)
-%   knows(b, a)
-%   knows(uniqueVar47, a)
-%   knows(uniqueVar49, a)
-%   knows(underscore, uniqueVar49)
-%   knows(underscore, uniqueVar48)
+%   knows(uniqueVar46, uniqueVar45)
+%   knows(uniqueVar42, a)
+%   knows(uniqueVar41, a)
+%   knows(uniqueVar41, uniqueVar41)
+%   knows(uniqueVar43, a)
 %   knows(uniqueVar43, uniqueVar43)
+%   knows(uniqueVar40, b)
+%   knows(b, a)
+%   knows(uniqueVar46, a)
+%   knows(b, b)
 %   knows(a, uniqueVar44)
-%   knows(uniqueVar47, uniqueVar46)
-%   knows(uniqueVar48, a)
+%   knows(uniqueVar40, a)
+%   knows(uniqueVar40, uniqueVar40)
+%   knows(underscore, a)
+%   knows(b, uniqueVar45)
+%   knows(uniqueVar42, uniqueVar42)
+%   knows(a, uniqueVar42)
+%   knows(uniqueVar44, a)
+%   knows(b, underscore)
 
-%%%%%  WILL-Produced Tree #7 @ 18:26:45 10/21/22.  %%%%%
+%%%%%  WILL-Produced Tree #7 @ 19:16:28 10/21/22.  %%%%%
 
 % FOR trusts(A, B):
 %   if ( knows(A, C), knows(C, C) )
 %   then if ( knows(B, A) )
-%   | then return 0.19788709463469994;  // std dev = 1,975, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
-%   | else if ( knows(A, A) )
-%   | | then return 0.2088373174479784;  // std dev = 0,969, 18,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=17 */
-%   | | else if ( knows(B, C) )
-%   | | | then return 0.18657671979372895;  // std dev = 2,273, 72,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=66 */
-%   | | | else if ( knows(B, D) )
-%   | | | | then return 0.1615776582068666;  // std dev = 4,591, 216,000 (wgt'ed) examples reached here.  /* #neg=24 #pos=192 */
-%   | | | | else return 0.19722560907968237;  // std dev = 0,977, 24,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=23 */
+%   | then return 0.1988503413758935;  // std dev = 1,975, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
+%   | else if ( knows(B, C) )
+%   | | then return 0.19327064913888703;  // std dev = 2,214, 72,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=66 */
+%   | | else if ( knows(B, D) )
+%   | | | then return 0.16253433014434135;  // std dev = 4,688, 232,000 (wgt'ed) examples reached here.  /* #neg=25 #pos=207 */
+%   | | | else if ( knows(C, A) )
+%   | | | | then return 0.22032231991822207;  // std dev = 0,011, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
+%   | | | | else return 0.19322665909811748;  // std dev = 0,979, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
 %   else if ( knows(B, A) )
-%   | then return 0.20988191098969475;  // std dev = 0,068, 424,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=422 */
+%   | then return 0.21010593998454127;  // std dev = 0,068, 424,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=422 */
 %   | else if ( knows(E, A), knows(F, E) )
 %   | | then if ( knows(F, A) )
-%   | | | then return 0.18463110945491534;  // std dev = 5,191, 480,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=451 */
-%   | | | else return 0.2045449579018626;  // std dev = 0,138, 354,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=347 */
-%   | | else return 0.2067114107446805;  // std dev = 0,106, 260,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=257 */
+%   | | | then return 0.18354190793754563;  // std dev = 5,187, 480,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=451 */
+%   | | | else return 0.20387890177972479;  // std dev = 0,139, 354,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=347 */
+%   | | else return 0.2088315126245339;  // std dev = 0,107, 260,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=257 */
 
 
 % Clauses:
 
-trusts(A, B, 0.19788709463469994) :- 
+trusts(A, B, 0.1988503413758935) :- 
      knows(A, C), 
      knows(C, C), 
      knows(B, A), 
      !. // Clause #1.
 
-trusts(A, B, 0.2088373174479784) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(A, A), 
-     !. // Clause #2.
-
-trusts(A, B, 0.18657671979372895) :- 
+trusts(A, B, 0.19327064913888703) :- 
      knows(A, C), 
      knows(C, C), 
      knows(B, C), 
-     !. // Clause #3.
+     !. // Clause #2.
 
-trusts(A, B, 0.1615776582068666) :- 
+trusts(A, B, 0.16253433014434135) :- 
      knows(A, C), 
      knows(C, C), 
      knows(B, D), 
+     !. // Clause #3.
+
+trusts(A, B, 0.22032231991822207) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(C, A), 
      !. // Clause #4.
 
-trusts(A, B, 0.19722560907968237) :- 
+trusts(A, B, 0.19322665909811748) :- 
      knows(A, C), 
      knows(C, C), 
      !. // Clause #5.
 
-trusts(A, B, 0.20988191098969475) :- 
+trusts(A, B, 0.21010593998454127) :- 
      knows(B, A), 
      !. // Clause #6.
 
-trusts(A, B, 0.18463110945491534) :- 
+trusts(A, B, 0.18354190793754563) :- 
      knows(C, A), 
      knows(D, C), 
      knows(D, A), 
      !. // Clause #7.
 
-trusts(A, B, 0.2045449579018626) :- 
+trusts(A, B, 0.20387890177972479) :- 
      knows(C, A), 
      knows(D, C), 
      !. // Clause #8.
 
-trusts(A, B, 0.2067114107446805) :- !. // Clause #9.
+trusts(A, B, 0.2088315126245339) :- !. // Clause #9.
 
 
 % The flattened versions of these clauses:
 
-flattened_trusts(a, b, 0.19788709463469994) :-  /* #neg=4 #pos=156 */ 
+flattened_trusts(a, b, 0.1988503413758935) :-  /* #neg=4 #pos=156 */ 
+   knows(a, uniqueVar47),
+   knows(uniqueVar47, uniqueVar47),
+   knows(b, a),
+   !. // Flattened version of clause #1.
+
+flattened_trusts(a, b, 0.19327064913888703) :-  /* #neg=6 #pos=66 */ 
+   knows(a, uniqueVar48),
+   knows(uniqueVar48, uniqueVar48),
+   knows(b, uniqueVar48),
+   !. // Flattened version of clause #2.
+
+flattened_trusts(a, b, 0.16253433014434135) :-  /* #neg=25 #pos=207 */ 
+   knows(a, uniqueVar49),
+   knows(uniqueVar49, uniqueVar49),
+   knows(b, underscore),
+   !. // Flattened version of clause #3.
+
+flattened_trusts(a, underscore, 0.22032231991822207) :-  /* #pos=6 */ 
    knows(a, uniqueVar50),
    knows(uniqueVar50, uniqueVar50),
-   knows(b, a),
-   !. // Flattened version of clause #1.
+   knows(uniqueVar50, a),
+   !. // Flattened version of clause #4.
 
-flattened_trusts(a, underscore, 0.2088373174479784) :-  /* #neg=1 #pos=17 */ 
+flattened_trusts(a, underscore, 0.19322665909811748) :-  /* #neg=1 #pos=19 */ 
    knows(a, uniqueVar51),
    knows(uniqueVar51, uniqueVar51),
-   knows(a, a),
-   !. // Flattened version of clause #2.
-
-flattened_trusts(a, b, 0.18657671979372895) :-  /* #neg=6 #pos=66 */ 
-   knows(a, uniqueVar52),
-   knows(uniqueVar52, uniqueVar52),
-   knows(b, uniqueVar52),
-   !. // Flattened version of clause #3.
-
-flattened_trusts(a, b, 0.1615776582068666) :-  /* #neg=24 #pos=192 */ 
-   knows(a, uniqueVar53),
-   knows(uniqueVar53, uniqueVar53),
-   knows(b, underscore),
-   !. // Flattened version of clause #4.
-
-flattened_trusts(a, underscore, 0.19722560907968237) :-  /* #neg=1 #pos=23 */ 
-   knows(a, uniqueVar54),
-   knows(uniqueVar54, uniqueVar54),
    !. // Flattened version of clause #5.
 
-flattened_trusts(a, b, 0.20988191098969475) :-  /* #neg=2 #pos=422 */ 
+flattened_trusts(a, b, 0.21010593998454127) :-  /* #neg=2 #pos=422 */ 
    knows(b, a),
    !. // Flattened version of clause #6.
 
-flattened_trusts(a, underscore, 0.18463110945491534) :-  /* #neg=29 #pos=451 */ 
-   knows(uniqueVar55, a),
-   knows(uniqueVar56, uniqueVar55),
-   knows(uniqueVar56, a),
+flattened_trusts(a, underscore, 0.18354190793754563) :-  /* #neg=29 #pos=451 */ 
+   knows(uniqueVar52, a),
+   knows(uniqueVar53, uniqueVar52),
+   knows(uniqueVar53, a),
    !. // Flattened version of clause #7.
 
-flattened_trusts(a, underscore, 0.2045449579018626) :-  /* #neg=7 #pos=347 */ 
-   knows(uniqueVar57, a),
-   knows(underscore, uniqueVar57),
+flattened_trusts(a, underscore, 0.20387890177972479) :-  /* #neg=7 #pos=347 */ 
+   knows(uniqueVar54, a),
+   knows(underscore, uniqueVar54),
    !. // Flattened version of clause #8.
 
-flattened_trusts(underscore, underscore, 0.2067114107446805) :-  /* #neg=3 #pos=257 */ 
+flattened_trusts(underscore, underscore, 0.2088315126245339) :-  /* #neg=3 #pos=257 */ 
    !. // Flattened version of clause #9.
 
 
 % The unique flattened literals:
-%   knows(b, underscore)
-%   knows(uniqueVar57, a)
-%   knows(uniqueVar50, uniqueVar50)
-%   knows(uniqueVar54, uniqueVar54)
-%   knows(uniqueVar53, uniqueVar53)
-%   knows(a, uniqueVar53)
-%   knows(b, uniqueVar52)
-%   knows(uniqueVar52, uniqueVar52)
-%   knows(b, a)
-%   knows(a, uniqueVar54)
-%   knows(a, uniqueVar50)
-%   knows(a, a)
-%   knows(uniqueVar51, uniqueVar51)
-%   knows(uniqueVar56, uniqueVar55)
-%   knows(underscore, uniqueVar57)
-%   knows(uniqueVar56, a)
+%   knows(b, uniqueVar48)
+%   knows(underscore, uniqueVar54)
 %   knows(a, uniqueVar51)
-%   knows(a, uniqueVar52)
-%   knows(uniqueVar55, a)
-
-%%%%%  WILL-Produced Tree #8 @ 18:26:54 10/21/22.  %%%%%
-
-% FOR trusts(A, B):
-%   if ( knows(A, C), knows(C, C) )
-%   then if ( knows(B, A) )
-%   | then return 0.16549339619591805;  // std dev = 1,975, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
-%   | else if ( knows(B, D) )
-%   | | then return 0.13761285584083172;  // std dev = 5,221, 304,000 (wgt'ed) examples reached here.  /* #neg=31 #pos=273 */
-%   | | else if ( knows(C, A) )
-%   | | | then return 0.1909900464933698;  // std dev = 0,002, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
-%   | | | else return 0.15757455252408795;  // std dev = 0,218, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
-%   else if ( knows(B, E), knows(E, B) )
-%   | then return 0.17004403165573811;  // std dev = 0,140, 1.222,000 (wgt'ed) examples reached here.  /* #neg=25 #pos=1.197 */
-%   | else if ( knows(B, F), knows(A, F) )
-%   | | then return 0.1257958366957992;  // std dev = 0,285, 32,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=29 */
-%   | | else if ( knows(G, B), knows(G, G) )
-%   | | | then if ( knows(B, H) )
-%   | | | | then return 0.20623951496963866;  // std dev = 0,025, 4,000 (wgt'ed) examples reached here.  /* #pos=4 */
-%   | | | | else return -0.11712720738838378;  // std dev = 1,154, 6,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=4 */
-%   | | | else return 0.16378199005348373;  // std dev = 0,202, 254,000 (wgt'ed) examples reached here.  /* #neg=11 #pos=243 */
-
-
-% Clauses:
-
-trusts(A, B, 0.16549339619591805) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(B, A), 
-     !. // Clause #1.
-
-trusts(A, B, 0.13761285584083172) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(B, D), 
-     !. // Clause #2.
-
-trusts(A, B, 0.1909900464933698) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(C, A), 
-     !. // Clause #3.
-
-trusts(A, B, 0.15757455252408795) :- 
-     knows(A, C), 
-     knows(C, C), 
-     !. // Clause #4.
-
-trusts(A, B, 0.17004403165573811) :- 
-     knows(B, C), 
-     knows(C, B), 
-     !. // Clause #5.
-
-trusts(A, B, 0.1257958366957992) :- 
-     knows(B, C), 
-     knows(A, C), 
-     !. // Clause #6.
-
-trusts(A, B, 0.20623951496963866) :- 
-     knows(C, B), 
-     knows(C, C), 
-     knows(B, D), 
-     !. // Clause #7.
-
-trusts(A, B, -0.11712720738838378) :- 
-     knows(C, B), 
-     knows(C, C), 
-     !. // Clause #8.
-
-trusts(A, B, 0.16378199005348373) :- !. // Clause #9.
-
-
-% The flattened versions of these clauses:
-
-flattened_trusts(a, b, 0.16549339619591805) :-  /* #neg=4 #pos=156 */ 
-   knows(a, uniqueVar58),
-   knows(uniqueVar58, uniqueVar58),
-   knows(b, a),
-   !. // Flattened version of clause #1.
-
-flattened_trusts(a, b, 0.13761285584083172) :-  /* #neg=31 #pos=273 */ 
-   knows(a, uniqueVar59),
-   knows(uniqueVar59, uniqueVar59),
-   knows(b, underscore),
-   !. // Flattened version of clause #2.
-
-flattened_trusts(a, underscore, 0.1909900464933698) :-  /* #pos=6 */ 
-   knows(a, uniqueVar60),
-   knows(uniqueVar60, uniqueVar60),
-   knows(uniqueVar60, a),
-   !. // Flattened version of clause #3.
-
-flattened_trusts(a, underscore, 0.15757455252408795) :-  /* #neg=1 #pos=19 */ 
-   knows(a, uniqueVar61),
-   knows(uniqueVar61, uniqueVar61),
-   !. // Flattened version of clause #4.
-
-flattened_trusts(underscore, a, 0.17004403165573811) :-  /* #neg=25 #pos=1.197 */ 
-   knows(a, uniqueVar62),
-   knows(uniqueVar62, a),
-   !. // Flattened version of clause #5.
-
-flattened_trusts(a, b, 0.1257958366957992) :-  /* #neg=3 #pos=29 */ 
-   knows(b, uniqueVar63),
-   knows(a, uniqueVar63),
-   !. // Flattened version of clause #6.
-
-flattened_trusts(underscore, a, 0.20623951496963866) :-  /* #pos=4 */ 
-   knows(uniqueVar64, a),
-   knows(uniqueVar64, uniqueVar64),
-   knows(a, underscore),
-   !. // Flattened version of clause #7.
-
-flattened_trusts(underscore, a, -0.11712720738838378) :-  /* #neg=2 #pos=4 */ 
-   knows(uniqueVar65, a),
-   knows(uniqueVar65, uniqueVar65),
-   !. // Flattened version of clause #8.
-
-flattened_trusts(underscore, underscore, 0.16378199005348373) :-  /* #neg=11 #pos=243 */ 
-   !. // Flattened version of clause #9.
-
-
-% The unique flattened literals:
-%   knows(uniqueVar61, uniqueVar61)
-%   knows(a, underscore)
-%   knows(uniqueVar60, a)
-%   knows(b, underscore)
-%   knows(uniqueVar59, uniqueVar59)
-%   knows(a, uniqueVar62)
-%   knows(uniqueVar64, a)
-%   knows(uniqueVar64, uniqueVar64)
-%   knows(a, uniqueVar60)
-%   knows(b, uniqueVar63)
-%   knows(a, uniqueVar61)
-%   knows(uniqueVar60, uniqueVar60)
-%   knows(a, uniqueVar58)
-%   knows(a, uniqueVar63)
-%   knows(uniqueVar58, uniqueVar58)
-%   knows(a, uniqueVar59)
+%   knows(uniqueVar53, a)
+%   knows(uniqueVar52, a)
+%   knows(uniqueVar50, uniqueVar50)
+%   knows(a, uniqueVar48)
+%   knows(uniqueVar51, uniqueVar51)
+%   knows(uniqueVar54, a)
+%   knows(uniqueVar47, uniqueVar47)
+%   knows(uniqueVar48, uniqueVar48)
+%   knows(uniqueVar49, uniqueVar49)
+%   knows(a, uniqueVar50)
 %   knows(b, a)
-%   knows(uniqueVar62, a)
-%   knows(uniqueVar65, a)
-%   knows(uniqueVar65, uniqueVar65)
+%   knows(uniqueVar53, uniqueVar52)
+%   knows(a, uniqueVar47)
+%   knows(uniqueVar50, a)
+%   knows(a, uniqueVar49)
+%   knows(b, underscore)
 
-%%%%%  WILL-Produced Tree #9 @ 18:27:06 10/21/22.  %%%%%
+%%%%%  WILL-Produced Tree #8 @ 19:16:38 10/21/22.  %%%%%
 
 % FOR trusts(A, B):
-%   if ( knows(A, C), knows(C, C) )
-%   then if ( knows(B, A) )
-%   | then return 0.1412694229149483;  // std dev = 1,975, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
-%   | else if ( knows(B, D) )
-%   | | then return 0.11346544980045362;  // std dev = 5,225, 304,000 (wgt'ed) examples reached here.  /* #neg=31 #pos=273 */
-%   | | else if ( knows(C, A) )
-%   | | | then return 0.16320403260582847;  // std dev = 0,002, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
-%   | | | else return 0.13285358475089937;  // std dev = 0,218, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
-%   else if ( knows(B, A) )
-%   | then return 0.15272983873511453;  // std dev = 0,068, 424,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=422 */
+%   if ( knows(B, A) )
+%   then return 0.17388620426732404;  // std dev = 0,101, 584,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=578 */
+%   else if ( knows(A, C), knows(C, C) )
+%   | then if ( knows(B, C) )
+%   | | then return 0.1565554848760374;  // std dev = 2,223, 72,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=66 */
+%   | | else if ( knows(B, D) )
+%   | | | then return 0.1317132013119006;  // std dev = 4,690, 232,000 (wgt'ed) examples reached here.  /* #neg=25 #pos=207 */
+%   | | | else return 0.16531154963425473;  // std dev = 0,192, 26,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=25 */
 %   | else if ( knows(E, A), knows(F, E) )
 %   | | then if ( knows(F, A) )
-%   | | | then return 0.1260237444013383;  // std dev = 5,187, 480,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=451 */
+%   | | | then return 0.1513213872436984;  // std dev = 5,189, 480,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=451 */
 %   | | | else if ( knows(B, G) )
-%   | | | | then return 0.15055509149770005;  // std dev = 1,986, 304,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=300 */
-%   | | | | else return 0.12154864089984484;  // std dev = 1,672, 50,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=47 */
-%   | | else return 0.14975592708296992;  // std dev = 0,105, 260,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=257 */
-
-
-% Clauses:
-
-trusts(A, B, 0.1412694229149483) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(B, A), 
-     !. // Clause #1.
-
-trusts(A, B, 0.11346544980045362) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(B, D), 
-     !. // Clause #2.
-
-trusts(A, B, 0.16320403260582847) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(C, A), 
-     !. // Clause #3.
-
-trusts(A, B, 0.13285358475089937) :- 
-     knows(A, C), 
-     knows(C, C), 
-     !. // Clause #4.
-
-trusts(A, B, 0.15272983873511453) :- 
-     knows(B, A), 
-     !. // Clause #5.
-
-trusts(A, B, 0.1260237444013383) :- 
-     knows(C, A), 
-     knows(D, C), 
-     knows(D, A), 
-     !. // Clause #6.
-
-trusts(A, B, 0.15055509149770005) :- 
-     knows(C, A), 
-     knows(D, C), 
-     knows(B, E), 
-     !. // Clause #7.
-
-trusts(A, B, 0.12154864089984484) :- 
-     knows(C, A), 
-     knows(D, C), 
-     !. // Clause #8.
-
-trusts(A, B, 0.14975592708296992) :- !. // Clause #9.
-
-
-% The flattened versions of these clauses:
-
-flattened_trusts(a, b, 0.1412694229149483) :-  /* #neg=4 #pos=156 */ 
-   knows(a, uniqueVar66),
-   knows(uniqueVar66, uniqueVar66),
-   knows(b, a),
-   !. // Flattened version of clause #1.
-
-flattened_trusts(a, b, 0.11346544980045362) :-  /* #neg=31 #pos=273 */ 
-   knows(a, uniqueVar67),
-   knows(uniqueVar67, uniqueVar67),
-   knows(b, underscore),
-   !. // Flattened version of clause #2.
-
-flattened_trusts(a, underscore, 0.16320403260582847) :-  /* #pos=6 */ 
-   knows(a, uniqueVar68),
-   knows(uniqueVar68, uniqueVar68),
-   knows(uniqueVar68, a),
-   !. // Flattened version of clause #3.
-
-flattened_trusts(a, underscore, 0.13285358475089937) :-  /* #neg=1 #pos=19 */ 
-   knows(a, uniqueVar69),
-   knows(uniqueVar69, uniqueVar69),
-   !. // Flattened version of clause #4.
-
-flattened_trusts(a, b, 0.15272983873511453) :-  /* #neg=2 #pos=422 */ 
-   knows(b, a),
-   !. // Flattened version of clause #5.
-
-flattened_trusts(a, underscore, 0.1260237444013383) :-  /* #neg=29 #pos=451 */ 
-   knows(uniqueVar70, a),
-   knows(uniqueVar71, uniqueVar70),
-   knows(uniqueVar71, a),
-   !. // Flattened version of clause #6.
-
-flattened_trusts(a, b, 0.15055509149770005) :-  /* #neg=4 #pos=300 */ 
-   knows(uniqueVar72, a),
-   knows(underscore, uniqueVar72),
-   knows(b, underscore),
-   !. // Flattened version of clause #7.
-
-flattened_trusts(a, underscore, 0.12154864089984484) :-  /* #neg=3 #pos=47 */ 
-   knows(uniqueVar73, a),
-   knows(underscore, uniqueVar73),
-   !. // Flattened version of clause #8.
-
-flattened_trusts(underscore, underscore, 0.14975592708296992) :-  /* #neg=3 #pos=257 */ 
-   !. // Flattened version of clause #9.
-
-
-% The unique flattened literals:
-%   knows(a, uniqueVar66)
-%   knows(a, uniqueVar69)
-%   knows(b, underscore)
-%   knows(uniqueVar68, a)
-%   knows(uniqueVar68, uniqueVar68)
-%   knows(uniqueVar73, a)
-%   knows(uniqueVar69, uniqueVar69)
-%   knows(uniqueVar72, a)
-%   knows(uniqueVar71, a)
-%   knows(uniqueVar71, uniqueVar70)
-%   knows(uniqueVar70, a)
-%   knows(uniqueVar67, uniqueVar67)
-%   knows(b, a)
-%   knows(underscore, uniqueVar72)
-%   knows(a, uniqueVar67)
-%   knows(underscore, uniqueVar73)
-%   knows(a, uniqueVar68)
-%   knows(uniqueVar66, uniqueVar66)
-
-%%%%%  WILL-Produced Tree #10 @ 18:27:19 10/21/22.  %%%%%
-
-% FOR trusts(A, B):
-%   if ( knows(A, C), knows(C, C) )
-%   then if ( knows(B, D) )
-%   | then return 0.10446404770513887;  // std dev = 5,595, 464,000 (wgt'ed) examples reached here.  /* #neg=35 #pos=429 */
-%   | else if ( knows(C, A) )
-%   | | then return 0.14212121110366957;  // std dev = 0,002, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
-%   | | else return 0.11383753446741851;  // std dev = 0,218, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
-%   else if ( knows(B, A) )
-%   | then return 0.1335119283630517;  // std dev = 0,068, 424,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=422 */
-%   | else if ( knows(E, A), knows(F, E) )
-%   | | then if ( knows(F, A) )
-%   | | | then return 0.107674672584599;  // std dev = 5,189, 480,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=451 */
-%   | | | else if ( knows(B, G) )
-%   | | | | then return 0.13097450663096094;  // std dev = 1,986, 304,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=300 */
-%   | | | | else return 0.10418600246512984;  // std dev = 1,673, 50,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=47 */
+%   | | | | then return 0.1747451126140717;  // std dev = 1,985, 304,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=300 */
+%   | | | | else return 0.14461609553355276;  // std dev = 1,680, 50,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=47 */
 %   | | else if ( knows(A, H), knows(H, I) )
-%   | | | then return 0.13374392033946073;  // std dev = 0,089, 250,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=248 */
-%   | | | else return 0.04973697861528566;  // std dev = 0,290, 10,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=9 */
+%   | | | then return 0.17855390423173834;  // std dev = 0,089, 250,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=248 */
+%   | | | else return 0.08744091084885572;  // std dev = 0,300, 10,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=9 */
 
 
 % Clauses:
 
-trusts(A, B, 0.10446404770513887) :- 
+trusts(A, B, 0.17388620426732404) :- 
+     knows(B, A), 
+     !. // Clause #1.
+
+trusts(A, B, 0.1565554848760374) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(B, C), 
+     !. // Clause #2.
+
+trusts(A, B, 0.1317132013119006) :- 
      knows(A, C), 
      knows(C, C), 
      knows(B, D), 
-     !. // Clause #1.
-
-trusts(A, B, 0.14212121110366957) :- 
-     knows(A, C), 
-     knows(C, C), 
-     knows(C, A), 
-     !. // Clause #2.
-
-trusts(A, B, 0.11383753446741851) :- 
-     knows(A, C), 
-     knows(C, C), 
      !. // Clause #3.
 
-trusts(A, B, 0.1335119283630517) :- 
-     knows(B, A), 
+trusts(A, B, 0.16531154963425473) :- 
+     knows(A, C), 
+     knows(C, C), 
      !. // Clause #4.
 
-trusts(A, B, 0.107674672584599) :- 
+trusts(A, B, 0.1513213872436984) :- 
      knows(C, A), 
      knows(D, C), 
      knows(D, A), 
      !. // Clause #5.
 
-trusts(A, B, 0.13097450663096094) :- 
+trusts(A, B, 0.1747451126140717) :- 
      knows(C, A), 
      knows(D, C), 
      knows(B, E), 
      !. // Clause #6.
 
-trusts(A, B, 0.10418600246512984) :- 
+trusts(A, B, 0.14461609553355276) :- 
      knows(C, A), 
      knows(D, C), 
      !. // Clause #7.
 
-trusts(A, B, 0.13374392033946073) :- 
+trusts(A, B, 0.17855390423173834) :- 
      knows(A, C), 
      knows(C, D), 
      !. // Clause #8.
 
-trusts(A, B, 0.04973697861528566) :- !. // Clause #9.
+trusts(A, B, 0.08744091084885572) :- !. // Clause #9.
 
 
 % The flattened versions of these clauses:
 
-flattened_trusts(a, b, 0.10446404770513887) :-  /* #neg=35 #pos=429 */ 
-   knows(a, uniqueVar74),
-   knows(uniqueVar74, uniqueVar74),
-   knows(b, underscore),
+flattened_trusts(a, b, 0.17388620426732404) :-  /* #neg=6 #pos=578 */ 
+   knows(b, a),
    !. // Flattened version of clause #1.
 
-flattened_trusts(a, underscore, 0.14212121110366957) :-  /* #pos=6 */ 
-   knows(a, uniqueVar75),
-   knows(uniqueVar75, uniqueVar75),
-   knows(uniqueVar75, a),
+flattened_trusts(a, b, 0.1565554848760374) :-  /* #neg=6 #pos=66 */ 
+   knows(a, uniqueVar55),
+   knows(uniqueVar55, uniqueVar55),
+   knows(b, uniqueVar55),
    !. // Flattened version of clause #2.
 
-flattened_trusts(a, underscore, 0.11383753446741851) :-  /* #neg=1 #pos=19 */ 
-   knows(a, uniqueVar76),
-   knows(uniqueVar76, uniqueVar76),
+flattened_trusts(a, b, 0.1317132013119006) :-  /* #neg=25 #pos=207 */ 
+   knows(a, uniqueVar56),
+   knows(uniqueVar56, uniqueVar56),
+   knows(b, underscore),
    !. // Flattened version of clause #3.
 
-flattened_trusts(a, b, 0.1335119283630517) :-  /* #neg=2 #pos=422 */ 
-   knows(b, a),
+flattened_trusts(a, underscore, 0.16531154963425473) :-  /* #neg=1 #pos=25 */ 
+   knows(a, uniqueVar57),
+   knows(uniqueVar57, uniqueVar57),
    !. // Flattened version of clause #4.
 
-flattened_trusts(a, underscore, 0.107674672584599) :-  /* #neg=29 #pos=451 */ 
-   knows(uniqueVar77, a),
-   knows(uniqueVar78, uniqueVar77),
-   knows(uniqueVar78, a),
+flattened_trusts(a, underscore, 0.1513213872436984) :-  /* #neg=29 #pos=451 */ 
+   knows(uniqueVar58, a),
+   knows(uniqueVar59, uniqueVar58),
+   knows(uniqueVar59, a),
    !. // Flattened version of clause #5.
 
-flattened_trusts(a, b, 0.13097450663096094) :-  /* #neg=4 #pos=300 */ 
-   knows(uniqueVar79, a),
-   knows(underscore, uniqueVar79),
+flattened_trusts(a, b, 0.1747451126140717) :-  /* #neg=4 #pos=300 */ 
+   knows(uniqueVar60, a),
+   knows(underscore, uniqueVar60),
    knows(b, underscore),
    !. // Flattened version of clause #6.
 
-flattened_trusts(a, underscore, 0.10418600246512984) :-  /* #neg=3 #pos=47 */ 
-   knows(uniqueVar80, a),
-   knows(underscore, uniqueVar80),
+flattened_trusts(a, underscore, 0.14461609553355276) :-  /* #neg=3 #pos=47 */ 
+   knows(uniqueVar61, a),
+   knows(underscore, uniqueVar61),
    !. // Flattened version of clause #7.
 
-flattened_trusts(a, underscore, 0.13374392033946073) :-  /* #neg=2 #pos=248 */ 
-   knows(a, uniqueVar81),
-   knows(uniqueVar81, underscore),
+flattened_trusts(a, underscore, 0.17855390423173834) :-  /* #neg=2 #pos=248 */ 
+   knows(a, uniqueVar62),
+   knows(uniqueVar62, underscore),
    !. // Flattened version of clause #8.
 
-flattened_trusts(underscore, underscore, 0.04973697861528566) :-  /* #neg=1 #pos=9 */ 
+flattened_trusts(underscore, underscore, 0.08744091084885572) :-  /* #neg=1 #pos=9 */ 
    !. // Flattened version of clause #9.
 
 
 % The unique flattened literals:
-%   knows(a, uniqueVar76)
-%   knows(b, underscore)
-%   knows(uniqueVar75, a)
-%   knows(a, uniqueVar81)
-%   knows(uniqueVar78, a)
-%   knows(uniqueVar78, uniqueVar77)
-%   knows(a, uniqueVar74)
-%   knows(uniqueVar74, uniqueVar74)
-%   knows(uniqueVar75, uniqueVar75)
-%   knows(a, uniqueVar75)
-%   knows(uniqueVar77, a)
-%   knows(uniqueVar81, underscore)
-%   knows(uniqueVar79, a)
-%   knows(underscore, uniqueVar80)
-%   knows(underscore, uniqueVar79)
+%   knows(a, uniqueVar56)
+%   knows(a, uniqueVar57)
+%   knows(underscore, uniqueVar60)
+%   knows(uniqueVar60, a)
+%   knows(uniqueVar56, uniqueVar56)
+%   knows(underscore, uniqueVar61)
+%   knows(uniqueVar62, underscore)
+%   knows(a, uniqueVar55)
+%   knows(uniqueVar57, uniqueVar57)
+%   knows(uniqueVar55, uniqueVar55)
 %   knows(b, a)
-%   knows(uniqueVar80, a)
-%   knows(uniqueVar76, uniqueVar76)
+%   knows(uniqueVar61, a)
+%   knows(uniqueVar59, a)
+%   knows(uniqueVar59, uniqueVar58)
+%   knows(b, uniqueVar55)
+%   knows(a, uniqueVar62)
+%   knows(uniqueVar58, a)
+%   knows(b, underscore)
+
+%%%%%  WILL-Produced Tree #9 @ 19:16:48 10/21/22.  %%%%%
+
+% FOR trusts(A, B):
+%   if ( knows(B, A) )
+%   then return 0.14918266693185214;  // std dev = 0,101, 584,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=578 */
+%   else if ( knows(C, A), knows(C, C) )
+%   | then if ( knows(C, B) )
+%   | | then return 0.16501655480080582;  // std dev = 0,983, 30,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=29 */
+%   | | else if ( knows(B, B) )
+%   | | | then return -0.18715352473189603;  // std dev = 1,225, 6,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=3 */
+%   | | | else if ( knows(A, C) )
+%   | | | | then return 0.12251011277150362;  // std dev = 2,131, 58,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=53 */
+%   | | | | else return 0.05509964580044642;  // std dev = 2,537, 46,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=38 */
+%   | else if ( knows(B, D), knows(D, B) )
+%   | | then return 0.14142940514369073;  // std dev = 0,184, 950,000 (wgt'ed) examples reached here.  /* #neg=34 #pos=916 */
+%   | | else if ( knows(B, E), knows(F, A) )
+%   | | | then if ( knows(F, E) )
+%   | | | | then return 0.06448552805655879;  // std dev = 2,603, 56,000 (wgt'ed) examples reached here.  /* #neg=8 #pos=48 */
+%   | | | | else return 0.1313576102550545;  // std dev = 2,147, 92,000 (wgt'ed) examples reached here.  /* #neg=5 #pos=87 */
+%   | | | else return 0.14089376679722643;  // std dev = 0,190, 186,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=179 */
+
+
+% Clauses:
+
+trusts(A, B, 0.14918266693185214) :- 
+     knows(B, A), 
+     !. // Clause #1.
+
+trusts(A, B, 0.16501655480080582) :- 
+     knows(C, A), 
+     knows(C, C), 
+     knows(C, B), 
+     !. // Clause #2.
+
+trusts(A, B, -0.18715352473189603) :- 
+     knows(C, A), 
+     knows(C, C), 
+     knows(B, B), 
+     !. // Clause #3.
+
+trusts(A, B, 0.12251011277150362) :- 
+     knows(C, A), 
+     knows(C, C), 
+     knows(A, C), 
+     !. // Clause #4.
+
+trusts(A, B, 0.05509964580044642) :- 
+     knows(C, A), 
+     knows(C, C), 
+     !. // Clause #5.
+
+trusts(A, B, 0.14142940514369073) :- 
+     knows(B, C), 
+     knows(C, B), 
+     !. // Clause #6.
+
+trusts(A, B, 0.06448552805655879) :- 
+     knows(B, C), 
+     knows(D, A), 
+     knows(D, C), 
+     !. // Clause #7.
+
+trusts(A, B, 0.1313576102550545) :- 
+     knows(B, C), 
+     knows(D, A), 
+     !. // Clause #8.
+
+trusts(A, B, 0.14089376679722643) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_trusts(a, b, 0.14918266693185214) :-  /* #neg=6 #pos=578 */ 
+   knows(b, a),
+   !. // Flattened version of clause #1.
+
+flattened_trusts(a, b, 0.16501655480080582) :-  /* #neg=1 #pos=29 */ 
+   knows(uniqueVar63, a),
+   knows(uniqueVar63, uniqueVar63),
+   knows(uniqueVar63, b),
+   !. // Flattened version of clause #2.
+
+flattened_trusts(a, b, -0.18715352473189603) :-  /* #neg=3 #pos=3 */ 
+   knows(uniqueVar64, a),
+   knows(uniqueVar64, uniqueVar64),
+   knows(b, b),
+   !. // Flattened version of clause #3.
+
+flattened_trusts(a, underscore, 0.12251011277150362) :-  /* #neg=5 #pos=53 */ 
+   knows(uniqueVar65, a),
+   knows(uniqueVar65, uniqueVar65),
+   knows(a, uniqueVar65),
+   !. // Flattened version of clause #4.
+
+flattened_trusts(a, underscore, 0.05509964580044642) :-  /* #neg=8 #pos=38 */ 
+   knows(uniqueVar66, a),
+   knows(uniqueVar66, uniqueVar66),
+   !. // Flattened version of clause #5.
+
+flattened_trusts(underscore, a, 0.14142940514369073) :-  /* #neg=34 #pos=916 */ 
+   knows(a, uniqueVar67),
+   knows(uniqueVar67, a),
+   !. // Flattened version of clause #6.
+
+flattened_trusts(a, b, 0.06448552805655879) :-  /* #neg=8 #pos=48 */ 
+   knows(b, uniqueVar68),
+   knows(uniqueVar69, a),
+   knows(uniqueVar69, uniqueVar68),
+   !. // Flattened version of clause #7.
+
+flattened_trusts(a, b, 0.1313576102550545) :-  /* #neg=5 #pos=87 */ 
+   knows(b, underscore),
+   knows(underscore, a),
+   !. // Flattened version of clause #8.
+
+flattened_trusts(underscore, underscore, 0.14089376679722643) :-  /* #neg=7 #pos=179 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   knows(uniqueVar64, a)
+%   knows(uniqueVar65, uniqueVar65)
+%   knows(uniqueVar69, a)
+%   knows(a, uniqueVar65)
+%   knows(uniqueVar66, uniqueVar66)
+%   knows(uniqueVar69, uniqueVar68)
+%   knows(uniqueVar63, a)
+%   knows(a, uniqueVar67)
+%   knows(uniqueVar67, a)
+%   knows(b, a)
+%   knows(b, b)
+%   knows(uniqueVar63, b)
+%   knows(uniqueVar65, a)
+%   knows(b, uniqueVar68)
+%   knows(underscore, a)
+%   knows(uniqueVar63, uniqueVar63)
+%   knows(uniqueVar64, uniqueVar64)
+%   knows(uniqueVar66, a)
+%   knows(b, underscore)
+
+%%%%%  WILL-Produced Tree #10 @ 19:16:58 10/21/22.  %%%%%
+
+% FOR trusts(A, B):
+%   if ( knows(A, C), knows(C, C) )
+%   then if ( knows(B, A) )
+%   | then return 0.12112951232738707;  // std dev = 1,975, 160,000 (wgt'ed) examples reached here.  /* #neg=4 #pos=156 */
+%   | else if ( knows(B, C) )
+%   | | then return 0.11359931404546758;  // std dev = 2,178, 72,000 (wgt'ed) examples reached here.  /* #neg=6 #pos=66 */
+%   | | else if ( knows(B, D) )
+%   | | | then return 0.08754530826340734;  // std dev = 4,683, 232,000 (wgt'ed) examples reached here.  /* #neg=25 #pos=207 */
+%   | | | else if ( knows(C, A) )
+%   | | | | then return 0.1436199518838244;  // std dev = 0,014, 6,000 (wgt'ed) examples reached here.  /* #pos=6 */
+%   | | | | else return 0.11460121494718936;  // std dev = 0,980, 20,000 (wgt'ed) examples reached here.  /* #neg=1 #pos=19 */
+%   else if ( knows(B, A) )
+%   | then return 0.13360894162326578;  // std dev = 0,068, 424,000 (wgt'ed) examples reached here.  /* #neg=2 #pos=422 */
+%   | else if ( knows(E, A), knows(F, E) )
+%   | | then if ( knows(F, A) )
+%   | | | then return 0.10830582906630946;  // std dev = 5,187, 480,000 (wgt'ed) examples reached here.  /* #neg=29 #pos=451 */
+%   | | | else return 0.12744741049890873;  // std dev = 0,139, 354,000 (wgt'ed) examples reached here.  /* #neg=7 #pos=347 */
+%   | | else return 0.13172899768816063;  // std dev = 0,106, 260,000 (wgt'ed) examples reached here.  /* #neg=3 #pos=257 */
+
+
+% Clauses:
+
+trusts(A, B, 0.12112951232738707) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(B, A), 
+     !. // Clause #1.
+
+trusts(A, B, 0.11359931404546758) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(B, C), 
+     !. // Clause #2.
+
+trusts(A, B, 0.08754530826340734) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(B, D), 
+     !. // Clause #3.
+
+trusts(A, B, 0.1436199518838244) :- 
+     knows(A, C), 
+     knows(C, C), 
+     knows(C, A), 
+     !. // Clause #4.
+
+trusts(A, B, 0.11460121494718936) :- 
+     knows(A, C), 
+     knows(C, C), 
+     !. // Clause #5.
+
+trusts(A, B, 0.13360894162326578) :- 
+     knows(B, A), 
+     !. // Clause #6.
+
+trusts(A, B, 0.10830582906630946) :- 
+     knows(C, A), 
+     knows(D, C), 
+     knows(D, A), 
+     !. // Clause #7.
+
+trusts(A, B, 0.12744741049890873) :- 
+     knows(C, A), 
+     knows(D, C), 
+     !. // Clause #8.
+
+trusts(A, B, 0.13172899768816063) :- !. // Clause #9.
+
+
+% The flattened versions of these clauses:
+
+flattened_trusts(a, b, 0.12112951232738707) :-  /* #neg=4 #pos=156 */ 
+   knows(a, uniqueVar70),
+   knows(uniqueVar70, uniqueVar70),
+   knows(b, a),
+   !. // Flattened version of clause #1.
+
+flattened_trusts(a, b, 0.11359931404546758) :-  /* #neg=6 #pos=66 */ 
+   knows(a, uniqueVar71),
+   knows(uniqueVar71, uniqueVar71),
+   knows(b, uniqueVar71),
+   !. // Flattened version of clause #2.
+
+flattened_trusts(a, b, 0.08754530826340734) :-  /* #neg=25 #pos=207 */ 
+   knows(a, uniqueVar72),
+   knows(uniqueVar72, uniqueVar72),
+   knows(b, underscore),
+   !. // Flattened version of clause #3.
+
+flattened_trusts(a, underscore, 0.1436199518838244) :-  /* #pos=6 */ 
+   knows(a, uniqueVar73),
+   knows(uniqueVar73, uniqueVar73),
+   knows(uniqueVar73, a),
+   !. // Flattened version of clause #4.
+
+flattened_trusts(a, underscore, 0.11460121494718936) :-  /* #neg=1 #pos=19 */ 
+   knows(a, uniqueVar74),
+   knows(uniqueVar74, uniqueVar74),
+   !. // Flattened version of clause #5.
+
+flattened_trusts(a, b, 0.13360894162326578) :-  /* #neg=2 #pos=422 */ 
+   knows(b, a),
+   !. // Flattened version of clause #6.
+
+flattened_trusts(a, underscore, 0.10830582906630946) :-  /* #neg=29 #pos=451 */ 
+   knows(uniqueVar75, a),
+   knows(uniqueVar76, uniqueVar75),
+   knows(uniqueVar76, a),
+   !. // Flattened version of clause #7.
+
+flattened_trusts(a, underscore, 0.12744741049890873) :-  /* #neg=7 #pos=347 */ 
+   knows(uniqueVar77, a),
+   knows(underscore, uniqueVar77),
+   !. // Flattened version of clause #8.
+
+flattened_trusts(underscore, underscore, 0.13172899768816063) :-  /* #neg=3 #pos=257 */ 
+   !. // Flattened version of clause #9.
+
+
+% The unique flattened literals:
+%   knows(a, uniqueVar70)
+%   knows(uniqueVar73, a)
+%   knows(a, uniqueVar74)
+%   knows(uniqueVar70, uniqueVar70)
+%   knows(a, uniqueVar71)
+%   knows(a, uniqueVar73)
+%   knows(uniqueVar77, a)
+%   knows(uniqueVar72, uniqueVar72)
+%   knows(uniqueVar73, uniqueVar73)
+%   knows(underscore, uniqueVar77)
+%   knows(uniqueVar74, uniqueVar74)
+%   knows(b, a)
+%   knows(uniqueVar76, a)
+%   knows(uniqueVar75, a)
+%   knows(b, uniqueVar71)
+%   knows(uniqueVar76, uniqueVar75)
+%   knows(uniqueVar71, uniqueVar71)
+%   knows(a, uniqueVar72)
+%   knows(b, underscore)
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1499,174 +1495,171 @@ getScore_trusts_tree9(A, B, TreesToUse, Total9) :- trusts_tree9(A, B, Total), st
 getScore_trusts_tree10(A, B, TreesToUse, 0.0) :- 10 > TreesToUse, !.
 getScore_trusts_tree10(A, B, TreesToUse, Total10) :- trusts_tree10(A, B, Total), stepLength_tree10(StepLen), Total10 is Total * StepLen.
 
-flattenedLiteralsInThisSetOfTrees(trusts, 170, [
-   knows(a, uniqueVar3),
-   knows(b, uniqueVar16),
-   knows(b, uniqueVar23),
-   knows(underscore, uniqueVar7),
-   knows(a, uniqueVar11),
-   knows(a, uniqueVar45),
-   knows(uniqueVar53, uniqueVar53),
-   knows(a, uniqueVar60),
-   knows(a, uniqueVar61),
-   knows(a, uniqueVar2),
-   knows(a, uniqueVar36),
-   knows(a, uniqueVar35),
-   knows(uniqueVar15, a),
-   knows(uniqueVar42, uniqueVar42),
-   knows(uniqueVar28, a),
-   knows(uniqueVar67, uniqueVar67),
-   knows(uniqueVar47, a),
-   knows(underscore, uniqueVar49),
-   knows(uniqueVar80, a),
-   knows(uniqueVar23, b),
-   knows(uniqueVar65, a),
-   knows(uniqueVar31, a),
-   knows(uniqueVar41, a),
-   knows(uniqueVar43, uniqueVar43),
-   knows(uniqueVar56, a),
-   knows(uniqueVar66, uniqueVar66),
-   knows(uniqueVar76, uniqueVar76),
+flattenedLiteralsInThisSetOfTrees(trusts, 167, [
+   knows(uniqueVar37, a),
+   knows(underscore, uniqueVar54),
    knows(a, uniqueVar51),
-   knows(a, uniqueVar52),
-   knows(uniqueVar7, a),
-   knows(uniqueVar36, uniqueVar36),
-   knows(b, uniqueVar40),
-   knows(uniqueVar57, a),
-   knows(uniqueVar11, a),
-   knows(uniqueVar18, uniqueVar17),
-   knows(uniqueVar54, uniqueVar54),
-   knows(uniqueVar64, uniqueVar64),
-   knows(underscore, uniqueVar8),
-   knows(uniqueVar21, b),
-   knows(uniqueVar77, a),
-   knows(uniqueVar81, underscore),
-   knows(uniqueVar27, b),
-   knows(a, uniqueVar30),
-   knows(uniqueVar1, uniqueVar1),
-   knows(a, uniqueVar67),
-   knows(underscore, uniqueVar73),
-   knows(underscore, a),
-   knows(uniqueVar6, uniqueVar5),
-   knows(uniqueVar10, uniqueVar10),
-   knows(uniqueVar46, a),
-   knows(a, uniqueVar53),
-   knows(a, uniqueVar33),
-   knows(b, b),
-   knows(uniqueVar45, uniqueVar45),
-   knows(uniqueVar25, b),
    knows(a, uniqueVar74),
-   knows(uniqueVar75, uniqueVar75),
-   knows(b, uniqueVar34),
-   knows(uniqueVar60, uniqueVar60),
-   knows(uniqueVar14, uniqueVar14),
-   knows(a, uniqueVar58),
-   knows(uniqueVar71, uniqueVar70),
-   knows(uniqueVar58, uniqueVar58),
-   knows(underscore, uniqueVar80),
-   knows(underscore, uniqueVar79),
-   knows(uniqueVar38, b),
-   knows(uniqueVar51, uniqueVar51),
-   knows(uniqueVar65, uniqueVar65),
-   knows(uniqueVar30, a),
-   knows(uniqueVar40, uniqueVar39),
-   knows(uniqueVar47, uniqueVar46),
-   knows(a, uniqueVar24),
-   knows(b, underscore),
-   knows(uniqueVar35, a),
-   knows(uniqueVar2, uniqueVar2),
-   knows(uniqueVar4, uniqueVar4),
-   knows(uniqueVar44, uniqueVar44),
-   knows(b, uniqueVar63),
-   knows(uniqueVar74, uniqueVar74),
-   knows(uniqueVar5, a),
-   knows(a, uniqueVar42),
+   knows(uniqueVar29, uniqueVar28),
    knows(uniqueVar17, a),
-   knows(uniqueVar22, a),
-   knows(uniqueVar27, uniqueVar27),
-   knows(uniqueVar70, a),
-   knows(uniqueVar29, uniqueVar29),
-   knows(uniqueVar49, a),
-   knows(uniqueVar62, a),
-   knows(uniqueVar31, uniqueVar32),
-   knows(uniqueVar20, a),
-   knows(uniqueVar15, uniqueVar16),
-   knows(a, uniqueVar23),
-   knows(uniqueVar75, a),
-   knows(a, uniqueVar81),
-   knows(uniqueVar59, uniqueVar59),
-   knows(uniqueVar64, a),
-   knows(uniqueVar68, uniqueVar68),
-   knows(uniqueVar44, a),
-   knows(uniqueVar37, uniqueVar37),
-   knows(uniqueVar18, a),
-   knows(uniqueVar71, a),
-   knows(a, uniqueVar43),
-   knows(uniqueVar79, a),
-   knows(b, a),
-   knows(underscore, uniqueVar22),
-   knows(a, uniqueVar54),
-   knows(a, uniqueVar25),
-   knows(uniqueVar61, uniqueVar61),
-   knows(uniqueVar35, uniqueVar35),
-   knows(a, uniqueVar66),
-   knows(a, uniqueVar76),
-   knows(a, uniqueVar69),
-   knows(uniqueVar78, a),
-   knows(a, uniqueVar13),
-   knows(uniqueVar21, uniqueVar20),
-   knows(uniqueVar6, a),
-   knows(uniqueVar78, uniqueVar77),
-   knows(uniqueVar72, a),
-   knows(uniqueVar8, a),
    knows(uniqueVar26, a),
-   knows(uniqueVar29, a),
-   knows(b, uniqueVar32),
-   knows(uniqueVar52, uniqueVar52),
-   knows(uniqueVar24, b),
-   knows(uniqueVar28, uniqueVar28),
-   knows(a, uniqueVar50),
-   knows(uniqueVar56, uniqueVar55),
-   knows(a, uniqueVar34),
-   knows(uniqueVar60, a),
-   knows(uniqueVar12, uniqueVar12),
-   knows(a, uniqueVar26),
-   knows(uniqueVar50, uniqueVar50),
-   knows(a, uniqueVar62),
-   knows(uniqueVar73, a),
-   knows(a, uniqueVar9),
-   knows(uniqueVar19, a),
-   knows(a, uniqueVar75),
-   knows(a, uniqueVar10),
+   knows(a, uniqueVar55),
+   knows(uniqueVar48, uniqueVar48),
+   knows(uniqueVar72, uniqueVar72),
+   knows(uniqueVar49, uniqueVar49),
+   knows(uniqueVar74, uniqueVar74),
    knows(uniqueVar14, a),
-   knows(underscore, uniqueVar41),
-   knows(a, uniqueVar59),
-   knows(underscore, uniqueVar19),
-   knows(underscore, uniqueVar72),
-   knows(a, uniqueVar4),
-   knows(underscore, uniqueVar57),
-   knows(uniqueVar3, a),
-   knows(a, uniqueVar68),
-   knows(uniqueVar55, a),
-   knows(a, uniqueVar1),
-   knows(uniqueVar9, uniqueVar9),
-   knows(uniqueVar38, a),
-   knows(a, underscore),
-   knows(uniqueVar68, a),
-   knows(uniqueVar13, a),
-   knows(uniqueVar34, uniqueVar34),
-   knows(uniqueVar33, uniqueVar33),
-   knows(b, uniqueVar52),
-   knows(uniqueVar39, a),
-   knows(uniqueVar27, a),
-   knows(uniqueVar69, uniqueVar69),
-   knows(a, uniqueVar63),
-   knows(uniqueVar11, uniqueVar11),
-   knows(underscore, uniqueVar48),
-   knows(a, uniqueVar12),
-   knows(a, a),
+   knows(uniqueVar63, b),
+   knows(uniqueVar7, a),
+   knows(underscore, a),
+   knows(a, uniqueVar62),
+   knows(uniqueVar4, uniqueVar4),
+   knows(uniqueVar50, a),
+   knows(uniqueVar71, uniqueVar71),
+   knows(b, uniqueVar48),
+   knows(a, uniqueVar3),
    knows(uniqueVar3, uniqueVar3),
-   knows(uniqueVar26, uniqueVar26),
+   knows(uniqueVar65, uniqueVar65),
+   knows(uniqueVar19, a),
+   knows(a, uniqueVar15),
+   knows(underscore, uniqueVar22),
+   knows(underscore, uniqueVar8),
+   knows(uniqueVar63, a),
+   knows(uniqueVar77, a),
+   knows(uniqueVar38, b),
+   knows(uniqueVar47, uniqueVar47),
+   knows(uniqueVar36, uniqueVar36),
+   knows(b, a),
+   knows(uniqueVar59, a),
+   knows(a, uniqueVar34),
+   knows(uniqueVar76, a),
+   knows(a, uniqueVar56),
+   knows(uniqueVar42, a),
+   knows(a, uniqueVar10),
+   knows(a, uniqueVar36),
+   knows(uniqueVar60, a),
+   knows(uniqueVar41, uniqueVar41),
+   knows(uniqueVar54, a),
+   knows(uniqueVar35, a),
+   knows(uniqueVar12, uniqueVar12),
+   knows(a, uniqueVar67),
+   knows(uniqueVar5, a),
+   knows(uniqueVar25, uniqueVar25),
+   knows(uniqueVar46, a),
+   knows(uniqueVar11, uniqueVar11),
+   knows(uniqueVar53, uniqueVar52),
+   knows(uniqueVar59, uniqueVar58),
+   knows(uniqueVar40, uniqueVar40),
+   knows(uniqueVar75, a),
+   knows(uniqueVar9, a),
+   knows(uniqueVar29, a),
+   knows(uniqueVar76, uniqueVar75),
+   knows(uniqueVar63, uniqueVar63),
+   knows(underscore, uniqueVar23),
+   knows(b, underscore),
+   knows(b, uniqueVar38),
+   knows(a, uniqueVar27),
+   knows(uniqueVar69, a),
+   knows(uniqueVar23, a),
+   knows(uniqueVar39, b),
+   knows(a, uniqueVar71),
+   knows(uniqueVar1, uniqueVar1),
+   knows(uniqueVar31, a),
+   knows(uniqueVar37, b),
+   knows(uniqueVar41, a),
+   knows(uniqueVar51, uniqueVar51),
+   knows(uniqueVar69, uniqueVar68),
+   knows(a, uniqueVar38),
+   knows(uniqueVar20, a),
+   knows(uniqueVar21, uniqueVar20),
+   knows(uniqueVar57, uniqueVar57),
+   knows(a, uniqueVar13),
+   knows(a, uniqueVar39),
+   knows(b, b),
+   knows(a, uniqueVar17),
    knows(a, uniqueVar44),
-   knows(a, uniqueVar37),
-   knows(uniqueVar48, a)]).
+   knows(a, uniqueVar26),
+   knows(b, uniqueVar71),
+   knows(a, uniqueVar2),
+   knows(uniqueVar8, a),
+   knows(uniqueVar53, a),
+   knows(a, uniqueVar9),
+   knows(uniqueVar27, uniqueVar27),
+   knows(a, uniqueVar73),
+   knows(a, uniqueVar1),
+   knows(uniqueVar67, a),
+   knows(underscore, uniqueVar7),
+   knows(uniqueVar17, uniqueVar17),
+   knows(uniqueVar33, uniqueVar33),
+   knows(uniqueVar65, a),
+   knows(a, uniqueVar12),
+   knows(a, uniqueVar49),
+   knows(uniqueVar66, a),
+   knows(a, uniqueVar33),
+   knows(uniqueVar46, uniqueVar45),
+   knows(uniqueVar34, uniqueVar34),
+   knows(a, uniqueVar35),
+   knows(uniqueVar22, a),
+   knows(uniqueVar15, uniqueVar15),
+   knows(uniqueVar66, uniqueVar66),
+   knows(b, uniqueVar33),
+   knows(uniqueVar43, a),
+   knows(a, uniqueVar48),
+   knows(uniqueVar62, underscore),
+   knows(uniqueVar26, uniqueVar26),
+   knows(uniqueVar73, uniqueVar73),
+   knows(underscore, uniqueVar77),
+   knows(a, uniqueVar24),
+   knows(a, uniqueVar50),
+   knows(uniqueVar61, a),
+   knows(uniqueVar18, b),
+   knows(b, uniqueVar68),
+   knows(a, uniqueVar72),
+   knows(uniqueVar64, a),
+   knows(uniqueVar3, a),
+   knows(uniqueVar32, uniqueVar32),
+   knows(a, uniqueVar57),
+   knows(uniqueVar10, uniqueVar10),
+   knows(uniqueVar13, a),
+   knows(underscore, uniqueVar31),
+   knows(uniqueVar73, a),
+   knows(uniqueVar70, uniqueVar70),
+   knows(uniqueVar56, uniqueVar56),
+   knows(underscore, uniqueVar61),
+   knows(uniqueVar30, a),
+   knows(uniqueVar50, uniqueVar50),
+   knows(a, uniqueVar4),
+   knows(uniqueVar43, uniqueVar43),
+   knows(uniqueVar6, uniqueVar5),
+   knows(uniqueVar18, a),
+   knows(a, uniqueVar32),
+   knows(uniqueVar55, uniqueVar55),
+   knows(underscore, uniqueVar30),
+   knows(uniqueVar16, a),
+   knows(uniqueVar40, a),
+   knows(b, uniqueVar55),
+   knows(uniqueVar35, uniqueVar35),
+   knows(uniqueVar14, uniqueVar14),
+   knows(uniqueVar42, uniqueVar42),
+   knows(a, uniqueVar42),
+   knows(uniqueVar6, a),
+   knows(underscore, uniqueVar60),
+   knows(a, uniqueVar70),
+   knows(a, uniqueVar65),
+   knows(uniqueVar52, a),
+   knows(a, uniqueVar11),
+   knows(uniqueVar40, b),
+   knows(uniqueVar18, uniqueVar18),
+   knows(uniqueVar9, uniqueVar9),
+   knows(uniqueVar19, uniqueVar19),
+   knows(a, uniqueVar25),
+   knows(a, uniqueVar47),
+   knows(uniqueVar2, uniqueVar2),
+   knows(uniqueVar21, a),
+   knows(uniqueVar24, uniqueVar24),
+   knows(uniqueVar28, a),
+   knows(b, uniqueVar45),
+   knows(uniqueVar64, uniqueVar64),
+   knows(uniqueVar16, uniqueVar16),
+   knows(uniqueVar58, a),
+   knows(uniqueVar44, a)]).

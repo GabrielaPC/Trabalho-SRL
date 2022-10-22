@@ -3,12 +3,12 @@ setParam: stringsAreCaseSensitive = true.
 usePrologVariables: true.
 
 
-(hasCat(A, _, 0.23705618833188882) :-  /* #pos=24 */ link(A, UniqueVar60), link(UniqueVar60, _), link(UniqueVar60, A)).
-(hasCat(A, _, 0.1743544120734732) :-  /* #neg=10 #pos=68 */ link(A, UniqueVar61), link(UniqueVar61, UniqueVar62), link(A, UniqueVar62)).
-(hasCat(A, _, 0.09402072496114336) :-  /* #neg=7 #pos=28 */ link(A, UniqueVar63), link(UniqueVar63, UniqueVar64), link(UniqueVar64, _)).
-(hasCat(A, _, 0.1702960818041161) :-  /* #neg=9 #pos=79 */ link(A, UniqueVar65), link(UniqueVar65, _)).
-(hasCat(A, _, 0.14192737475443953) :-  /* #neg=15 #pos=80 */ link(UniqueVar66, A), link(UniqueVar67, UniqueVar66), link(_, UniqueVar67)).
-(hasCat(A, _, 0.19471376265223725) :-  /* #neg=11 #pos=129 */ link(UniqueVar68, A), link(_, UniqueVar68)).
-(hasCat(A, _, 0.17020600080208512) :-  /* #neg=23 #pos=185 */ link(UniqueVar69, A), link(UniqueVar69, UniqueVar70), link(UniqueVar70, _)).
-(hasCat(A, _, 0.1650925746530566) :-  /* #neg=35 #pos=250 */ link(_, A)).
-hasCat(_, _, 0.17225184143785557) /* #neg=97 #pos=813 */ .
+(hasCat(A, _, 0.1889542185872541) :-  /* #neg=6 #pos=88 */ link(A, UniqueVar59), link(UniqueVar60, UniqueVar59), link(UniqueVar60, A)).
+(hasCat(A, _, 0.16006519909925795) :-  /* #neg=14 #pos=87 */ link(UniqueVar61, A), link(UniqueVar62, UniqueVar61), link(_, UniqueVar62)).
+(hasCat(A, _, 0.15740450477510787) :-  /* #neg=31 #pos=199 */ link(A, UniqueVar63), link(UniqueVar64, UniqueVar63), link(_, UniqueVar64)).
+(hasCat(A, _, 0.17070218266491943) :-  /* #neg=23 #pos=176 */ link(UniqueVar65, A), link(UniqueVar65, UniqueVar66), link(UniqueVar66, _)).
+(hasCat(A, _, 0.1935841828500848) :-  /* #neg=3 #pos=40 */ link(UniqueVar67, A), link(_, UniqueVar67)).
+(hasCat(A, _, 0.16501780422163856) :-  /* #neg=35 #pos=250 */ link(_, A)).
+(hasCat(A, _, 0.19547710374548025) :-  /* #neg=5 #pos=49 */ link(A, UniqueVar68), link(UniqueVar68, _)).
+(hasCat(A, _, 0.16720917968482013) :-  /* #neg=33 #pos=245 */ link(A, _)).
+hasCat(_, _, 0.17456646875990742) /* #neg=57 #pos=522 */ .

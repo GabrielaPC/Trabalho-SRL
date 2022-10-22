@@ -57,10 +57,10 @@ Resetting the LazyGroundNthArgumentClauseIndex.
 
 % Looking at the training examples to see if any types of new constants can be inferred.
 % No mode match to 'prior(0, 9.196251814702388E15)' in [signature = [const], types = [+person]]
-% Time to collect constants: 413 milliseconds
+% Time to collect constants: 330 milliseconds
 
 % Read 2.104 pos examples and 92 neg examples.
-% Time to init learnOneClause: 426 milliseconds
+% Time to init learnOneClause: 340 milliseconds
 % Old dirSRLBoost/data/trust/train/models/
 
 % Have 2.104 'raw' positive examples and kept 2.104.
@@ -101,7 +101,7 @@ Resetting the LazyGroundNthArgumentClauseIndex.
 % [ LazyGroundNthArgumentClauseIndex ]  Argument 0:  Building full index for knows/2.
 % [ LazyGroundClauseIndex ]  Building full index for knows/2 with 8.675 assertions.
 % [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for knows/2.
- (Arithmetic) Mean Probability Assigned to Correct Output Class: 1.819,887/2.196,00 = 0,828728
+ (Arithmetic) Mean Probability Assigned to Correct Output Class: 1.819,221/2.196,00 = 0,828425
 
  The weighted count of positive examples = 2.104,000 and the weighted count of negative examples = 92,000
 
@@ -113,17 +113,17 @@ printExamples: Writing out predictions (for Tuffy?) on 2.196 examples for 'trust
 % Computing Area Under Curves.
 %Pos=2104
 %Neg=92
-%LL:-322.8105567695986
-%LL:-493.4867439787307
+%LL:-323.81974823679445
+%LL:-493.6434697851928
 Best F1 = 1.0
 % F1 = 1.0
-% Threshold = 0.8484143501464415
+% Threshold = 0.84742860034133
 
-%   AUC ROC   = 0,709859
-%   AUC PR    = 0,981518
-%   CLL	      = -0,224721
+%   AUC ROC   = 0,714173
+%   AUC PR    = 0,982094
+%   CLL	      = -0,224792
 %   Precision = 0,958106 at threshold = 0,500
 %   Recall    = 1,000000
 %   F1        = 0,978605
 
-% Total inference time (10 trees): 10,359 seconds.
+% Total inference time (10 trees): 9,037 seconds.

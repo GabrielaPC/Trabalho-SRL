@@ -3,12 +3,12 @@ setParam: stringsAreCaseSensitive = true.
 usePrologVariables: true.
 
 
-(hasCat(A, _, 0.13398804625380817) :-  /* #neg=2 #pos=37 */ link(A, UniqueVar90), link(UniqueVar91, UniqueVar90), link(UniqueVar90, UniqueVar91), !).
-(hasCat(A, _, 0.07646585079901087) :-  /* #neg=15 #pos=84 */ link(UniqueVar92, A), link(UniqueVar92, UniqueVar93), link(UniqueVar93, A), !).
-(hasCat(A, _, 0.10584286309034255) :-  /* #neg=5 #pos=60 */ link(A, UniqueVar94), link(UniqueVar95, UniqueVar94), link(UniqueVar95, A), !).
-(hasCat(A, _, 0.07543300738327821) :-  /* #neg=9 #pos=48 */ link(A, UniqueVar96), link(A, UniqueVar97), link(UniqueVar96, UniqueVar97), !).
-(hasCat(A, _, 0.08656576497046618) :-  /* #neg=20 #pos=141 */ link(A, UniqueVar98), link(UniqueVar99, UniqueVar98), link(_, UniqueVar99), !).
-(hasCat(A, _, 0.10745949737362868) :-  /* #neg=5 #pos=49 */ link(A, UniqueVar100), link(UniqueVar100, _), !).
-(hasCat(A, _, 0.08953669982560897) :-  /* #neg=33 #pos=245 */ link(A, _), !).
-(hasCat(A, _, 0.09282770919404934) :-  /* #neg=61 #pos=470 */ link(_, A), !).
-(hasCat(_, _, 0.0982275696548698) :-  /* #neg=57 #pos=522 */ !).
+(hasCat(A, _, 0.11172679786896879) :-  /* #neg=6 #pos=82 */ link(UniqueVar89, A), link(_, UniqueVar89), link(A, _), !).
+(hasCat(A, _, 0.10999319254427758) :-  /* #neg=3 #pos=40 */ link(A, UniqueVar90), link(UniqueVar91, A), link(UniqueVar91, UniqueVar90), !).
+(hasCat(A, _, 0.08241113410245031) :-  /* #neg=29 #pos=185 */ link(A, UniqueVar92), link(UniqueVar93, UniqueVar92), link(_, UniqueVar93), !).
+(hasCat(A, _, 0.11321143194125448) :-  /* #neg=5 #pos=49 */ link(A, UniqueVar94), link(UniqueVar94, _), !).
+(hasCat(A, _, 0.09036722673176566) :-  /* #neg=33 #pos=245 */ link(A, _), !).
+(hasCat(A, _, 0.07033657968159689) :-  /* #neg=13 #pos=63 */ link(UniqueVar95, A), link(UniqueVar96, UniqueVar95), link(UniqueVar96, A), !).
+(hasCat(A, _, 0.10650966538114402) :-  /* #neg=10 #pos=104 */ link(UniqueVar97, A), link(_, UniqueVar97), !).
+(hasCat(A, _, 0.08941326487450543) :-  /* #neg=51 #pos=366 */ link(_, A), !).
+(hasCat(_, _, 0.09780273075260776) :-  /* #neg=57 #pos=522 */ !).

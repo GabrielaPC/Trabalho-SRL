@@ -3,12 +3,12 @@ setParam: stringsAreCaseSensitive = true.
 usePrologVariables: true.
 
 
-(trusts(A, B, 0.17388620426732404) :-  /* #neg=6 #pos=578 */ knows(B, A)).
-(trusts(A, B, 0.1565554848760374) :-  /* #neg=6 #pos=66 */ knows(A, UniqueVar55), knows(UniqueVar55, UniqueVar55), knows(B, UniqueVar55)).
-(trusts(A, B, 0.1317132013119006) :-  /* #neg=25 #pos=207 */ knows(A, UniqueVar56), knows(UniqueVar56, UniqueVar56), knows(B, _)).
-(trusts(A, _, 0.16531154963425473) :-  /* #neg=1 #pos=25 */ knows(A, UniqueVar57), knows(UniqueVar57, UniqueVar57)).
-(trusts(A, _, 0.1513213872436984) :-  /* #neg=29 #pos=451 */ knows(UniqueVar58, A), knows(UniqueVar59, UniqueVar58), knows(UniqueVar59, A)).
-(trusts(A, B, 0.1747451126140717) :-  /* #neg=4 #pos=300 */ knows(UniqueVar60, A), knows(_, UniqueVar60), knows(B, _)).
-(trusts(A, _, 0.14461609553355276) :-  /* #neg=3 #pos=47 */ knows(UniqueVar61, A), knows(_, UniqueVar61)).
-(trusts(A, _, 0.17855390423173834) :-  /* #neg=2 #pos=248 */ knows(A, UniqueVar62), knows(UniqueVar62, _)).
-trusts(_, _, 0.08744091084885572) /* #neg=1 #pos=9 */ .
+(trusts(A, B, 0.16523170173133436) :-  /* #neg=4 #pos=156 */ knows(A, UniqueVar57), knows(UniqueVar57, UniqueVar57), knows(B, A)).
+(trusts(A, B, 0.13744467757570367) :-  /* #neg=31 #pos=273 */ knows(A, UniqueVar58), knows(UniqueVar58, UniqueVar58), knows(B, _)).
+(trusts(A, _, 0.18486080437876143) :-  /* #pos=6 */ knows(A, UniqueVar59), knows(UniqueVar59, UniqueVar59), knows(UniqueVar59, A)).
+(trusts(A, _, 0.16178191593963195) :-  /* #neg=1 #pos=19 */ knows(A, UniqueVar60), knows(UniqueVar60, UniqueVar60)).
+(trusts(_, A, 0.17019951526128427) :-  /* #neg=25 #pos=1.197 */ knows(UniqueVar61, A), knows(A, UniqueVar61)).
+(trusts(A, B, 0.1467126028814781) :-  /* #neg=8 #pos=114 */ knows(B, UniqueVar62), knows(_, A), knows(UniqueVar62, _)).
+(trusts(A, B, -0.04647294157747606) :-  /* #neg=1 #pos=3 */ knows(B, _), knows(_, A)).
+(trusts(_, A, 0.1858874218174088) :-  /* #pos=26 */ knows(A, _)).
+trusts(_, _, 0.16066894223846215) /* #neg=7 #pos=137 */ .

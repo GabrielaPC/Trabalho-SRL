@@ -3,12 +3,12 @@ setParam: stringsAreCaseSensitive = true.
 usePrologVariables: true.
 
 
-(hasCat(A, _, 0.24393567488467882) :-  /* #neg=6 #pos=88 */ link(UniqueVar50, A), link(UniqueVar50, UniqueVar51), link(A, UniqueVar51)).
-(hasCat(A, _, 0.18934724965625946) :-  /* #neg=14 #pos=71 */ link(UniqueVar52, A), link(UniqueVar53, UniqueVar52), link(UniqueVar53, A)).
-(hasCat(A, _, 0.23064648606163485) :-  /* #neg=12 #pos=130 */ link(UniqueVar54, A), link(_, UniqueVar54)).
-(hasCat(A, _, 0.20393088629297387) :-  /* #neg=29 #pos=185 */ link(A, UniqueVar55), link(UniqueVar56, UniqueVar55), link(_, UniqueVar56)).
-(hasCat(A, _, 0.2107583963083462) :-  /* #neg=16 #pos=116 */ link(UniqueVar57, A), link(UniqueVar57, UniqueVar58), link(UniqueVar58, _)).
-(hasCat(A, _, 0.20997413995085207) :-  /* #neg=35 #pos=250 */ link(_, A)).
-(hasCat(A, _, 0.2271619809116494) :-  /* #neg=5 #pos=49 */ link(A, UniqueVar59), link(UniqueVar59, _)).
-(hasCat(A, _, 0.21127528717411106) :-  /* #neg=33 #pos=245 */ link(A, _)).
-hasCat(_, _, 0.22165364512847807) /* #neg=57 #pos=522 */ .
+(hasCat(A, _, 0.2748422381286881) :-  /* #neg=1 #pos=40 */ link(UniqueVar48, A), link(UniqueVar48, UniqueVar49), link(UniqueVar49, UniqueVar48)).
+(hasCat(A, _, 0.18000640335023332) :-  /* #neg=14 #pos=70 */ link(UniqueVar50, A), link(UniqueVar51, UniqueVar50), link(_, UniqueVar51)).
+(hasCat(A, _, 0.21256909593202022) :-  /* #neg=10 #pos=67 */ link(A, UniqueVar52), link(UniqueVar52, UniqueVar53), link(A, UniqueVar53)).
+(hasCat(A, _, 0.13666033208630968) :-  /* #neg=7 #pos=27 */ link(A, UniqueVar54), link(UniqueVar54, UniqueVar55), link(UniqueVar55, _)).
+(hasCat(A, _, 0.2190132586934166) :-  /* #neg=9 #pos=75 */ link(A, UniqueVar56), link(UniqueVar56, _)).
+(hasCat(A, _, 0.2371582821208396) :-  /* #neg=8 #pos=98 */ link(A, _), link(_, A)).
+(hasCat(A, _, 0.2142433438918221) :-  /* #neg=7 #pos=46 */ link(A, UniqueVar57), link(UniqueVar58, UniqueVar57), link(_, UniqueVar58)).
+(hasCat(A, _, 0.21247969129926042) :-  /* #neg=33 #pos=245 */ link(A, _)).
+hasCat(_, _, 0.21799249695922396) /* #neg=118 #pos=988 */ .

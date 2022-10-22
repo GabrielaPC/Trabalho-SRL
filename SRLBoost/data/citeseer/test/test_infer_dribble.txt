@@ -52,10 +52,10 @@
 % Collecting the types of constants.
 
 % Looking at the training examples to see if any types of new constants can be inferred.
-% Time to collect constants: 148 milliseconds
+% Time to collect constants: 130 milliseconds
 
 % Read 1.654 pos examples and 206 neg examples.
-% Time to init learnOneClause: 152 milliseconds
+% Time to init learnOneClause: 137 milliseconds
 % Old dirSRLBoost/data/citeseer/train/models/
 
 % Have 1.654 'raw' positive examples and kept 1.654.
@@ -96,7 +96,7 @@
 % [ LazyGroundNthArgumentClauseIndex ]  Argument 0:  Building full index for link/2.
 % [ LazyGroundNthArgumentClauseIndex ]  Argument 1:  Building full index for link/2.
 % [ LazyGroundClauseIndex ]  Building full index for link/2 with 1.127 assertions.
- (Arithmetic) Mean Probability Assigned to Correct Output Class: 1.380,415/1.860,00 = 0,742159
+ (Arithmetic) Mean Probability Assigned to Correct Output Class: 1.380,486/1.860,00 = 0,742197
 
  The weighted count of positive examples = 1.654,000 and the weighted count of negative examples = 206,000
 
@@ -108,16 +108,16 @@ printExamples: Writing out predictions (for Tuffy?) on 1.860 examples for 'hasCa
 % Computing Area Under Curves.
 %Pos=1654
 %Neg=206
-%LL:-348.0364753103575
-%LL:-686.1380535910254
+%LL:-348.083940241922
+%LL:-685.8942504507895
 % F1 = 1.0
-% Threshold = 0.7967207231033071
+% Threshold = 0.7967930827609333
 
-%   AUC ROC   = 0,574989
-%   AUC PR    = 0,916589
-%   CLL	      = -0,368891
+%   AUC ROC   = 0,574483
+%   AUC PR    = 0,915791
+%   CLL	      = -0,368760
 %   Precision = 0,889247 at threshold = 0,500
 %   Recall    = 1,000000
 %   F1        = 0,941377
 
-% Total inference time (10 trees): 3,375 seconds.
+% Total inference time (10 trees): 3,844 seconds.
